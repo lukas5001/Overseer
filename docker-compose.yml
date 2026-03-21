@@ -1,0 +1,100 @@
+version: "3.9"
+
+services:
+  # ==================== Infrastruktur ====================
+  postgres:
+    image: timescale/timescaledb:latest-pg16
+    container_name: overseer-postgres
+    environment:
+      POSTGRES_DB: overseer
+      POSTGRES_USER: overseer
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-overseer_dev_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U overseer"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: overseer-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ==================== Backend ====================
+  receiver:
+    build:
+      context: .
+      dockerfile: receiver/Dockerfile
+    container_name: overseer-receiver
+    ports:
+      - "8001:8001"
+    environment:
+      REDIS_URL: redis://redis:6379
+      DATABASE_URL: postgresql+asyncpg://overseer:${POSTGRES_PASSWORD:-overseer_dev_password}@postgres:5432/overseer
+      SECRET_KEY: ${SECRET_KEY:-dev_secret_key_change_in_production}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: .
+      dockerfile: worker/Dockerfile
+    container_name: overseer-worker
+    deploy:
+      replicas: 2
+    environment:
+      REDIS_URL: redis://redis:6379
+      DATABASE_URL: postgresql+asyncpg://overseer:${POSTGRES_PASSWORD:-overseer_dev_password}@postgres:5432/overseer
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    container_name: overseer-api
+    ports:
+      - "8000:8000"
+    environment:
+      REDIS_URL: redis://redis:6379
+      DATABASE_URL: postgresql+asyncpg://overseer:${POSTGRES_PASSWORD:-overseer_dev_password}@postgres:5432/overseer
+      SECRET_KEY: ${SECRET_KEY:-dev_secret_key_change_in_production}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: overseer-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
+  redisdata:
