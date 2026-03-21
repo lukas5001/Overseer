@@ -5,7 +5,7 @@ import enum
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 # ==================== Enums ====================
@@ -87,6 +87,11 @@ class CollectorOut(BaseModel):
 
     model_config = {"from_attributes": True}
 
+    @field_validator("ip_address", mode="before")
+    @classmethod
+    def coerce_ip(cls, v):
+        return str(v) if v is not None else None
+
 
 class HostOut(BaseModel):
     id: UUID
@@ -99,8 +104,14 @@ class HostOut(BaseModel):
     tags: list
     active: bool
     created_at: datetime
+    tenant_name: str | None = None
 
     model_config = {"from_attributes": True}
+
+    @field_validator("ip_address", mode="before")
+    @classmethod
+    def coerce_ip(cls, v):
+        return str(v) if v is not None else None
 
 
 class ServiceOut(BaseModel):

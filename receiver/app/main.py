@@ -2,7 +2,7 @@
 Overseer Receiver – Accepts check results from Collectors.
 
 Responsibilities:
-- Validate API key → identify tenant
+- Validate API key → identify tenant (real DB lookup)
 - Validate payload schema
 - Write to Redis Stream
 - Return 202 Accepted immediately
@@ -11,10 +11,13 @@ import hashlib
 import json
 import logging
 import os
+from datetime import datetime, timezone
 
 import redis.asyncio as redis
-from fastapi import FastAPI, HTTPException, Header, Request
+from fastapi import FastAPI, HTTPException, Header
 from fastapi.responses import JSONResponse
+from sqlalchemy import select, text
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 
 from shared.schemas import CollectorPayload
 
@@ -31,6 +34,8 @@ logger = logging.getLogger("overseer.receiver")
 logging.basicConfig(level=logging.INFO)
 
 redis_pool: redis.Redis | None = None
+engine = create_async_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
+AsyncSessionLocal = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
 @app.on_event("startup")
@@ -44,31 +49,42 @@ async def startup():
 async def shutdown():
     if redis_pool:
         await redis_pool.close()
+    await engine.dispose()
 
 
 # ==================== API Key Validation ====================
 
-# In production, this queries the database. For now, a simple cache.
-_api_key_cache: dict[str, dict] = {}
-
-
 async def validate_api_key(api_key: str) -> dict:
-    """Validate API key and return tenant info.
-    
-    TODO: Query api_keys table, compare hash, return tenant_id.
-    For now, accepts any key with format 'overseer_<tenant_slug>_<secret>'.
-    """
+    """Validate API key via DB lookup. Returns {tenant_slug, tenant_id}."""
     key_hash = hashlib.sha256(api_key.encode()).hexdigest()
-    prefix = api_key[:12]
+    key_prefix = api_key[:12]
 
-    # TODO: Replace with actual DB lookup
-    # For development, extract tenant from key format
-    if api_key.startswith("overseer_"):
-        parts = api_key.split("_", 2)
-        if len(parts) >= 3:
-            return {"tenant_slug": parts[1], "key_prefix": prefix}
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(
+            text("""
+                SELECT ak.id, ak.tenant_id, ak.key_hash, t.slug AS tenant_slug
+                FROM api_keys ak
+                JOIN tenants t ON t.id = ak.tenant_id
+                WHERE ak.key_prefix = :prefix
+                  AND ak.active = true
+                  AND t.active = true
+            """),
+            {"prefix": key_prefix},
+        )
+        row = result.fetchone()
 
-    raise HTTPException(status_code=401, detail="Invalid API key")
+    if not row or row.key_hash != key_hash:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+
+    # Update last_used_at in background (fire and forget, non-blocking)
+    async with AsyncSessionLocal() as db:
+        await db.execute(
+            text("UPDATE api_keys SET last_used_at = :now WHERE id = :id"),
+            {"now": datetime.now(timezone.utc), "id": row.id},
+        )
+        await db.commit()
+
+    return {"tenant_slug": row.tenant_slug, "tenant_id": str(row.tenant_id)}
 
 
 # ==================== Endpoints ====================
@@ -79,19 +95,16 @@ async def receive_check_results(
     x_api_key: str = Header(..., alias="X-API-Key"),
 ):
     """Receive check results from a Collector."""
-    # 1. Validate API key
     tenant_info = await validate_api_key(x_api_key)
 
-    # 2. Enrich payload with validated tenant info
     message = {
         "tenant_slug": tenant_info["tenant_slug"],
         "collector_id": payload.collector_id,
         "timestamp": payload.timestamp.isoformat(),
         "checks": [check.model_dump_json() for check in payload.checks],
-        "received_at": __import__("datetime").datetime.utcnow().isoformat(),
+        "received_at": datetime.now(timezone.utc).isoformat(),
     }
 
-    # 3. Write to Redis Stream
     await redis_pool.xadd(STREAM_NAME, {"data": json.dumps(message)})
 
     logger.info(

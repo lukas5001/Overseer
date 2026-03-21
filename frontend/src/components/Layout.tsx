@@ -1,13 +1,29 @@
 import { Outlet, NavLink } from 'react-router-dom'
-import { LayoutDashboard, AlertTriangle, Settings, Shield } from 'lucide-react'
+import { LayoutDashboard, AlertTriangle, Monitor, Building2, Shield } from 'lucide-react'
 import clsx from 'clsx'
 
-const navItems = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/errors', label: 'Fehlerübersicht', icon: AlertTriangle },
-]
+function getRole(): string | null {
+  try {
+    const token = localStorage.getItem('overseer_token')
+    if (!token) return null
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    return payload.role ?? null
+  } catch {
+    return null
+  }
+}
 
 export default function Layout() {
+  const role = getRole()
+  const isSuperAdmin = role === 'super_admin'
+
+  const navItems = [
+    { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/errors', label: 'Fehlerübersicht', icon: AlertTriangle },
+    { to: '/hosts', label: 'Hosts', icon: Monitor },
+    ...(isSuperAdmin ? [{ to: '/tenants', label: 'Tenants', icon: Building2 }] : []),
+  ]
+
   return (
     <div className="flex h-screen overflow-hidden">
       {/* Sidebar */}

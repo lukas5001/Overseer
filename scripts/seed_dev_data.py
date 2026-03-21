@@ -48,22 +48,31 @@ def seed():
     api_keys = {}
     for name, slug in tenants:
         tid = str(uuid.uuid4())
-        tenant_ids[slug] = tid
         cur.execute(
             "INSERT INTO tenants (id, name, slug) VALUES (%s, %s, %s) ON CONFLICT (slug) DO NOTHING",
             (tid, name, slug),
         )
+        # Use existing ID if tenant was already present
+        cur.execute("SELECT id FROM tenants WHERE slug = %s", (slug,))
+        tenant_ids[slug] = str(cur.fetchone()[0])
 
-        full_key, key_hash, key_prefix = generate_api_key(slug)
-        api_keys[slug] = full_key
-        cur.execute(
-            "INSERT INTO api_keys (tenant_id, key_hash, key_prefix, name) VALUES (%s, %s, %s, %s)",
-            (tid, key_hash, key_prefix, f"Collector Key {slug}"),
-        )
+        cur.execute("SELECT key_prefix FROM api_keys WHERE tenant_id = %s AND name = %s",
+                    (tenant_ids[slug], f"Collector Key {slug}"))
+        existing_key = cur.fetchone()
+        if not existing_key:
+            full_key, key_hash, key_prefix = generate_api_key(slug)
+            api_keys[slug] = full_key
+            cur.execute(
+                "INSERT INTO api_keys (tenant_id, key_hash, key_prefix, name) VALUES (%s, %s, %s, %s)",
+                (tenant_ids[slug], key_hash, key_prefix, f"Collector Key {slug}"),
+            )
+        else:
+            api_keys[slug] = f"{existing_key[0]}…(existing, hash not recoverable)"
 
     # ==================== Users ====================
     # Password: "admin123" for all dev users
-    pw_hash = "$2b$12$LJ3m4ys3Lk0EXAMPLE_HASH_REPLACE_IN_PRODUCTION"
+    import bcrypt as _bcrypt
+    pw_hash = _bcrypt.hashpw(b"admin123", _bcrypt.gensalt()).decode()
 
     cur.execute(
         """INSERT INTO users (tenant_id, email, password_hash, display_name, role) 
@@ -83,14 +92,19 @@ def seed():
     # ==================== Collectors ====================
     collector_ids = {}
     for slug, tid in tenant_ids.items():
-        cid = str(uuid.uuid4())
-        collector_ids[slug] = cid
-        cur.execute(
-            """INSERT INTO collectors (id, tenant_id, name, hostname, ip_address, last_seen_at) 
-               VALUES (%s, %s, %s, %s, %s, %s)""",
-            (cid, tid, f"collector-{slug}", f"collector-{slug}.local", "10.0.0.100",
-             datetime.now(timezone.utc)),
-        )
+        cur.execute("SELECT id FROM collectors WHERE tenant_id = %s AND name = %s", (tid, f"collector-{slug}"))
+        row = cur.fetchone()
+        if row:
+            collector_ids[slug] = str(row[0])
+        else:
+            cid = str(uuid.uuid4())
+            cur.execute(
+                """INSERT INTO collectors (id, tenant_id, name, hostname, ip_address, last_seen_at)
+                   VALUES (%s, %s, %s, %s, %s, %s)""",
+                (cid, tid, f"collector-{slug}", f"collector-{slug}.local", "10.0.0.100",
+                 datetime.now(timezone.utc)),
+            )
+            collector_ids[slug] = cid
 
     # ==================== Hosts & Services ====================
     host_configs = {
@@ -183,18 +197,20 @@ def seed():
         for hostname, display, ip, htype, checks in hosts:
             hid = str(uuid.uuid4())
             cur.execute(
-                """INSERT INTO hosts (id, tenant_id, collector_id, hostname, display_name, 
+                """INSERT INTO hosts (id, tenant_id, collector_id, hostname, display_name,
                    ip_address, host_type)
                    VALUES (%s, %s, %s, %s, %s, %s, %s)
                    ON CONFLICT (tenant_id, hostname) DO NOTHING""",
                 (hid, tid, cid, hostname, display, ip, htype),
             )
+            cur.execute("SELECT id FROM hosts WHERE tenant_id = %s AND hostname = %s", (tid, hostname))
+            hid = str(cur.fetchone()[0])
 
             for check_name, check_type, check_config in checks:
                 sid = str(uuid.uuid4())
                 import json
                 cur.execute(
-                    """INSERT INTO services (id, host_id, tenant_id, name, check_type, 
+                    """INSERT INTO services (id, host_id, tenant_id, name, check_type,
                        check_config, threshold_warn, threshold_crit)
                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                        ON CONFLICT (host_id, name) DO NOTHING""",
@@ -202,6 +218,8 @@ def seed():
                      80.0 if "cpu" in check_name or "disk" in check_name or "ram" in check_name else None,
                      95.0 if "cpu" in check_name or "disk" in check_name or "ram" in check_name else None),
                 )
+                cur.execute("SELECT id FROM services WHERE host_id = %s AND name = %s", (hid, check_name))
+                sid = str(cur.fetchone()[0])
 
                 # Seed current_status with OK for most, some problems
                 import random

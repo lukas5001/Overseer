@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   # ==================== Infrastruktur ====================
   postgres:
@@ -56,7 +54,6 @@ services:
     build:
       context: .
       dockerfile: worker/Dockerfile
-    container_name: overseer-worker
     deploy:
       replicas: 2
     environment:
