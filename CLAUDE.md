@@ -81,6 +81,7 @@ cd agent && make build-all   # → bin/overseer-agent + bin/overseer-agent.exe
 4. **Tenant-Isolation** – Jede DB-Query enthält automatisch einen tenant_id Filter. Auf ORM-Ebene erzwungen.
 5. **Push-basiert** – Collectors und Agents senden Ergebnisse, Server empfängt passiv.
 6. **Agent statt WinRM** – WinRM erfordert Inbound-Ports, Firewall-Konfiguration und Credentials. Der Agent braucht nur Outbound HTTPS 443, ist ein Single-Binary (~10 MB), und authentifiziert sich mit einem SHA256-gehashten Token.
+7. **Server-Managed Scripts** – Monitoring-Scripts werden zentral in der DB (`monitoring_scripts`) verwaltet und über die API an Agents ausgeliefert. Alternativ können Agents auch lokale Scripts referenzieren.
 
 ## Sicherheitsarchitektur
 
@@ -117,8 +118,9 @@ Jeder Service hat seinen eigenen Docker-Build-Context (siehe Dockerfiles):
 - 1:1 Bindung an einen Host (1 Token pro Host)
 - Auth über `X-Agent-Token` Header (separate Validierung, kein JWT)
 - Receiver akzeptiert sowohl `X-API-Key` (Collector) als auch `X-Agent-Token` (Agent)
-- Check-Typen mit Agent: `agent_cpu`, `agent_memory`, `agent_disk`, `agent_service`, `agent_process`, `agent_eventlog`, `agent_custom`
+- Check-Typen mit Agent: `agent_cpu`, `agent_memory`, `agent_disk`, `agent_service`, `agent_process`, `agent_eventlog`, `agent_custom`, `agent_script`, `agent_services_auto`
 - Check-Mode für Agent-Checks: `agent` (statt `passive` oder `active`)
+- Agent-Tokens können nur für `host_type='server'` generiert werden
 
 ### Rate Limiting (slowapi)
 - Login-Endpoint `/api/v1/auth/login`: 10 req/min pro IP
@@ -154,3 +156,32 @@ Ebenso: API-Endpoints die `user["sub"]` nutzen um User in der DB zu suchen (z.B.
 
 ### datetime-local Inputs im Frontend
 `datetime-local` HTML-Inputs erwarten **lokale Zeit**. Niemals `toISOString().slice(0,16)` verwenden (gibt UTC!). Stattdessen immer `getFullYear()/getMonth()/getDate()/getHours()/getMinutes()` benutzen.
+
+## Check-Erstellungs-Validierung (Production Audit, 2026-03-24)
+
+Beim Erstellen von Checks (`POST /api/v1/services/`) gelten folgende Backend-Validierungen:
+- **Agent-Checks** (`check_type.startswith('agent_')` oder `check_mode='agent'`) → Host muss `agent_managed=true` haben
+- **Passive Checks** (`check_mode='passive'`) → Host muss `collector_id` haben
+- **Netzwerk-Checks** (`ping`, `port`, `snmp*`, `ssh_*`) → Host muss `ip_address` haben
+- **check_type** ist nach Erstellung unveränderlich (PATCH lehnt Änderungen ab)
+- **Intervall** muss zwischen 10 Sekunden und 7 Tagen liegen (POST und PATCH)
+
+Das Frontend filtert Check-Typen und Templates kontextabhängig nach Host-Eigenschaften.
+SNMP-Felder werden nur für Netzwerkgeräte angezeigt (switch, router, printer, firewall, access_point).
+
+## Monitoring Scripts
+
+- Tabelle: `monitoring_scripts` (Migration 022)
+- API: `/api/v1/scripts/` (CRUD, admin-only Schreibzugriff)
+- Frontend: `/scripts` Seite (ScriptsPage.tsx)
+- Felder: `name`, `description`, `interpreter` (powershell/bash/python), `script_body`, `expected_output` (nagios/text/json)
+- Tenant-isoliert mit `UNIQUE(tenant_id, name)`
+- Agent holt Script-Inhalt über Config-Endpoint: `script_id` → `script_content` + `script_interpreter` + `expected_output`
+
+## Produktionsserver
+
+- Server: `212.227.88.119`
+- Services: `overseer-api`, `overseer-receiver`, `overseer-worker@{0,1,2}` (systemd)
+- DB: PostgreSQL 17 nativ (kein Docker)
+- Frontend: Vite-Build nach `/opt/overseer/frontend/dist`, nginx reverse proxy
+- Deploy: `git pull` → `npm run build` → `systemctl restart overseer-*`
