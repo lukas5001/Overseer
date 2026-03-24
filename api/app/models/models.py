@@ -50,8 +50,8 @@ class Tenant(Base):
     created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
 
-    collectors = relationship("Collector", back_populates="tenant")
-    hosts = relationship("Host", back_populates="tenant")
+    collectors = relationship("Collector", back_populates="tenant", passive_deletes=True)
+    hosts = relationship("Host", back_populates="tenant", passive_deletes=True)
 
 
 class ApiKey(Base):
@@ -110,7 +110,7 @@ class Collector(Base):
     updated_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
 
     tenant = relationship("Tenant", back_populates="collectors")
-    hosts = relationship("Host", back_populates="collector")
+    hosts = relationship("Host", back_populates="collector", passive_deletes=True)
 
 
 class Host(Base):
@@ -134,7 +134,7 @@ class Host(Base):
 
     tenant = relationship("Tenant", back_populates="hosts")
     collector = relationship("Collector", back_populates="hosts")
-    services = relationship("Service", back_populates="host")
+    services = relationship("Service", back_populates="host", passive_deletes=True)
 
 
 class Service(Base):
