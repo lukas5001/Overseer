@@ -276,12 +276,13 @@ if (!host.snmp_community) {
 7. ✅ 2.2 — IP-Adresse Hinweistexte
 8. ✅ 2.3 — Agent nur für Server
 9. ✅ 2.4 — Server-URL dynamisch
-10. ✅ 2.7 — Templates filtern
+10. ✅ 2.5 — Collector/Agent Display kontextabhängig
+11. ✅ 2.7 — Templates filtern
 
 ### Danach:
-11. 3.1 — Onboarding-Flow
-12. 3.2 — Host-Bereitschaft in Liste
-13. 3.3 — Host-Kopie Agent-Status
-14. 3.4 — Intervall-Validierung
-15. 3.5 — SNMP Walk Validierung
-16. 3.6 — Token Regenerierung
+11. ✅ 3.1 — Onboarding-Flow
+12. ✅ 3.2 — Host-Bereitschaft in Liste
+13. ✅ 3.3 — Host-Kopie Agent-Status
+14. ✅ 3.4 — Intervall-Validierung
+15. ✅ 3.5 — SNMP Walk Validierung
+16. ✅ 3.6 — Token Regenerierung

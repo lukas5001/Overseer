@@ -232,6 +232,7 @@ class ServiceCreate(BaseModel):
 
 class ServiceUpdate(BaseModel):
     name: str | None = None
+    check_type: str | None = None  # blocked in PATCH – immutable after creation
     check_config: dict | None = None
     interval_seconds: int | None = None
     threshold_warn: float | None = None

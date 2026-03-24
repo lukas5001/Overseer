@@ -246,6 +246,7 @@ async def copy_host(
         snmp_community=src.snmp_community,
         snmp_version=src.snmp_version,
         tags=list(src.tags or []),
+        agent_managed=False,  # 3.3 Agent-Status wird nicht kopiert — Token muss separat generiert werden
     )
     db.add(new_host)
     await db.flush()

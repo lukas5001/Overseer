@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Monitor, Server, Router, Printer, Shield, Wifi, HelpCircle, Plus, X, Search, ChevronDown, ChevronRight, Eye, EyeOff, Power, Copy, Trash2 } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import clsx from 'clsx'
 import { api } from '../api/client'
 import ConfirmDialog from '../components/ConfirmDialog'
@@ -46,7 +46,7 @@ const HOST_TYPES = ['server', 'switch', 'router', 'printer', 'firewall', 'access
 
 interface AddHostModalProps {
   onClose: () => void
-  onSaved: () => void
+  onSaved: (hostId?: string) => void
 }
 
 function AddHostModal({ onClose, onSaved }: AddHostModalProps) {
@@ -88,7 +88,7 @@ function AddHostModal({ onClose, onSaved }: AddHostModalProps) {
       tenant_id: form.tenant_id,
       collector_id: form.collector_id || null,
     }),
-    onSuccess: () => { onSaved(); onClose() },
+    onSuccess: (resp: any) => { onSaved(resp.data?.id); onClose() },
     onError: (e: any) => setError(e.response?.data?.detail ?? 'Fehler beim Speichern'),
   })
 
@@ -138,9 +138,17 @@ function AddHostModal({ onClose, onSaved }: AddHostModalProps) {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">IP-Adresse</label>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                IP-Adresse
+                {form.host_type !== 'server' && <span className="text-red-400 ml-0.5">*</span>}
+              </label>
               <input value={form.ip_address} onChange={set('ip_address')} placeholder="192.168.1.1"
                 className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+              <p className="text-[11px] text-gray-400 mt-0.5">
+                {form.host_type === 'server'
+                  ? 'Optional bei Agent-Hosts, nötig für aktive Checks (Ping, SSH, Port)'
+                  : 'Erforderlich für Netzwerk-Checks (Ping, SNMP, Port)'}
+              </p>
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Typ</label>
@@ -151,22 +159,25 @@ function AddHostModal({ onClose, onSaved }: AddHostModalProps) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">SNMP Community</label>
-              <input value={form.snmp_community} onChange={set('snmp_community')} placeholder="public"
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+          {/* SNMP-Felder nur für Netzwerkgeräte */}
+          {['switch', 'router', 'printer', 'firewall', 'access_point', 'other'].includes(form.host_type) && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">SNMP Community</label>
+                <input value={form.snmp_community} onChange={set('snmp_community')} placeholder="public"
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">SNMP Version</label>
+                <select value={form.snmp_version} onChange={set('snmp_version')}
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none">
+                  <option value="1">v1</option>
+                  <option value="2c">v2c</option>
+                  <option value="3">v3</option>
+                </select>
+              </div>
             </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">SNMP Version</label>
-              <select value={form.snmp_version} onChange={set('snmp_version')}
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none">
-                <option value="1">v1</option>
-                <option value="2c">v2c</option>
-                <option value="3">v3</option>
-              </select>
-            </div>
-          </div>
+          )}
 
           {error && (
             <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>
@@ -194,6 +205,7 @@ function AddHostModal({ onClose, onSaved }: AddHostModalProps) {
 
 export default function HostsPage() {
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
   const [showAdd, setShowAdd] = useState(false)
   const [search, setSearch] = useState('')
   const [expandedTenants, setExpandedTenants] = useState<Set<string>>(() => {
@@ -358,7 +370,10 @@ export default function HostsPage() {
       {showAdd && (
         <AddHostModal
           onClose={() => setShowAdd(false)}
-          onSaved={() => queryClient.invalidateQueries({ queryKey: ['hosts-all'] })}
+          onSaved={(hostId) => {
+            queryClient.invalidateQueries({ queryKey: ['hosts-all'] })
+            if (hostId) navigate(`/hosts/${hostId}?new=1`)
+          }}
         />
       )}
 
@@ -554,6 +569,7 @@ export default function HostsPage() {
                         <th className="px-6 py-2 text-left">Host</th>
                         <th className="px-6 py-2 text-left">IP</th>
                         <th className="px-6 py-2 text-left">Typ</th>
+                        <th className="px-6 py-2 text-left">Monitoring</th>
                         <th className="px-6 py-2 text-left">Status</th>
                       </tr>
                     </thead>
@@ -593,6 +609,22 @@ export default function HostsPage() {
                             </td>
                             <td className="px-6 py-2.5 text-gray-500 capitalize">
                               {host.host_type.replace('_', ' ')}
+                            </td>
+                            <td className="px-6 py-2.5">
+                              {/* 3.2 Host-Bereitschaft */}
+                              {host.agent_managed ? (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded">
+                                  Agent
+                                </span>
+                              ) : host.ip_address ? (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
+                                  Netzwerk
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded">
+                                  Nicht konfiguriert
+                                </span>
+                              )}
                             </td>
                             <td className="px-6 py-2.5">
                               <div className="flex items-center gap-2">

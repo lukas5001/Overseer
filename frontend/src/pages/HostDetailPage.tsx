@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Server, Router, Printer, Shield, Wifi, ArrowLeft, Play, Search,
@@ -337,11 +337,24 @@ function AddCheckModal({ host, onClose, onSaved }: AddCheckModalProps) {
     queryKey: ['service-templates'],
     queryFn: () => api.get('/api/v1/service-templates/').then(r => r.data),
   })
+
+  // 2.6 Check-Typen nach Host-Kontext filtern
+  const availableCheckTypes = CHECK_TYPES.filter(ct => {
+    // Agent-Checks nur für agent-managed Hosts
+    if (ct.startsWith('agent_') && !host.agent_managed) return false
+    // SSH-Checks nur wenn IP vorhanden
+    if (ct.startsWith('ssh_') && !host.ip_address) return false
+    // SNMP-Checks nur wenn SNMP community gesetzt
+    if (ct.startsWith('snmp') && !host.snmp_community) return false
+    // Ping/Port/HTTP nur wenn IP vorhanden
+    if ((ct === 'ping' || ct === 'port') && !host.ip_address) return false
+    return true
+  })
   const [mode, setMode] = useState<'choose' | 'manual' | 'template'>('choose')
   const [applyingTemplate, setApplyingTemplate] = useState<string | null>(null)
   const [form, setForm] = useState({
     name: '',
-    check_type: 'ping',
+    check_type: availableCheckTypes[0] ?? 'ping',
     interval_seconds: '60',
     threshold_warn: '',
     threshold_crit: '',
@@ -457,12 +470,34 @@ function AddCheckModal({ host, onClose, onSaved }: AddCheckModalProps) {
         )}
 
         {/* Template picker */}
-        {mode === 'template' && (
+        {mode === 'template' && (() => {
+          // 2.7 Templates nach Kompatibilität filtern
+          const compatibleTemplates = templates.filter(tpl => {
+            const types = tpl.checks.map(c => c.check_type)
+            const hasAgent = types.some(t => t.startsWith('agent_'))
+            const hasSnmp = types.some(t => t.startsWith('snmp'))
+            const hasSsh = types.some(t => t.startsWith('ssh_'))
+            const hasNetwork = types.some(t => ['ping', 'port'].includes(t))
+            // Agent-Templates nur für agent-managed Hosts
+            if (hasAgent && !host.agent_managed) return false
+            // SNMP-Templates nur wenn SNMP konfiguriert
+            if (hasSnmp && !host.snmp_community) return false
+            // SSH-Templates nur wenn IP vorhanden
+            if (hasSsh && !host.ip_address) return false
+            // Netzwerk-Templates nur wenn IP vorhanden
+            if (hasNetwork && !host.ip_address) return false
+            return true
+          })
+          return (
           <div className="space-y-2">
-            {templates.length === 0 && (
-              <p className="text-sm text-gray-500 text-center py-4">Keine Vorlagen vorhanden. Erstelle welche unter <a href="/templates" className="text-overseer-600 hover:underline">Vorlagen</a>.</p>
+            {compatibleTemplates.length === 0 && (
+              <p className="text-sm text-gray-500 text-center py-4">
+                {templates.length === 0
+                  ? <>Keine Vorlagen vorhanden. Erstelle welche unter <a href="/templates" className="text-overseer-600 hover:underline">Vorlagen</a>.</>
+                  : 'Keine kompatiblen Vorlagen für diesen Host. Vorlagen erfordern passende Konfiguration (Agent, IP, SNMP).'}
+              </p>
             )}
-            {templates.map(tpl => (
+            {compatibleTemplates.map(tpl => (
               <button key={tpl.id} onClick={() => applyTemplate(tpl)}
                 disabled={!!applyingTemplate}
                 className={clsx(
@@ -492,7 +527,8 @@ function AddCheckModal({ host, onClose, onSaved }: AddCheckModalProps) {
               {successMsg ? 'Schließen' : 'Zurück'}
             </button>
           </div>
-        )}
+          )
+        })()}
 
         {/* Manual form */}
         {mode === 'manual' && (
@@ -508,7 +544,7 @@ function AddCheckModal({ host, onClose, onSaved }: AddCheckModalProps) {
                   <label className="block text-xs font-medium text-gray-600 mb-1">Check-Typ *</label>
                   <select value={form.check_type} onChange={setF('check_type')}
                     className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none">
-                    {CHECK_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                    {availableCheckTypes.map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
                 </div>
               </div>
@@ -551,14 +587,27 @@ function AddCheckModal({ host, onClose, onSaved }: AddCheckModalProps) {
                         onChange={setF('check_mode')} className="w-4 h-4 text-overseer-600 focus:ring-overseer-500" />
                       <span>Aktiv <span className="text-xs text-gray-400">(Server prüft)</span></span>
                     </label>
-                    <label className="inline-flex items-center gap-1.5 text-sm cursor-pointer">
-                      <input type="radio" name="check_mode" value="passive" checked={form.check_mode === 'passive'}
-                        onChange={setF('check_mode')} className="w-4 h-4 text-overseer-600 focus:ring-overseer-500" />
-                      <span>Passiv <span className="text-xs text-gray-400">(Collector sendet)</span></span>
-                    </label>
+                    {host.collector_id ? (
+                      <label className="inline-flex items-center gap-1.5 text-sm cursor-pointer">
+                        <input type="radio" name="check_mode" value="passive" checked={form.check_mode === 'passive'}
+                          onChange={setF('check_mode')} className="w-4 h-4 text-overseer-600 focus:ring-overseer-500" />
+                        <span>Passiv <span className="text-xs text-gray-400">(Collector sendet)</span></span>
+                      </label>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 text-sm text-gray-300">
+                        Passiv <span className="text-xs">(kein Collector zugewiesen)</span>
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
+
+              {/* Hinweis wenn keine Check-Typen verfügbar */}
+              {availableCheckTypes.length === 0 && (
+                <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                  Keine Check-Typen für diesen Host verfügbar. Bitte zuerst IP-Adresse, Agent oder SNMP-Community konfigurieren.
+                </p>
+              )}
 
               {error && (
                 <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>
@@ -645,6 +694,13 @@ function EditHostModal({ host, onClose, onSaved }: EditHostModalProps) {
               <label className="block text-xs font-medium text-gray-600 mb-1">IP-Adresse</label>
               <input value={form.ip_address} onChange={setF('ip_address')} placeholder="192.168.1.1"
                 className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+              <p className="text-[11px] text-gray-400 mt-0.5">
+                {host.agent_managed
+                  ? 'Optional — Agent verbindet sich selbst. Nur für Netzwerk-Checks nötig.'
+                  : host.collector_id
+                    ? 'Erforderlich für passive Checks über den Collector'
+                    : 'Erforderlich für aktive Checks (Ping, SSH, Port)'}
+              </p>
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Typ</label>
@@ -654,21 +710,24 @@ function EditHostModal({ host, onClose, onSaved }: EditHostModalProps) {
               </select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">SNMP Community</label>
-              <input value={form.snmp_community} onChange={setF('snmp_community')} placeholder="public"
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+          {/* SNMP-Felder nur für Netzwerkgeräte oder wenn bereits konfiguriert */}
+          {(['switch', 'router', 'printer', 'firewall', 'access_point', 'other'].includes(form.host_type) || host.snmp_community) && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">SNMP Community</label>
+                <input value={form.snmp_community} onChange={setF('snmp_community')} placeholder="public"
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">SNMP Version</label>
+                <select value={form.snmp_version} onChange={setF('snmp_version')}
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none">
+                  <option value="1">v1</option>
+                  <option value="2c">v2c</option>
+                </select>
+              </div>
             </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">SNMP Version</label>
-              <select value={form.snmp_version} onChange={setF('snmp_version')}
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none">
-                <option value="1">v1</option>
-                <option value="2c">v2c</option>
-              </select>
-            </div>
-          </div>
+          )}
 
           {error && (
             <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>
@@ -859,6 +918,15 @@ function SnmpDiscoveryModal({ host, onClose, onSaved }: SnmpDiscoveryModalProps)
   const [truncated, setTruncated] = useState(false)
 
   const startWalk = async () => {
+    // 3.5 Validierung: SNMP Community prüfen
+    if (!host.snmp_community) {
+      setError('Bitte SNMP Community in den Host-Einstellungen setzen bevor Sie einen Walk starten.')
+      return
+    }
+    if (!host.ip_address) {
+      setError('Bitte IP-Adresse in den Host-Einstellungen setzen bevor Sie einen Walk starten.')
+      return
+    }
     setWalking(true)
     setError(null)
     setResults([])
@@ -1077,6 +1145,8 @@ function SnmpDiscoveryModal({ host, onClose, onSaved }: SnmpDiscoveryModalProps)
 
 export default function HostDetailPage() {
   const { hostId } = useParams<{ hostId: string }>()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const isNewHost = searchParams.get('new') === '1'
   const queryClient = useQueryClient()
   const [showAddCheck, setShowAddCheck] = useState(false)
   const [showEditHost, setShowEditHost] = useState(false)
@@ -1431,6 +1501,32 @@ export default function HostDetailPage() {
         </div>
       </div>
 
+      {/* 3.1 Onboarding-Banner für neue Hosts */}
+      {isNewHost && serviceList.length === 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl px-5 py-4 mb-6">
+          <p className="text-sm font-medium text-blue-800 mb-2">Host erstellt! Nächste Schritte:</p>
+          <div className="flex flex-wrap gap-2">
+            {host.host_type === 'server' && !host.agent_managed && (
+              <button onClick={() => generateTokenMutation.mutate()}
+                disabled={generateTokenMutation.isPending}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                <KeyRound className="w-3.5 h-3.5" />
+                Agent einrichten
+              </button>
+            )}
+            <button onClick={() => setShowAddCheck(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white text-blue-700 text-xs font-medium rounded-lg border border-blue-300 hover:bg-blue-50 transition-colors">
+              <Plus className="w-3.5 h-3.5" />
+              Checks / Template hinzufügen
+            </button>
+            <button onClick={() => { setSearchParams({}); }}
+              className="px-3 py-1.5 text-xs text-blue-500 hover:text-blue-700 transition-colors">
+              Hinweis ausblenden
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Agent section */}
       <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
         <div className="flex items-center justify-between">
@@ -1439,26 +1535,39 @@ export default function HostDetailPage() {
             <h2 className="font-semibold text-gray-800">Agent</h2>
           </div>
           {host.agent_managed && agentTokenInfo && (
-            <button
-              onClick={() => setRevokeConfirm(true)}
-              className="text-xs text-red-500 hover:text-red-700 transition-colors"
-            >
-              Token widerrufen
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => generateTokenMutation.mutate()}
+                disabled={generateTokenMutation.isPending}
+                className="text-xs text-overseer-600 hover:text-overseer-800 transition-colors"
+              >
+                {generateTokenMutation.isPending ? 'Generiere…' : 'Token erneuern'}
+              </button>
+              <button
+                onClick={() => setRevokeConfirm(true)}
+                className="text-xs text-red-500 hover:text-red-700 transition-colors"
+              >
+                Token widerrufen
+              </button>
+            </div>
           )}
         </div>
 
         {!host.agent_managed ? (
           <div className="mt-3 flex items-center justify-between bg-gray-50 rounded-lg px-4 py-3">
             <p className="text-sm text-gray-500">Kein Agent eingerichtet</p>
-            <button
-              onClick={() => generateTokenMutation.mutate()}
-              disabled={generateTokenMutation.isPending}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-overseer-600 text-white text-xs font-medium rounded-lg hover:bg-overseer-700 disabled:opacity-50 transition-colors"
-            >
-              <KeyRound className="w-3.5 h-3.5" />
-              {generateTokenMutation.isPending ? 'Generiere…' : 'Agent einrichten'}
-            </button>
+            {host.host_type === 'server' ? (
+              <button
+                onClick={() => generateTokenMutation.mutate()}
+                disabled={generateTokenMutation.isPending}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-overseer-600 text-white text-xs font-medium rounded-lg hover:bg-overseer-700 disabled:opacity-50 transition-colors"
+              >
+                <KeyRound className="w-3.5 h-3.5" />
+                {generateTokenMutation.isPending ? 'Generiere…' : 'Agent einrichten'}
+              </button>
+            ) : (
+              <span className="text-xs text-gray-400">Agent nur für Server verfügbar</span>
+            )}
           </div>
         ) : agentTokenInfo ? (
           <div className="mt-3 flex items-center gap-4 bg-gray-50 rounded-lg px-4 py-3">
@@ -1564,7 +1673,7 @@ export default function HostDetailPage() {
                   <p className="font-sans"><span className="text-gray-400 font-mono">2.</span> Setup als Administrator ausführen</p>
                   <p className="font-sans"><span className="text-gray-400 font-mono">3.</span> Server-URL und Token eingeben:</p>
                   <div className="bg-gray-900 rounded px-3 py-2 text-gray-300 font-mono">
-                    <p><span className="text-blue-400">Server</span>: https://overseer.dailycrust.it</p>
+                    <p><span className="text-blue-400">Server</span>: {window.location.origin}</p>
                     <p><span className="text-blue-400">Token</span>: <span className="text-emerald-400 break-all">{generatedToken}</span></p>
                   </div>
                   <p className="font-sans"><span className="text-gray-400 font-mono">4.</span> Weiter klicken — der Installer erledigt den Rest</p>
@@ -1582,7 +1691,7 @@ export default function HostDetailPage() {
                     overseer-agent (Linux, 9.3 MB)
                   </a>
                   <p className="text-gray-400 text-[11px]">Oder per Terminal:</p>
-                  <div className="bg-gray-900 rounded px-3 py-2 text-emerald-400 select-all break-all">wget https://overseer.dailycrust.it/agent/overseer-agent-linux-amd64</div>
+                  <div className="bg-gray-900 rounded px-3 py-2 text-emerald-400 select-all break-all">wget {window.location.origin}/agent/overseer-agent-linux-amd64</div>
                   <p><span className="text-gray-400">2.</span> Installieren:</p>
                   <div className="bg-gray-900 rounded px-3 py-2 text-emerald-400 select-all space-y-0.5">
                     <p>chmod +x overseer-agent-linux-amd64</p>
@@ -1592,7 +1701,7 @@ export default function HostDetailPage() {
                   <p><span className="text-gray-400">3.</span> Config erstellen:</p>
                   <div className="bg-gray-900 rounded px-3 py-2 text-gray-300 select-all">
                     <p>sudo tee /etc/overseer-agent/config.yaml {'<<'}EOF</p>
-                    <p><span className="text-blue-400">server</span>: https://overseer.dailycrust.it</p>
+                    <p><span className="text-blue-400">server</span>: {window.location.origin}</p>
                     <p><span className="text-blue-400">token</span>: <span className="text-emerald-400">{generatedToken}</span></p>
                     <p>EOF</p>
                   </div>
@@ -1626,7 +1735,7 @@ export default function HostDetailPage() {
             )}
           </h2>
           <div className="flex items-center gap-2">
-            {host.snmp_community && (
+            {host.snmp_community && host.ip_address && (
               <button
                 onClick={() => setShowSnmpDiscovery(true)}
                 className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-50 transition-colors"

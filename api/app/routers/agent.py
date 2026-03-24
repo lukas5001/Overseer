@@ -114,6 +114,18 @@ async def generate_agent_token(
     if not host_row:
         raise HTTPException(status_code=404, detail="Host not found")
 
+    # 2.3 Agent-Tokens nur für Server
+    host_type_result = await db.execute(
+        text("SELECT host_type FROM hosts WHERE id = :id"),
+        {"id": host_id},
+    )
+    ht_row = host_type_result.fetchone()
+    if ht_row and ht_row.host_type not in ('server',):
+        raise HTTPException(
+            status_code=400,
+            detail="Agent-Tokens können nur für Server generiert werden.",
+        )
+
     # Tenant scope check
     if scope is not None and host_row.tenant_id not in scope:
         raise HTTPException(status_code=403, detail="Access denied to this tenant")

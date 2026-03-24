@@ -64,6 +64,46 @@ async def create_service(
     db: AsyncSession = Depends(get_db),
     _user: dict = Depends(require_role("super_admin", "tenant_admin")),
 ):
+    # ── Validierung: Check-Typ muss zum Host passen ──
+    host_result = await db.execute(select(Host).where(Host.id == body.host_id))
+    host_obj = host_result.scalar_one_or_none()
+    if not host_obj:
+        raise HTTPException(status_code=404, detail="Host nicht gefunden")
+
+    # 1.1 Agent-Checks erfordern agent_managed
+    if body.check_mode == 'agent' or body.check_type.startswith('agent_'):
+        if not host_obj.agent_managed:
+            raise HTTPException(
+                status_code=400,
+                detail="Agent-Checks erfordern einen installierten Agent. Bitte zuerst Agent einrichten.",
+            )
+
+    # 1.2 Passive Checks erfordern Collector
+    if body.check_mode == 'passive':
+        if not host_obj.collector_id:
+            raise HTTPException(
+                status_code=400,
+                detail="Passive Checks benötigen einen zugewiesenen Collector.",
+            )
+
+    # 1.3 Netzwerk-Checks erfordern IP-Adresse
+    IP_REQUIRED_TYPES = {
+        'ping', 'port', 'snmp', 'snmp_interface',
+        'ssh_disk', 'ssh_cpu', 'ssh_mem', 'ssh_process', 'ssh_service', 'ssh_custom',
+    }
+    if body.check_type in IP_REQUIRED_TYPES:
+        if not host_obj.ip_address:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Check-Typ '{body.check_type}' benötigt eine IP-Adresse auf dem Host.",
+            )
+
+    # 3.4 Intervall-Validierung
+    if body.interval_seconds < 10:
+        raise HTTPException(status_code=400, detail="Minimales Intervall: 10 Sekunden")
+    if body.interval_seconds > 604800:
+        raise HTTPException(status_code=400, detail="Maximales Intervall: 7 Tage (604800 Sekunden)")
+
     # Check for duplicate (host_id + name has unique DB constraint)
     existing = await db.execute(
         select(Service).where(
@@ -147,6 +187,21 @@ async def update_service(
     svc = result.scalar_one_or_none()
     if not svc:
         raise HTTPException(status_code=404, detail="Service not found")
+
+    # 1.4 check_type ist nach Erstellung unveränderlich
+    if body.check_type is not None:
+        raise HTTPException(
+            status_code=400,
+            detail="check_type kann nach Erstellung nicht geändert werden. Bitte Check löschen und neu anlegen.",
+        )
+
+    # 3.4 Intervall-Validierung
+    if body.interval_seconds is not None:
+        if body.interval_seconds < 10:
+            raise HTTPException(status_code=400, detail="Minimales Intervall: 10 Sekunden")
+        if body.interval_seconds > 604800:
+            raise HTTPException(status_code=400, detail="Maximales Intervall: 7 Tage (604800 Sekunden)")
+
     for field, value in body.model_dump(exclude_none=True).items():
         setattr(svc, field, value)
     svc.updated_at = datetime.now(timezone.utc)
