@@ -53,8 +53,6 @@ class ActiveCheckScheduler:
                        s.host_id, s.tenant_id,
                        h.ip_address, h.hostname,
                        h.snmp_community, h.snmp_version,
-                       h.winrm_username, h.winrm_password,
-                       h.winrm_transport, h.winrm_port, h.winrm_ssl
                 FROM services s
                 JOIN hosts h ON h.id = s.host_id
                 JOIN tenants t ON t.id = s.tenant_id
@@ -86,12 +84,10 @@ class ActiveCheckScheduler:
         config = svc.check_config if isinstance(svc.check_config, dict) else json.loads(svc.check_config or "{}")
         config = dict(config)  # copy to avoid mutating cached data
 
-        # Inject host-level credentials (SNMP/WinRM) then decrypt
+        # Inject host-level credentials (SNMP) then decrypt
         inject_host_credentials(svc.check_type, config, svc)
         if "community" in config and config["community"]:
             config["community"] = decrypt_field(config["community"])
-        if "password" in config and config["password"]:
-            config["password"] = decrypt_field(config["password"])
 
         # Run the check in a thread (blocking I/O)
         check_result = await asyncio.to_thread(

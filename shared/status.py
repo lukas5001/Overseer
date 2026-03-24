@@ -53,10 +53,9 @@ def compute_new_state(
 
 
 def inject_host_credentials(check_type: str, config: dict, host) -> dict:
-    """Inject host-level SNMP/WinRM credentials into check config.
+    """Inject host-level SNMP credentials into check config.
 
-    `host` can be any object with snmp_community, snmp_version,
-    winrm_username, winrm_password, winrm_transport, winrm_port, winrm_ssl
+    `host` can be any object with snmp_community, snmp_version
     attributes (ORM model, named tuple from raw SQL, etc.).
 
     Returns the modified config dict (mutates in place for convenience).
@@ -64,13 +63,5 @@ def inject_host_credentials(check_type: str, config: dict, host) -> dict:
     if check_type in ("snmp", "snmp_interface"):
         config.setdefault("community", getattr(host, "snmp_community", None) or "public")
         config.setdefault("version", getattr(host, "snmp_version", None) or "2c")
-
-    if check_type.startswith("winrm_"):
-        config.setdefault("username", getattr(host, "winrm_username", None) or "")
-        config.setdefault("password", getattr(host, "winrm_password", None) or "")
-        config.setdefault("transport", getattr(host, "winrm_transport", None) or "ntlm")
-        config.setdefault("port", getattr(host, "winrm_port", None) or 5986)
-        winrm_ssl = getattr(host, "winrm_ssl", None)
-        config.setdefault("ssl", winrm_ssl if winrm_ssl is not None else True)
 
     return config

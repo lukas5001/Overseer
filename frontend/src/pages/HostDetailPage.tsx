@@ -21,11 +21,6 @@ interface Host {
   host_type: string
   snmp_community: string | null
   snmp_version: string | null
-  winrm_username: string | null
-  winrm_password: string | null
-  winrm_transport: string | null
-  winrm_port: number | null
-  winrm_ssl: boolean | null
   tags: string[]
   active: boolean
   created_at: string
@@ -257,7 +252,6 @@ const CHECK_TYPES = [
   'ping', 'port', 'http',
   'snmp', 'snmp_interface',
   'ssh_disk', 'ssh_cpu', 'ssh_mem', 'ssh_process', 'ssh_service', 'ssh_custom',
-  'winrm_cpu', 'winrm_mem', 'winrm_disk', 'winrm_service', 'winrm_custom',
 ]
 
 function ConfigFields({ checkType, config, onChange }: {
@@ -285,11 +279,6 @@ function ConfigFields({ checkType, config, onChange }: {
     case 'ssh_process': return <>{field('Prozessname', 'process', 'nginx')}{field('SSH-User', 'username', 'root')}{field('SSH-Passwort', 'password', '')}</>
     case 'ssh_service': return <>{field('Servicename', 'service', 'nginx')}{field('SSH-User', 'username', 'root')}{field('SSH-Passwort', 'password', '')}</>
     case 'ssh_custom':  return <>{field('Kommando', 'command', 'echo OK')}{field('SSH-User', 'username', 'root')}{field('SSH-Passwort', 'password', '')}</>
-    case 'winrm_cpu':   return null
-    case 'winrm_mem':   return null
-    case 'winrm_disk':  return <>{field('Laufwerk', 'drive', 'C:')}</>
-    case 'winrm_service': return <>{field('Servicename', 'service', 'W32Time')}</>
-    case 'winrm_custom': return <>{field('PowerShell-Kommando', 'command', 'Get-Service | Where ...')}{field('OK Pattern (Regex)', 'ok_pattern', '')}{field('Critical Pattern (Regex)', 'crit_pattern', '')}</>
     default: return null
   }
 }
@@ -578,11 +567,6 @@ function EditHostModal({ host, onClose, onSaved }: EditHostModalProps) {
     host_type: host.host_type,
     snmp_community: host.snmp_community ?? '',
     snmp_version: host.snmp_version ?? '2c',
-    winrm_username: host.winrm_username ?? '',
-    winrm_password: host.winrm_password ?? '',
-    winrm_transport: host.winrm_transport ?? 'ntlm',
-    winrm_port: String(host.winrm_port ?? 5986),
-    winrm_ssl: host.winrm_ssl ?? true,
   })
   const [error, setError] = useState<string | null>(null)
 
@@ -594,11 +578,6 @@ function EditHostModal({ host, onClose, onSaved }: EditHostModalProps) {
       host_type: form.host_type,
       snmp_community: form.snmp_community || null,
       snmp_version: form.snmp_version || '2c',
-      winrm_username: form.winrm_username || null,
-      winrm_password: form.winrm_password || null,
-      winrm_transport: form.winrm_transport,
-      winrm_port: parseInt(form.winrm_port) || 5986,
-      winrm_ssl: form.winrm_ssl,
     }),
     onSuccess: () => { onSaved(); onClose() },
     onError: (e: any) => setError(e.response?.data?.detail ?? 'Fehler beim Speichern'),
@@ -653,46 +632,6 @@ function EditHostModal({ host, onClose, onSaved }: EditHostModalProps) {
                 <option value="1">v1</option>
                 <option value="2c">v2c</option>
               </select>
-            </div>
-          </div>
-
-          {/* WinRM Credentials */}
-          <div className="border-t border-gray-100 pt-3 mt-1">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">WinRM (Windows)</p>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Benutzer</label>
-                <input value={form.winrm_username} onChange={setF('winrm_username')} placeholder="DOMAIN\user"
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Passwort</label>
-                <input value={form.winrm_password} onChange={setF('winrm_password')} type="password" placeholder="••••••"
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
-              </div>
-            </div>
-            <div className="grid grid-cols-3 gap-3 mt-2">
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Transport</label>
-                <select value={form.winrm_transport} onChange={setF('winrm_transport')}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none">
-                  <option value="ntlm">NTLM</option>
-                  <option value="kerberos">Kerberos</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Port</label>
-                <input value={form.winrm_port} onChange={setF('winrm_port')} type="number" placeholder="5986"
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
-              </div>
-              <div className="flex items-end pb-1">
-                <label className="inline-flex items-center gap-1.5 text-sm cursor-pointer">
-                  <input type="checkbox" checked={form.winrm_ssl}
-                    onChange={e => setForm(prev => ({ ...prev, winrm_ssl: e.target.checked }))}
-                    className="w-4 h-4 text-overseer-600 focus:ring-overseer-500 rounded" />
-                  <span>HTTPS</span>
-                </label>
-              </div>
             </div>
           </div>
 

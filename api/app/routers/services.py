@@ -205,7 +205,7 @@ async def check_now(
     ip = str(host.ip_address)
     config = dict(svc.check_config or {})
 
-    # Inject host-level credentials (SNMP/WinRM)
+    # Inject host-level credentials (SNMP)
     inject_host_credentials(svc.check_type, config, host)
 
     # Run the check in a thread (blocking I/O)

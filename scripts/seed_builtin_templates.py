@@ -49,17 +49,13 @@ BUILTIN_TEMPLATES = [
     },
     {
         "name": "Generic Windows Server",
-        "description": "Standard checks for Windows servers via WinRM: ping, RDP, CPU, RAM, disk C:.",
+        "description": "Standard checks for Windows servers via Agent: ping, RDP port.",
         "vendor": "generic",
         "category": "server",
-        "tags": ["windows", "winrm"],
+        "tags": ["windows", "agent"],
         "checks": [
             {"name": "ping", "check_type": "ping", "check_config": {}, "interval_seconds": 60},
             {"name": "rdp", "check_type": "port", "check_config": {"port": 3389}, "interval_seconds": 60},
-            {"name": "winrm", "check_type": "port", "check_config": {"port": 5985}, "interval_seconds": 60},
-            {"name": "cpu", "check_type": "winrm_cpu", "check_config": {}, "threshold_warn": 80, "threshold_crit": 95, "interval_seconds": 120},
-            {"name": "memory", "check_type": "winrm_mem", "check_config": {}, "threshold_warn": 85, "threshold_crit": 95, "interval_seconds": 120},
-            {"name": "disk_c", "check_type": "winrm_disk", "check_config": {"drive": "C"}, "threshold_warn": 80, "threshold_crit": 90, "interval_seconds": 300},
         ],
     },
     {

@@ -47,9 +47,8 @@ async def export_config(
                 "hostname": h.hostname, "display_name": h.display_name,
                 "ip_address": str(h.ip_address) if h.ip_address else None,
                 "host_type": h.host_type, "snmp_version": h.snmp_version,
-                "winrm_username": h.winrm_username,
                 "tags": h.tags, "active": h.active,
-                # winrm_password and snmp_community intentionally excluded
+                # snmp_community intentionally excluded
             }
             for h in hosts
         ],
@@ -154,9 +153,9 @@ async def import_config(
     for item in data.get("hosts", []):
         await db.execute(text("""
             INSERT INTO hosts (id, tenant_id, collector_id, hostname, display_name, ip_address,
-                               host_type, snmp_version, winrm_username, tags, active, created_at, updated_at)
+                               host_type, snmp_version, tags, active, created_at, updated_at)
             VALUES (:id, :tid, :cid, :hostname, :display_name, :ip, :host_type, :snmp_version,
-                    :winrm_username, :tags, :active, now(), now())
+                    :tags, :active, now(), now())
             ON CONFLICT (id) DO UPDATE
             SET hostname = EXCLUDED.hostname, display_name = EXCLUDED.display_name,
                 ip_address = EXCLUDED.ip_address, active = EXCLUDED.active, updated_at = now()
@@ -166,7 +165,6 @@ async def import_config(
             "hostname": item["hostname"], "display_name": item.get("display_name"),
             "ip": item.get("ip_address"), "host_type": item.get("host_type", "server"),
             "snmp_version": item.get("snmp_version", "2c"),
-            "winrm_username": item.get("winrm_username"),
             "tags": str(item.get("tags", "[]")), "active": item.get("active", True),
         })
         imported_hosts += 1

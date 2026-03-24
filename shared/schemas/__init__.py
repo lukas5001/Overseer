@@ -104,11 +104,6 @@ class HostOut(BaseModel):
     host_type: HostType
     snmp_community: str | None = None
     snmp_version: str | None = None
-    winrm_username: str | None = None
-    winrm_password: str | None = None
-    winrm_transport: str | None = "ntlm"
-    winrm_port: int | None = 5986
-    winrm_ssl: bool | None = True
     tags: list
     active: bool
     created_at: datetime
@@ -204,11 +199,6 @@ class HostCreate(BaseModel):
     host_type: HostType = HostType.SERVER
     snmp_community: str | None = None
     snmp_version: str = "2c"
-    winrm_username: str | None = None
-    winrm_password: str | None = None
-    winrm_transport: str = "ntlm"
-    winrm_port: int = 5986
-    winrm_ssl: bool = True
     tags: list = []
 
 
@@ -219,11 +209,6 @@ class HostUpdate(BaseModel):
     host_type: HostType | None = None
     snmp_community: str | None = None
     snmp_version: str | None = None
-    winrm_username: str | None = None
-    winrm_password: str | None = None
-    winrm_transport: str | None = None
-    winrm_port: int | None = None
-    winrm_ssl: bool | None = None
     tags: list | None = None
     collector_id: UUID | None = None
     active: bool | None = None

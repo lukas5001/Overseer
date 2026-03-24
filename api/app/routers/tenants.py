@@ -143,11 +143,6 @@ async def copy_tenant(
             host_type=src_host.host_type,
             snmp_community=src_host.snmp_community,
             snmp_version=src_host.snmp_version,
-            winrm_username=src_host.winrm_username,
-            winrm_password=src_host.winrm_password,
-            winrm_transport=src_host.winrm_transport,
-            winrm_port=src_host.winrm_port,
-            winrm_ssl=src_host.winrm_ssl,
             tags=list(src_host.tags or []),
         )
         db.add(new_host)

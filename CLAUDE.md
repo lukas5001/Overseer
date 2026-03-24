@@ -84,10 +84,10 @@ Jeder Service hat seinen eigenen Docker-Build-Context (siehe Dockerfiles):
 **Konsequenz**: Code der von mehreren Services benötigt wird, muss in `shared/` liegen — nicht in `api/app/core/`. Beispiel: `shared/encryption.py` (nicht `api/app/core/`). `api/app/core/encryption.py` existiert nur als Re-Export für API-interne Importe.
 
 ### Feldverschlüsselung (AES-256-GCM)
-- `winrm_password` und `snmp_community` auf der `hosts`-Tabelle sind AES-256-GCM-verschlüsselt
+- `snmp_community` auf der `hosts`-Tabelle ist AES-256-GCM-verschlüsselt
 - Implementierung: `shared/encryption.py` — `encrypt_field()` / `decrypt_field()`
 - Der Worker entschlüsselt in `scheduler.py` nach `inject_host_credentials()`, bevor Checks ausgeführt werden
-- Die API maskiert beide Felder in `HostOut` als `"***"` — sie werden nie im Klartext zurückgegeben
+- Die API maskiert das Feld in `HostOut` als `"***"` — es wird nie im Klartext zurückgegeben
 - Legacy-Werte (unverschlüsselt) werden von `decrypt_field()` transparent durchgereicht (Fallback)
 - **ENV**: `FIELD_ENCRYPTION_KEY` muss ein Base64url-kodierter 32-Byte-Key sein
 

@@ -39,13 +39,10 @@ Die Soft/Hard-State-Machine-Logik existiert identisch in:
 
 ---
 
-## 5. [HOCH/KLEIN] WinRM/SNMP-Credential-Injection deduplizieren
+## 5. ✅ ERLEDIGT — SNMP-Credential-Injection dedupliziert
 
-Credential-Injection-Code dreifach dupliziert:
-- `worker/app/scheduler.py`
-- `api/app/routers/services.py`
-
-→ In `shared/checker.py` eine Funktion `inject_host_credentials()` extrahieren.
+WinRM wurde komplett entfernt (ersetzt durch Agent-basiertes Monitoring).
+SNMP-Credential-Injection ist in `shared/status.py` → `inject_host_credentials()` zentralisiert.
 
 ---
 

@@ -51,7 +51,7 @@ Nur `host_create` wird geloggt. Folgende Aktionen haben keinen Audit-Trail:
 
 ### 2.5 Hardcoded Secrets
 - Redis-URL und DB-Connection-Strings teilweise hardcoded statt über Environment-Variablen
-- Kein Secret-Management für WinRM-Passwörter (Klartext in DB)
+- ~~WinRM wurde entfernt (ersetzt durch Agent-basiertes Monitoring)~~
 
 
 ## 3. Frontend – Kritische Issues
@@ -93,16 +93,16 @@ Overseer überwacht sich selbst nicht:
 `scripts/migrate.py` hat kein Rollback und kein Tracking welche Migrations bereits gelaufen sind (außer via Dateiname-Konvention).
 
 ### 4.4 Go-Collector unvollständig
-Implementiert nur: `ping`, `http`, `snmp`. Fehlend: `tcp`, `dns`, `ssh`, `snmp_interface`, `certificate`, alle `winrm_*` Typen.
+Implementiert nur: `ping`, `http`, `snmp`. Fehlend: `tcp`, `dns`, `ssh`, `snmp_interface`, `certificate`. WinRM-Typen entfernt (ersetzt durch Agent).
 
 
 ## 5. Sicherheit
 
-### 5.1 WinRM-Passwörter im Klartext
-Host-Level WinRM-Credentials werden unverschlüsselt in der DB gespeichert. Sollte mindestens AES-verschlüsselt sein.
+### 5.1 ~~WinRM~~ — Entfernt
+WinRM wurde komplett entfernt und durch Agent-basiertes Monitoring ersetzt.
 
-### 5.2 SNMP Community Strings im Klartext
-Gleiches Problem wie WinRM – SNMP Community Strings sind Klartext.
+### 5.2 SNMP Community Strings
+SNMP Community Strings sind mittlerweile AES-256-GCM-verschlüsselt.
 
 ### 5.3 Keine Rate-Limiting
 API-Endpoints haben kein Rate-Limiting. DoS-Angriffe möglich.
@@ -114,7 +114,7 @@ Token-Expiry und Refresh-Logik sollte überprüft werden.
 ## 6. Code-Qualität
 
 ### 6.1 Duplizierung
-- WinRM-Credential-Injection dreifach dupliziert (scheduler.py, services.py check-now, API)
+- ~~WinRM entfernt~~ — SNMP-Credential-Injection ist zentralisiert in `shared/status.py`
 - Status-Update-Logik (Soft/Hard State Machine) zweifach dupliziert (scheduler.py, services.py check-now)
 - Check-Typ-Listen im Frontend und Backend nicht synchron
 
@@ -139,7 +139,7 @@ Token-Expiry und Refresh-Logik sollte überprüft werden.
 | HOCH | Status-Update-Logik deduplizieren | Mittel |
 | HOCH | Pagination für alle List-Endpoints | Mittel |
 | MITTEL | Audit-Logging erweitern | Mittel |
-| MITTEL | WinRM-Credential-Injection deduplizieren | Klein |
+| ~~MITTEL~~ | ~~WinRM entfernt~~ | ~~Erledigt~~ |
 | MITTEL | Reusable UI-Komponenten extrahieren | Groß |
 | NIEDRIG | Rate-Limiting | Mittel |
 | NIEDRIG | Strukturiertes Logging | Mittel |

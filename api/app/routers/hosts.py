@@ -127,11 +127,6 @@ async def create_host(
         host_type=body.host_type.value,
         snmp_community=encrypt_field(body.snmp_community) if body.snmp_community else body.snmp_community,
         snmp_version=body.snmp_version,
-        winrm_username=body.winrm_username,
-        winrm_password=encrypt_field(body.winrm_password) if body.winrm_password else body.winrm_password,
-        winrm_transport=body.winrm_transport,
-        winrm_port=body.winrm_port,
-        winrm_ssl=body.winrm_ssl,
         tags=body.tags,
     )
     db.add(host)
@@ -161,7 +156,7 @@ async def update_host(
     for field, value in body.model_dump(exclude_none=True).items():
         if field == "host_type":
             setattr(host, field, value.value if hasattr(value, "value") else value)
-        elif field in ("winrm_password", "snmp_community") and value:
+        elif field == "snmp_community" and value:
             setattr(host, field, encrypt_field(value))
         else:
             setattr(host, field, value)
@@ -250,11 +245,6 @@ async def copy_host(
         host_type=src.host_type,
         snmp_community=src.snmp_community,
         snmp_version=src.snmp_version,
-        winrm_username=src.winrm_username,
-        winrm_password=src.winrm_password,
-        winrm_transport=src.winrm_transport,
-        winrm_port=src.winrm_port,
-        winrm_ssl=src.winrm_ssl,
         tags=list(src.tags or []),
     )
     db.add(new_host)

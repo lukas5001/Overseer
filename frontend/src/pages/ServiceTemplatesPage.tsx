@@ -81,8 +81,6 @@ function TemplateModal({ onClose, existing }: { onClose: () => void; existing?: 
                         <option value="ping">Ping</option>
                         <option value="http">HTTP</option>
                         <option value="snmp">SNMP</option>
-                        <option value="winrm_wmi">WinRM WMI</option>
-                        <option value="winrm_perfmon">WinRM Perfmon</option>
                         <option value="ssh">SSH</option>
                         <option value="tcp">TCP Port</option>
                       </select>

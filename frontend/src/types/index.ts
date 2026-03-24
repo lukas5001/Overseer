@@ -142,11 +142,6 @@ export interface Host {
   host_type: HostType
   snmp_community: string | null
   snmp_version: string | null
-  winrm_username: string | null
-  winrm_password: string | null
-  winrm_transport: string | null
-  winrm_port: number | null
-  winrm_ssl: boolean | null
   tags: string[]
   active: boolean
   created_at: string
@@ -164,11 +159,6 @@ export interface HostCreate {
   host_type: HostType
   snmp_community?: string
   snmp_version?: string
-  winrm_username?: string
-  winrm_password?: string
-  winrm_transport?: string
-  winrm_port?: number
-  winrm_ssl?: boolean
   tags?: string[]
 }
 
@@ -179,11 +169,6 @@ export interface HostUpdate {
   host_type?: HostType
   snmp_community?: string
   snmp_version?: string
-  winrm_username?: string
-  winrm_password?: string
-  winrm_transport?: string
-  winrm_port?: number
-  winrm_ssl?: boolean
   tags?: string[]
   collector_id?: string
   active?: boolean
