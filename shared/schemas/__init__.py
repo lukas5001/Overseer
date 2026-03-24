@@ -123,6 +123,16 @@ class HostOut(BaseModel):
     def coerce_ip(cls, v):
         return str(v) if v is not None else None
 
+    @field_validator("winrm_password", mode="before")
+    @classmethod
+    def mask_winrm_password(cls, v):
+        return "***" if v else v
+
+    @field_validator("snmp_community", mode="before")
+    @classmethod
+    def mask_snmp_community(cls, v):
+        return "***" if v else v
+
 
 class ServiceOut(BaseModel):
     id: UUID

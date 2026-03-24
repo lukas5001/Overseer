@@ -114,7 +114,7 @@ two_fa_lockout_until = Column(DateTime(timezone=True), nullable=True)
 
 ---
 
-### 1.3 Feldverschlüsselung für WinRM-Passwörter und SNMP-Strings
+### ✅ 1.3 Feldverschlüsselung für WinRM-Passwörter und SNMP-Strings
 
 **Was**: `winrm_password` und `snmp_community` auf `Host`-Tabelle werden vor dem Schreiben mit AES-256-GCM verschlüsselt (Python-seitig, kein pgcrypto). Beim Lesen entschlüsseln.
 **Warum**: Passwörter liegen derzeit im Klartext in der DB — bei DB-Dump sofort kompromittiert.

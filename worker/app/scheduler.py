@@ -15,6 +15,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from shared.checker import run_check
+from shared.encryption import decrypt_field
 from shared.status import compute_new_state, inject_host_credentials
 
 logger = logging.getLogger("overseer.scheduler")
@@ -85,8 +86,12 @@ class ActiveCheckScheduler:
         config = svc.check_config if isinstance(svc.check_config, dict) else json.loads(svc.check_config or "{}")
         config = dict(config)  # copy to avoid mutating cached data
 
-        # Inject host-level credentials (SNMP/WinRM)
+        # Inject host-level credentials (SNMP/WinRM) then decrypt
         inject_host_credentials(svc.check_type, config, svc)
+        if "community" in config and config["community"]:
+            config["community"] = decrypt_field(config["community"])
+        if "password" in config and config["password"]:
+            config["password"] = decrypt_field(config["password"])
 
         # Run the check in a thread (blocking I/O)
         check_result = await asyncio.to_thread(

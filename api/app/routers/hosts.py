@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.app.core.database import get_db
 from api.app.core.auth import get_current_user, require_role, tenant_scope, apply_tenant_filter
+from api.app.core.encryption import encrypt_field, decrypt_field
 from api.app.routers.audit import write_audit
 from api.app.models.models import Host, Tenant, Collector, Service, CurrentStatus
 from shared.schemas import HostOut, HostCreate, HostUpdate
@@ -122,10 +123,10 @@ async def create_host(
         display_name=body.display_name,
         ip_address=body.ip_address,
         host_type=body.host_type.value,
-        snmp_community=body.snmp_community,
+        snmp_community=encrypt_field(body.snmp_community) if body.snmp_community else body.snmp_community,
         snmp_version=body.snmp_version,
         winrm_username=body.winrm_username,
-        winrm_password=body.winrm_password,
+        winrm_password=encrypt_field(body.winrm_password) if body.winrm_password else body.winrm_password,
         winrm_transport=body.winrm_transport,
         winrm_port=body.winrm_port,
         winrm_ssl=body.winrm_ssl,
@@ -158,6 +159,8 @@ async def update_host(
     for field, value in body.model_dump(exclude_none=True).items():
         if field == "host_type":
             setattr(host, field, value.value if hasattr(value, "value") else value)
+        elif field in ("winrm_password", "snmp_community") and value:
+            setattr(host, field, encrypt_field(value))
         else:
             setattr(host, field, value)
     host.updated_at = datetime.now(timezone.utc)
@@ -323,7 +326,7 @@ async def snmp_walk_host(
     from shared.snmp_utils import snmp_walk_async
 
     ip = str(host.ip_address)
-    community = host.snmp_community
+    community = decrypt_field(host.snmp_community) if host.snmp_community else host.snmp_community
     version = host.snmp_version or "2c"
     max_results = min(body.max_results, 2000)
 
