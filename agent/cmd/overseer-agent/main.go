@@ -52,6 +52,9 @@ func main() {
 	} else {
 		if err := run(*configPath); err != nil {
 			fmt.Fprintf(os.Stderr, "fatal: %v\n", err)
+			if runtime.GOOS == "windows" {
+				printWindowsUsage(*configPath)
+			}
 			os.Exit(1)
 		}
 	}
@@ -180,6 +183,36 @@ func run(configPath string) error {
 
 	logger.Info("Agent stopped gracefully")
 	return nil
+}
+
+func printWindowsUsage(configPath string) {
+	fmt.Println()
+	fmt.Println("══════════════════════════════════════════════════════════")
+	fmt.Println("  Overseer Agent — Installationsanleitung")
+	fmt.Println("══════════════════════════════════════════════════════════")
+	fmt.Println()
+	fmt.Println("  Der Agent kann nicht per Doppelklick installiert werden.")
+	fmt.Println("  Bitte eine Eingabeaufforderung (CMD) als Administrator")
+	fmt.Println("  oeffnen und folgende Befehle ausfuehren:")
+	fmt.Println()
+	fmt.Println("  1. Config-Verzeichnis erstellen und config.yaml anlegen:")
+	fmt.Printf("     mkdir \"%s\"\n", configPath[:len(configPath)-len("config.yaml")-1])
+	fmt.Println()
+	fmt.Printf("     Config-Datei erstellen: %s\n", configPath)
+	fmt.Println("     Inhalt:")
+	fmt.Println("       server: \"https://overseer.dailycrust.it\"")
+	fmt.Println("       token: \"overseer_agent_DEIN_TOKEN\"")
+	fmt.Println()
+	fmt.Println("  2. Service installieren:")
+	fmt.Println("     overseer-agent.exe install")
+	fmt.Println()
+	fmt.Println("  3. Service starten:")
+	fmt.Println("     net start OverseerAgent")
+	fmt.Println()
+	fmt.Println("══════════════════════════════════════════════════════════")
+	fmt.Println()
+	fmt.Print("Druecke Enter zum Beenden...")
+	fmt.Scanln()
 }
 
 func setupLogger(level, logFile string) *slog.Logger {

@@ -5,6 +5,7 @@ package service
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"golang.org/x/sys/windows/svc"
@@ -77,6 +78,21 @@ func Install(configPath string) error {
 	exePath, err := os.Executable()
 	if err != nil {
 		return fmt.Errorf("get executable path: %w", err)
+	}
+
+	// Create config directory and template config if it doesn't exist
+	configDir := filepath.Dir(configPath)
+	if err := os.MkdirAll(configDir, 0755); err != nil {
+		fmt.Fprintf(os.Stderr, "warning: could not create config directory %s: %v\n", configDir, err)
+	}
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		template := []byte("# Overseer Agent Configuration\nserver: \"https://overseer.dailycrust.it\"\ntoken: \"HIER_TOKEN_EINTRAGEN\"\nlog_level: \"info\"\n")
+		if writeErr := os.WriteFile(configPath, template, 0600); writeErr != nil {
+			fmt.Fprintf(os.Stderr, "warning: could not create config template: %v\n", writeErr)
+		} else {
+			fmt.Printf("Config template created: %s\n", configPath)
+			fmt.Println(">> Bitte Token in der Config-Datei eintragen bevor der Service gestartet wird!")
+		}
 	}
 
 	m, err := mgr.Connect()
