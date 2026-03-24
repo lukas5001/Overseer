@@ -9,7 +9,8 @@ from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.app.core.database import get_db
-from api.app.core.auth import get_current_user
+from api.app.core.auth import get_current_user, tenant_scope, apply_tenant_filter
+from api.app.routers.audit import write_audit
 from api.app.models.models import Downtime, CurrentStatus
 
 router = APIRouter()
@@ -56,9 +57,7 @@ async def create_downtime(
         tenant_id = h.tenant_id
         host_id = body.host_id
 
-    # Need a valid author_id — use first user as fallback for now
-    row = await db.execute(text("SELECT id FROM users LIMIT 1"))
-    author_id = row.scalar()
+    author_id = user["sub"]
 
     dt_id = str(uuid_mod.uuid4())
     await db.execute(
@@ -94,8 +93,88 @@ async def create_downtime(
                 {"hid": body.host_id},
             )
 
+    await write_audit(db, user=user, action="downtime_create",
+                      target_type="downtime", target_id=UUID(dt_id),
+                      tenant_id=tenant_id,
+                      detail={"comment": body.comment,
+                              "start_at": body.start_at.isoformat(),
+                              "end_at": body.end_at.isoformat()})
     await db.commit()
     return {"id": dt_id, "status": "created"}
+
+
+class BulkDowntimeCreate(BaseModel):
+    service_ids: list[UUID]
+    start_at: datetime
+    end_at: datetime
+    comment: str = ""
+
+
+@router.post("/bulk", status_code=201)
+async def create_bulk_downtime(
+    body: BulkDowntimeCreate,
+    db: AsyncSession = Depends(get_db),
+    user: dict = Depends(get_current_user),
+):
+    """Create downtimes for multiple services at once."""
+    if body.end_at <= body.start_at:
+        raise HTTPException(status_code=422, detail="end_at must be after start_at")
+    if not body.service_ids:
+        raise HTTPException(status_code=422, detail="service_ids must not be empty")
+
+    row = await db.execute(text("SELECT id FROM users LIMIT 1"))
+    author_id = row.scalar()
+
+    now = datetime.now(timezone.utc)
+    is_active_now = body.start_at <= now <= body.end_at
+    created = 0
+
+    for sid in body.service_ids:
+        svc_row = await db.execute(
+            text("SELECT tenant_id, host_id FROM services WHERE id = :id"),
+            {"id": sid},
+        )
+        svc = svc_row.fetchone()
+        if not svc:
+            continue
+
+        dt_id = str(uuid_mod.uuid4())
+        await db.execute(
+            text("""
+                INSERT INTO downtimes (id, tenant_id, host_id, service_id, start_at, end_at,
+                                       author_id, comment, active)
+                VALUES (:id, :tenant_id, :host_id, :service_id, :start_at, :end_at,
+                        :author_id, :comment, true)
+            """),
+            {
+                "id": dt_id,
+                "tenant_id": svc.tenant_id,
+                "host_id": str(svc.host_id),
+                "service_id": str(sid),
+                "start_at": body.start_at,
+                "end_at": body.end_at,
+                "author_id": str(author_id),
+                "comment": body.comment,
+            },
+        )
+
+        if is_active_now:
+            await db.execute(
+                text("UPDATE current_status SET in_downtime = true WHERE service_id = :sid"),
+                {"sid": sid},
+            )
+        created += 1
+
+    if created:
+        await write_audit(db, user=user, action="bulk_downtime_create",
+                          target_type="downtime", detail={
+                              "count": created,
+                              "comment": body.comment,
+                              "start_at": body.start_at.isoformat(),
+                              "end_at": body.end_at.isoformat(),
+                          })
+        await db.commit()
+    return {"created": created}
 
 
 @router.delete("/{downtime_id}")
@@ -122,6 +201,9 @@ async def delete_downtime(
         )
 
     dt.active = False
+    await write_audit(db, user=_user, action="downtime_delete",
+                      target_type="downtime", target_id=downtime_id,
+                      tenant_id=dt.tenant_id)
     await db.commit()
     return {"status": "deleted"}
 
@@ -132,10 +214,10 @@ async def list_downtimes(
     active_only: bool = True,
     db: AsyncSession = Depends(get_db),
     _user: dict = Depends(get_current_user),
+    _scope = Depends(tenant_scope),
 ):
     q = select(Downtime)
-    if tenant_id:
-        q = q.where(Downtime.tenant_id == tenant_id)
+    q = apply_tenant_filter(q, Downtime.tenant_id, _scope, tenant_id)
     if active_only:
         now = datetime.now(timezone.utc)
         q = q.where(Downtime.active == True, Downtime.start_at <= now, Downtime.end_at >= now)

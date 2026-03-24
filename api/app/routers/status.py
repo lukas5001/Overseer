@@ -5,14 +5,16 @@ This is the most important router – it powers the Fehlerübersicht
 that employees watch continuously.
 """
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from pydantic import BaseModel
 from sqlalchemy import select, func, case
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 
 from api.app.core.database import get_db
-from api.app.core.auth import get_current_user
-from api.app.models.models import CurrentStatus, Service, Host, Tenant
+from api.app.core.auth import get_current_user, tenant_scope, apply_tenant_filter
+from api.app.routers.audit import write_audit
+from api.app.models.models import CurrentStatus, Service, Host, Tenant, User
 from shared.schemas import ErrorOverviewItem, CurrentStatusOut, CheckStatus
 
 router = APIRouter()
@@ -20,14 +22,23 @@ router = APIRouter()
 
 @router.get("/errors", response_model=list[ErrorOverviewItem])
 async def get_error_overview(
+    response: Response,
     tenant_id: UUID | None = None,
+    statuses: str | None = None,
     status: CheckStatus | None = None,
     acknowledged: bool | None = None,
     include_downtime: bool = False,
+    limit: int = Query(default=200, ge=1, le=1000),
+    offset: int = Query(default=0, ge=0),
     db: AsyncSession = Depends(get_db),
     _user: dict = Depends(get_current_user),
+    _scope = Depends(tenant_scope),
 ):
-    """Get all non-OK hard-state checks – the main Fehlerübersicht."""
+    """Get hard-state checks – the main Fehlerübersicht.
+
+    statuses: comma-separated list e.g. "CRITICAL,WARNING,UNKNOWN" (new)
+    status: single status filter (legacy, kept for backward compat)
+    """
     q = (
         select(
             CurrentStatus,
@@ -37,20 +48,27 @@ async def get_error_overview(
             Host.display_name.label("host_display_name"),
             Host.host_type.label("host_type"),
             Tenant.name.label("tenant_name"),
+            User.email.label("ack_email"),
         )
         .join(Service, CurrentStatus.service_id == Service.id)
         .join(Host, CurrentStatus.host_id == Host.id)
         .join(Tenant, CurrentStatus.tenant_id == Tenant.id)
-        .where(CurrentStatus.status != "OK")
+        .outerjoin(User, CurrentStatus.acknowledged_by == User.id)
         .where(CurrentStatus.state_type == "HARD")
     )
 
+    # Status filtering: new multi-select takes precedence over legacy single
+    if statuses:
+        status_list = [s.strip().upper() for s in statuses.split(",") if s.strip()]
+        q = q.where(CurrentStatus.status.in_(status_list))
+    else:
+        q = q.where(CurrentStatus.status != "OK")
+        if status:
+            q = q.where(CurrentStatus.status == status.value)
+
     if not include_downtime:
         q = q.where(CurrentStatus.in_downtime == False)
-    if tenant_id:
-        q = q.where(CurrentStatus.tenant_id == tenant_id)
-    if status:
-        q = q.where(CurrentStatus.status == status.value)
+    q = apply_tenant_filter(q, CurrentStatus.tenant_id, _scope, tenant_id)
     if acknowledged is not None:
         q = q.where(CurrentStatus.acknowledged == acknowledged)
 
@@ -64,7 +82,12 @@ async def get_error_overview(
         CurrentStatus.last_state_change_at.asc().nulls_last(),
     )
 
-    result = await db.execute(q)
+    # Total count before pagination
+    count_q = select(func.count()).select_from(q.subquery())
+    total = (await db.execute(count_q)).scalar_one()
+    response.headers["X-Total-Count"] = str(total)
+
+    result = await db.execute(q.offset(offset).limit(limit))
     rows = result.all()
 
     items = []
@@ -98,7 +121,9 @@ async def get_error_overview(
             last_state_change_at=cs.last_state_change_at,
             duration_seconds=duration_seconds,
             acknowledged=cs.acknowledged,
-            acknowledged_by=None,
+            acknowledged_by=row.ack_email,
+            acknowledged_at=cs.acknowledged_at,
+            acknowledge_comment=cs.acknowledge_comment,
             in_downtime=cs.in_downtime,
         ))
 
@@ -110,6 +135,7 @@ async def get_status_summary(
     tenant_id: UUID | None = None,
     db: AsyncSession = Depends(get_db),
     _user: dict = Depends(get_current_user),
+    _scope = Depends(tenant_scope),
 ):
     """Count of checks by status for the dashboard cards."""
     q = select(
@@ -117,8 +143,7 @@ async def get_status_summary(
         func.count(CurrentStatus.service_id).label("cnt"),
     ).group_by(CurrentStatus.status)
 
-    if tenant_id:
-        q = q.where(CurrentStatus.tenant_id == tenant_id)
+    q = apply_tenant_filter(q, CurrentStatus.tenant_id, _scope, tenant_id)
 
     result = await db.execute(q)
     rows = result.all()
@@ -181,25 +206,46 @@ async def get_host_status(host_id: UUID, db: AsyncSession = Depends(get_db), _us
     return result.scalars().all()
 
 
+class AcknowledgeBody(BaseModel):
+    comment: str
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v):
+        if isinstance(v, cls) and not v.comment.strip():
+            raise ValueError("Kommentar darf nicht leer sein")
+        return v
+
+
 @router.post("/acknowledge/{service_id}")
 async def acknowledge_problem(
     service_id: UUID,
-    comment: str = "",
+    body: AcknowledgeBody,
     db: AsyncSession = Depends(get_db),
     _user: dict = Depends(get_current_user),
 ):
-    """Acknowledge a problem."""
+    """Acknowledge a problem. Comment is required."""
+    if not body.comment.strip():
+        raise HTTPException(status_code=400, detail="Kommentar darf nicht leer sein")
+
     result = await db.execute(
         select(CurrentStatus).where(CurrentStatus.service_id == service_id)
     )
     cs = result.scalar_one_or_none()
     if not cs:
-        from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Service not found")
 
     cs.acknowledged = True
     cs.acknowledged_at = datetime.now(timezone.utc)
-    cs.acknowledge_comment = comment
+    cs.acknowledged_by = UUID(_user["sub"])
+    cs.acknowledge_comment = body.comment.strip()
+    await write_audit(db, user=_user, action="acknowledge",
+                      target_type="service", target_id=service_id,
+                      tenant_id=cs.tenant_id,
+                      detail={"comment": body.comment.strip(), "status": cs.status})
     await db.commit()
     return {"status": "acknowledged"}
 
@@ -216,5 +262,48 @@ async def remove_acknowledgement(service_id: UUID, db: AsyncSession = Depends(ge
         cs.acknowledged_by = None
         cs.acknowledged_at = None
         cs.acknowledge_comment = None
+        await write_audit(db, user=_user, action="unacknowledge",
+                          target_type="service", target_id=service_id,
+                          tenant_id=cs.tenant_id)
         await db.commit()
     return {"status": "removed"}
+
+
+class BulkAcknowledgeBody(BaseModel):
+    service_ids: list[UUID]
+    comment: str
+
+
+@router.post("/bulk-acknowledge")
+async def bulk_acknowledge(
+    body: BulkAcknowledgeBody,
+    db: AsyncSession = Depends(get_db),
+    _user: dict = Depends(get_current_user),
+):
+    """Acknowledge multiple problems at once. Comment is required."""
+    if not body.comment.strip():
+        raise HTTPException(status_code=400, detail="Kommentar darf nicht leer sein")
+
+    now = datetime.now(timezone.utc)
+    user_id = UUID(_user["sub"])
+    comment = body.comment.strip()
+    result = await db.execute(
+        select(CurrentStatus).where(CurrentStatus.service_id.in_(body.service_ids))
+    )
+    rows = result.scalars().all()
+    count = 0
+    for cs in rows:
+        cs.acknowledged = True
+        cs.acknowledged_at = now
+        cs.acknowledged_by = user_id
+        cs.acknowledge_comment = comment
+        count += 1
+    if count:
+        await write_audit(db, user=_user, action="bulk_acknowledge",
+                          target_type="service", detail={
+                              "count": count,
+                              "comment": comment,
+                              "service_ids": [str(s) for s in body.service_ids],
+                          })
+        await db.commit()
+    return {"acknowledged": count}

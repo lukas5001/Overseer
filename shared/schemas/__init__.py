@@ -84,6 +84,7 @@ class CollectorOut(BaseModel):
     last_seen_at: datetime | None
     config_version: int
     created_at: datetime
+    offline: bool = False  # True if last_seen_at > 3 minutes ago
 
     model_config = {"from_attributes": True}
 
@@ -96,15 +97,24 @@ class CollectorOut(BaseModel):
 class HostOut(BaseModel):
     id: UUID
     tenant_id: UUID
-    collector_id: UUID
+    collector_id: UUID | None
     hostname: str
     display_name: str | None
     ip_address: str | None
     host_type: HostType
+    snmp_community: str | None = None
+    snmp_version: str | None = None
+    winrm_username: str | None = None
+    winrm_password: str | None = None
+    winrm_transport: str | None = "ntlm"
+    winrm_port: int | None = 5986
+    winrm_ssl: bool | None = True
     tags: list
     active: bool
     created_at: datetime
     tenant_name: str | None = None
+    tenant_active: bool = True
+    collector_offline: bool = False  # True if collector hasn't sent heartbeat recently
 
     model_config = {"from_attributes": True}
 
@@ -125,6 +135,7 @@ class ServiceOut(BaseModel):
     threshold_warn: float | None
     threshold_crit: float | None
     max_check_attempts: int
+    check_mode: str = "passive"
     active: bool
     created_at: datetime
 
@@ -177,7 +188,122 @@ class ErrorOverviewItem(BaseModel):
     duration_seconds: int | None = None
     acknowledged: bool
     acknowledged_by: str | None = None
+    acknowledged_at: datetime | None = None
+    acknowledge_comment: str | None = None
     in_downtime: bool
+
+
+# ==================== Write / Create / Update Schemas ====================
+
+class HostCreate(BaseModel):
+    tenant_id: UUID
+    collector_id: UUID | None = None
+    hostname: str
+    display_name: str | None = None
+    ip_address: str | None = None
+    host_type: HostType = HostType.SERVER
+    snmp_community: str | None = None
+    snmp_version: str = "2c"
+    winrm_username: str | None = None
+    winrm_password: str | None = None
+    winrm_transport: str = "ntlm"
+    winrm_port: int = 5986
+    winrm_ssl: bool = True
+    tags: list = []
+
+
+class HostUpdate(BaseModel):
+    hostname: str | None = None
+    display_name: str | None = None
+    ip_address: str | None = None
+    host_type: HostType | None = None
+    snmp_community: str | None = None
+    snmp_version: str | None = None
+    winrm_username: str | None = None
+    winrm_password: str | None = None
+    winrm_transport: str | None = None
+    winrm_port: int | None = None
+    winrm_ssl: bool | None = None
+    tags: list | None = None
+    collector_id: UUID | None = None
+    active: bool | None = None
+
+    model_config = {"extra": "ignore"}
+
+
+class ServiceCreate(BaseModel):
+    host_id: UUID
+    tenant_id: UUID
+    name: str
+    check_type: str
+    check_config: dict = {}
+    interval_seconds: int = 60
+    threshold_warn: float | None = None
+    threshold_crit: float | None = None
+    max_check_attempts: int = 3
+    check_mode: str = "passive"
+
+
+class ServiceUpdate(BaseModel):
+    name: str | None = None
+    check_config: dict | None = None
+    interval_seconds: int | None = None
+    threshold_warn: float | None = None
+    threshold_crit: float | None = None
+    max_check_attempts: int | None = None
+    check_mode: str | None = None
+    active: bool | None = None
+
+
+class TenantCreate(BaseModel):
+    name: str
+    slug: str
+
+
+class TenantUpdate(BaseModel):
+    name: str | None = None
+    active: bool | None = None
+
+
+# ==================== Service Templates ====================
+
+class TemplateCheckItem(BaseModel):
+    name: str
+    check_type: str
+    check_config: dict = {}
+    interval_seconds: int = 60
+    threshold_warn: float | None = None
+    threshold_crit: float | None = None
+    check_mode: str = "active"
+
+
+class ServiceTemplateOut(BaseModel):
+    id: UUID
+    name: str
+    description: str
+    checks: list[TemplateCheckItem]
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+    @field_validator("checks", mode="before")
+    @classmethod
+    def parse_checks(cls, v):
+        if isinstance(v, list) and all(isinstance(i, dict) for i in v):
+            return [TemplateCheckItem(**i) for i in v]
+        return v
+
+
+class ServiceTemplateCreate(BaseModel):
+    name: str
+    description: str = ""
+    checks: list[TemplateCheckItem] = []
+
+
+class ServiceTemplateUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    checks: list[TemplateCheckItem] | None = None
 
 
 # ==================== Auth ====================
@@ -188,6 +314,20 @@ class TokenResponse(BaseModel):
     expires_in: int
 
 
+class LoginResponse(BaseModel):
+    """Unified login response. Check requires_2fa to determine flow."""
+    access_token: str | None = None
+    token_type: str = "bearer"
+    expires_in: int | None = None
+    requires_2fa: bool = False
+    two_fa_method: str | None = None
+    pending_token: str | None = None
+
+
 class LoginRequest(BaseModel):
     email: str
     password: str
+
+
+class TwoFAVerifyRequest(BaseModel):
+    code: str

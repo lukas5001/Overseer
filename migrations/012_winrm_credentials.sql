@@ -1,0 +1,6 @@
+-- WinRM credentials on host level (for Windows Server monitoring)
+ALTER TABLE hosts ADD COLUMN IF NOT EXISTS winrm_username VARCHAR(255);
+ALTER TABLE hosts ADD COLUMN IF NOT EXISTS winrm_password VARCHAR(255);
+ALTER TABLE hosts ADD COLUMN IF NOT EXISTS winrm_transport VARCHAR(20) DEFAULT 'ntlm';
+ALTER TABLE hosts ADD COLUMN IF NOT EXISTS winrm_port INTEGER DEFAULT 5986;
+ALTER TABLE hosts ADD COLUMN IF NOT EXISTS winrm_ssl BOOLEAN DEFAULT TRUE;

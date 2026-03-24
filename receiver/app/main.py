@@ -14,7 +14,7 @@ import os
 from datetime import datetime, timezone
 
 import redis.asyncio as redis
-from fastapi import FastAPI, HTTPException, Header
+from fastapi import FastAPI, HTTPException, Header, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
@@ -26,6 +26,10 @@ from shared.schemas import CollectorPayload
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://overseer:overseer_dev_password@localhost:5432/overseer")
 STREAM_NAME = "overseer:check_results"
+
+# Rate limiting: max requests per key per window
+RATE_LIMIT_MAX = int(os.getenv("RATE_LIMIT_MAX", "120"))   # requests
+RATE_LIMIT_WINDOW = int(os.getenv("RATE_LIMIT_WINDOW", "60"))  # seconds
 
 # ==================== App ====================
 
@@ -52,6 +56,28 @@ async def shutdown():
     await engine.dispose()
 
 
+# ==================== Rate Limiting ====================
+
+async def check_rate_limit(key_prefix: str) -> None:
+    """Sliding-window rate limit via Redis INCR + EXPIRE.
+
+    Uses the key prefix (first 12 chars) as the rate-limit bucket so that
+    even if the full key is rotated the prefix-based bucket is consistent.
+    Raises HTTP 429 if the limit is exceeded.
+    """
+    bucket = f"ratelimit:{key_prefix}:{int(datetime.now(timezone.utc).timestamp()) // RATE_LIMIT_WINDOW}"
+    count = await redis_pool.incr(bucket)
+    if count == 1:
+        await redis_pool.expire(bucket, RATE_LIMIT_WINDOW * 2)
+    if count > RATE_LIMIT_MAX:
+        logger.warning("Rate limit exceeded for key prefix %s (%d req/window)", key_prefix, count)
+        raise HTTPException(
+            status_code=429,
+            detail=f"Rate limit exceeded: max {RATE_LIMIT_MAX} requests per {RATE_LIMIT_WINDOW}s",
+            headers={"Retry-After": str(RATE_LIMIT_WINDOW)},
+        )
+
+
 # ==================== API Key Validation ====================
 
 async def validate_api_key(api_key: str) -> dict:
@@ -62,18 +88,19 @@ async def validate_api_key(api_key: str) -> dict:
     async with AsyncSessionLocal() as db:
         result = await db.execute(
             text("""
-                SELECT ak.id, ak.tenant_id, ak.key_hash, t.slug AS tenant_slug
+                SELECT ak.id, ak.tenant_id, t.slug AS tenant_slug
                 FROM api_keys ak
                 JOIN tenants t ON t.id = ak.tenant_id
                 WHERE ak.key_prefix = :prefix
+                  AND ak.key_hash = :hash
                   AND ak.active = true
                   AND t.active = true
             """),
-            {"prefix": key_prefix},
+            {"prefix": key_prefix, "hash": key_hash},
         )
         row = result.fetchone()
 
-    if not row or row.key_hash != key_hash:
+    if not row:
         raise HTTPException(status_code=401, detail="Invalid API key")
 
     # Update last_used_at in background (fire and forget, non-blocking)
@@ -84,7 +111,7 @@ async def validate_api_key(api_key: str) -> dict:
         )
         await db.commit()
 
-    return {"tenant_slug": row.tenant_slug, "tenant_id": str(row.tenant_id)}
+    return {"tenant_slug": row.tenant_slug, "tenant_id": str(row.tenant_id), "key_prefix": key_prefix}
 
 
 # ==================== Endpoints ====================
@@ -95,6 +122,7 @@ async def receive_check_results(
     x_api_key: str = Header(..., alias="X-API-Key"),
 ):
     """Receive check results from a Collector."""
+    await check_rate_limit(x_api_key[:12])
     tenant_info = await validate_api_key(x_api_key)
 
     message = {
@@ -106,6 +134,14 @@ async def receive_check_results(
     }
 
     await redis_pool.xadd(STREAM_NAME, {"data": json.dumps(message)})
+
+    # Update collector last_seen_at (receiving data = collector is alive)
+    async with AsyncSessionLocal() as db:
+        await db.execute(
+            text("UPDATE collectors SET last_seen_at = :now WHERE id = CAST(:cid AS uuid)"),
+            {"now": datetime.now(timezone.utc), "cid": payload.collector_id},
+        )
+        await db.commit()
 
     logger.info(
         "Received %d checks from collector=%s tenant=%s",
