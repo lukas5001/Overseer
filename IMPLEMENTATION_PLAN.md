@@ -291,7 +291,7 @@ async def downtime_watcher_loop():
 
 ---
 
-### 1.7 Bulk-Acknowledge Limit
+### ✅ 1.7 Bulk-Acknowledge Limit
 
 **Was**: Bulk-Acknowledge-Endpoint akzeptiert maximal 500 Items.
 **Warum**: Unbegrenzte Bulk-Operationen können DB und API überlasten.
