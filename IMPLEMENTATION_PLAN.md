@@ -335,7 +335,7 @@ class ServiceCreate(BaseModel):
 
 ---
 
-### 1.9 API-Key: Key-Prefix aus DB entfernen
+### ✅ 1.9 API-Key: Key-Prefix aus DB entfernen
 
 **Was**: `key_prefix`-Feld auf `ApiKey`-Tabelle nicht mehr schreiben (für neue Keys). Lookup nur noch über SHA256-Hash.
 **Warum**: Selbst ein Präfix hilft beim Auffinden des Keys — Hash reicht für sicheren Lookup.

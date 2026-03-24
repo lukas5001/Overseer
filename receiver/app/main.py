@@ -96,7 +96,6 @@ async def check_rate_limit(key_prefix: str) -> None:
 async def validate_api_key(api_key: str) -> dict:
     """Validate API key via DB lookup. Returns {tenant_slug, tenant_id}."""
     key_hash = hashlib.sha256(api_key.encode()).hexdigest()
-    key_prefix = api_key[:12]
 
     async with AsyncSessionLocal() as db:
         result = await db.execute(
@@ -104,12 +103,11 @@ async def validate_api_key(api_key: str) -> dict:
                 SELECT ak.id, ak.tenant_id, t.slug AS tenant_slug
                 FROM api_keys ak
                 JOIN tenants t ON t.id = ak.tenant_id
-                WHERE ak.key_prefix = :prefix
-                  AND ak.key_hash = :hash
+                WHERE ak.key_hash = :hash
                   AND ak.active = true
                   AND t.active = true
             """),
-            {"prefix": key_prefix, "hash": key_hash},
+            {"hash": key_hash},
         )
         row = result.fetchone()
 
@@ -124,7 +122,7 @@ async def validate_api_key(api_key: str) -> dict:
         )
         await db.commit()
 
-    return {"tenant_slug": row.tenant_slug, "tenant_id": str(row.tenant_id), "key_prefix": key_prefix}
+    return {"tenant_slug": row.tenant_slug, "tenant_id": str(row.tenant_id)}
 
 
 # ==================== Endpoints ====================

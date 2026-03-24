@@ -199,17 +199,16 @@ async def generate_api_key(
 ):
     """Generate a new API key for the tenant. Returns key ONCE in plaintext."""
     raw_key = "overseer_" + secrets.token_urlsafe(32)
-    prefix = raw_key[:12]
     key_hash = hashlib.sha256(raw_key.encode()).hexdigest()
     api_key = ApiKey(
         tenant_id=tenant_id,
         key_hash=key_hash,
-        key_prefix=prefix,
+        key_prefix="",
         name=name,
     )
     db.add(api_key)
     await db.commit()
-    return {"id": str(api_key.id), "key": raw_key, "prefix": prefix, "name": name}
+    return {"id": str(api_key.id), "key": raw_key, "name": name}
 
 
 @router.get("/stats")
@@ -315,7 +314,6 @@ async def get_tenant_detail(
             {
                 "id": str(k.id),
                 "name": k.name,
-                "key_prefix": k.key_prefix,
                 "last_used_at": k.last_used_at.isoformat() if k.last_used_at else None,
             }
             for k in keys

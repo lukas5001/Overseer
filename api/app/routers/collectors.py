@@ -50,17 +50,15 @@ async def create_collector(
     # Generate API key
     raw_key = "overseer_" + secrets.token_urlsafe(32)
     key_hash = hashlib.sha256(raw_key.encode()).hexdigest()
-    key_prefix = raw_key[:12]
 
     await db.execute(
         text("""
             INSERT INTO api_keys (id, tenant_id, key_hash, key_prefix, name, active, created_at)
-            VALUES (gen_random_uuid(), :tenant_id, :key_hash, :key_prefix, :name, true, now())
+            VALUES (gen_random_uuid(), :tenant_id, :key_hash, '', :name, true, now())
         """),
         {
             "tenant_id": str(body.tenant_id),
             "key_hash": key_hash,
-            "key_prefix": key_prefix,
             "name": f"Collector: {body.name}",
         },
     )
