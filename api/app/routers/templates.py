@@ -204,11 +204,13 @@ async def apply_template(
 
     await db.commit()
 
-    await write_audit(db, _user, "template_applied", "service_template", template_id, {
-        "template_id": str(template_id),
-        "host_id": str(body.host_id),
-        "created_count": created,
-        "skipped_count": skipped,
-    })
+    await write_audit(db, user=_user, action="template_applied",
+                      target_type="service_template", target_id=template_id,
+                      detail={
+                          "template_id": str(template_id),
+                          "host_id": str(body.host_id),
+                          "created_count": created,
+                          "skipped_count": skipped,
+                      })
 
     return {"created": created, "skipped": skipped}
