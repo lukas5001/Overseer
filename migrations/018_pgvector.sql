@@ -12,5 +12,5 @@ CREATE TABLE knowledge_embeddings (
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX ON knowledge_embeddings USING ivfflat (embedding vector_cosine_ops)
-    WITH (lists = 100);
+-- Index wird erst bei ausreichend Einträgen (>1000) manuell erstellt:
+-- CREATE INDEX ON knowledge_embeddings USING hnsw (embedding vector_cosine_ops);
