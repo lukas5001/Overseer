@@ -4,6 +4,7 @@ import { Settings, User as UserIcon, ShieldCheck, Sliders } from 'lucide-react'
 import clsx from 'clsx'
 import { api } from '../api/client'
 import type { User } from '../types'
+import ConfirmDialog from '../components/ConfirmDialog'
 
 type Tab = 'profile' | '2fa' | 'preferences'
 
@@ -101,6 +102,7 @@ function TwoFATab({ user }: { user: User }) {
   const [code, setCode] = useState('')
   const [qrData, setQrData] = useState<string | null>(null)
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null)
+  const [showDisable2fa, setShowDisable2fa] = useState(false)
 
   const setupTotp = useMutation({
     mutationFn: () => api.post('/api/v1/auth/2fa/setup-totp').then(r => r.data),
@@ -121,7 +123,7 @@ function TwoFATab({ user }: { user: User }) {
 
   const disable2fa = useMutation({
     mutationFn: () => api.post('/api/v1/auth/2fa/disable').then(r => r.data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['current-user'] }); setMessage({ text: '2FA deaktiviert', ok: true }) },
+    onSuccess: () => { setShowDisable2fa(false); qc.invalidateQueries({ queryKey: ['current-user'] }); setMessage({ text: '2FA deaktiviert', ok: true }) },
   })
 
   const statusLabel = user.two_fa_method === 'totp' ? 'TOTP aktiv' : user.two_fa_method === 'email' ? 'Email-2FA aktiv' : 'Deaktiviert'
@@ -172,11 +174,22 @@ function TwoFATab({ user }: { user: User }) {
 
       {/* Disable */}
       {user.two_fa_method !== 'none' && (
-        <button onClick={() => { if (confirm('2FA wirklich deaktivieren?')) disable2fa.mutate() }}
+        <button onClick={() => setShowDisable2fa(true)}
           className="mt-4 px-4 py-2 border border-red-300 text-red-600 text-sm rounded-lg hover:bg-red-50">
           2FA deaktivieren
         </button>
       )}
+
+      <ConfirmDialog
+        open={showDisable2fa}
+        title="2FA deaktivieren"
+        message="Zwei-Faktor-Authentifizierung wirklich deaktivieren? Du kannst sie jederzeit wieder aktivieren."
+        confirmLabel="Deaktivieren"
+        variant="warning"
+        loading={disable2fa.isPending}
+        onConfirm={() => disable2fa.mutate()}
+        onCancel={() => setShowDisable2fa(false)}
+      />
 
       {message && (
         <p className={clsx('mt-4 text-sm px-3 py-2 rounded-lg', message.ok ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600')}>

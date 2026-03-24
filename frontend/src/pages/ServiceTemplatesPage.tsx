@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { FileCode2, Plus, X, Trash2, Play } from 'lucide-react'
 import { api } from '../api/client'
 import type { ServiceTemplate, ServiceTemplateCreate, TemplateCheckItem, Host } from '../types'
+import ConfirmDialog from '../components/ConfirmDialog'
 
 // ── New Template Modal ───────────────────────────────────────────────────────
 
@@ -203,6 +204,7 @@ export default function ServiceTemplatesPage() {
   const [showModal, setShowModal] = useState(false)
   const [editTemplate, setEditTemplate] = useState<ServiceTemplate | undefined>()
   const [applyTemplateId, setApplyTemplateId] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
 
   const { data: templates = [], isLoading } = useQuery<ServiceTemplate[]>({
     queryKey: ['service-templates'],
@@ -211,7 +213,7 @@ export default function ServiceTemplatesPage() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/api/v1/service-templates/${id}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['service-templates'] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['service-templates'] }); setDeleteTarget(null) },
   })
 
   return (
@@ -263,7 +265,7 @@ export default function ServiceTemplatesPage() {
                     <button onClick={() => setEditTemplate(t)} className="text-xs text-gray-500 hover:text-gray-700">
                       Bearbeiten
                     </button>
-                    <button onClick={() => { if (confirm('Template löschen?')) deleteMutation.mutate(t.id) }}
+                    <button onClick={() => setDeleteTarget(t.id)}
                       className="text-gray-400 hover:text-red-500">
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -277,6 +279,17 @@ export default function ServiceTemplatesPage() {
           <div className="p-8 text-center text-gray-400 text-sm">Keine Templates vorhanden.</div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Template löschen"
+        message="Soll dieses Template wirklich gelöscht werden?"
+        confirmLabel="Löschen"
+        variant="danger"
+        loading={deleteMutation.isPending}
+        onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget)}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   )
 }

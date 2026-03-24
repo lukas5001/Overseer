@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Bell, Plus, X, Trash2, Send, Webhook } from 'lucide-react'
 import clsx from 'clsx'
 import { api } from '../api/client'
+import ConfirmDialog from '../components/ConfirmDialog'
 
 interface Channel {
   id: string
@@ -131,6 +132,7 @@ export default function NotificationsPage() {
   const queryClient = useQueryClient()
   const [showAdd, setShowAdd] = useState(false)
   const [editTarget, setEditTarget] = useState<Channel | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
 
   const { data: channels = [], isLoading } = useQuery<Channel[]>({
     queryKey: ['notification-channels'],
@@ -144,7 +146,7 @@ export default function NotificationsPage() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/api/v1/notifications/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notification-channels'] }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['notification-channels'] }); setDeleteTarget(null) },
   })
 
   const testMutation = useMutation({
@@ -240,11 +242,7 @@ export default function NotificationsPage() {
                   Bearbeiten
                 </button>
                 <button
-                  onClick={() => {
-                    if (confirm(`Webhook "${ch.name}" wirklich löschen?`)) {
-                      deleteMutation.mutate(ch.id)
-                    }
-                  }}
+                  onClick={() => setDeleteTarget(ch.id)}
                   className="text-gray-300 hover:text-red-500 transition-colors"
                   title="Löschen"
                 >
@@ -273,6 +271,17 @@ export default function NotificationsPage() {
   "timestamp": "2026-03-21T14:30:00+00:00"
 }`}</pre>
       </div>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Webhook löschen"
+        message="Soll dieser Webhook wirklich gelöscht werden?"
+        confirmLabel="Löschen"
+        variant="danger"
+        loading={deleteMutation.isPending}
+        onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget)}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   )
 }

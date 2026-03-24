@@ -10,6 +10,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { de } from 'date-fns/locale'
 import { api } from '../api/client'
 import { formatDateTime } from '../lib/format'
+import ConfirmDialog from '../components/ConfirmDialog'
 
 interface Host {
   id: string
@@ -1036,6 +1037,7 @@ export default function HostDetailPage() {
   const [showSnmpDiscovery, setShowSnmpDiscovery] = useState(false)
   const [editService, setEditService] = useState<ServiceItem | null>(null)
   const [historyTarget, setHistoryTarget] = useState<{ id: string; name: string } | null>(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   const { data: host, isLoading: hostLoading } = useQuery<Host>({
     queryKey: ['host', hostId],
@@ -1077,7 +1079,8 @@ export default function HostDetailPage() {
 
   const deleteHostMutation = useMutation({
     mutationFn: () => api.delete(`/api/v1/hosts/${hostId}`),
-    onSuccess: () => navigate('/hosts'),
+    onSuccess: () => { setShowDeleteConfirm(false); navigate('/hosts') },
+    onError: () => setShowDeleteConfirm(false),
   })
 
   const copyHostMutation = useMutation({
@@ -1177,6 +1180,16 @@ export default function HostDetailPage() {
           }}
         />
       )}
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        title="Host löschen"
+        message={`Host "${host?.display_name || host?.hostname}" endgültig löschen?\n\nAlle Services, Check-Ergebnisse und Downtimes werden unwiderruflich gelöscht.`}
+        confirmLabel="Endgültig löschen"
+        variant="danger"
+        loading={deleteHostMutation.isPending}
+        onConfirm={() => deleteHostMutation.mutate()}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
       {showEditHost && (
         <EditHostModal
           host={host}
@@ -1312,11 +1325,7 @@ export default function HostDetailPage() {
               <Copy className="w-4 h-4" />
             </button>
             <button
-              onClick={() => {
-                if (confirm(`Host "${host.display_name || host.hostname}" endgültig löschen?\n\nAlle Services, Check-Ergebnisse und Downtimes werden unwiderruflich gelöscht.`)) {
-                  deleteHostMutation.mutate()
-                }
-              }}
+              onClick={() => setShowDeleteConfirm(true)}
               className="p-2 rounded-lg border border-gray-200 text-gray-400 hover:text-red-600 hover:border-red-300 transition-colors"
               title="Host endgültig löschen"
             >

@@ -4,6 +4,7 @@ import { Clock, Plus, X, StopCircle, Server, Layers, Search } from 'lucide-react
 import clsx from 'clsx'
 import { api } from '../api/client'
 import { formatDateTime } from '../lib/format'
+import ConfirmDialog from '../components/ConfirmDialog'
 
 interface Downtime {
   id: string
@@ -416,6 +417,7 @@ export default function DowntimesPage() {
   const queryClient = useQueryClient()
   const [tab, setTab] = useState<TabMode>('active')
   const [showAdd, setShowAdd] = useState(false)
+  const [endTarget, setEndTarget] = useState<string | null>(null)
 
   const activeOnly = tab === 'active'
 
@@ -441,7 +443,7 @@ export default function DowntimesPage() {
 
   const endMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/api/v1/downtimes/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['downtimes-list'] }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['downtimes-list'] }); setEndTarget(null) },
   })
 
   return (
@@ -561,11 +563,7 @@ export default function DowntimesPage() {
                   <div className="flex-shrink-0">
                     {dt.active && (
                       <button
-                        onClick={() => {
-                          if (confirm('Downtime jetzt beenden?')) {
-                            endMutation.mutate(dt.id)
-                          }
-                        }}
+                        onClick={() => setEndTarget(dt.id)}
                         disabled={endMutation.isPending}
                         title="Downtime beenden"
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 text-red-600 text-xs font-medium hover:bg-red-50 transition-colors disabled:opacity-50"
@@ -581,6 +579,17 @@ export default function DowntimesPage() {
           })}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!endTarget}
+        title="Downtime beenden"
+        message="Soll diese Downtime jetzt beendet werden?"
+        confirmLabel="Beenden"
+        variant="warning"
+        loading={endMutation.isPending}
+        onConfirm={() => endTarget && endMutation.mutate(endTarget)}
+        onCancel={() => setEndTarget(null)}
+      />
     </div>
   )
 }

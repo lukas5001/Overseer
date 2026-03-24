@@ -4,6 +4,7 @@ import { Mail, Webhook, Plus, X, Trash2, TestTube2, Check, AlertCircle } from 'l
 import clsx from 'clsx'
 import { api } from '../api/client'
 import type { NotificationChannel, ChannelCreate, ChannelType, Tenant } from '../types'
+import ConfirmDialog from '../components/ConfirmDialog'
 
 // ── New Channel Modal ────────────────────────────────────────────────────────
 
@@ -165,6 +166,7 @@ export default function NotificationChannelsPage() {
   const qc = useQueryClient()
   const [showModal, setShowModal] = useState(false)
   const [testResult, setTestResult] = useState<{ id: string; ok: boolean } | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
 
   const { data: channels = [], isLoading } = useQuery<NotificationChannel[]>({
     queryKey: ['notification-channels'],
@@ -178,7 +180,7 @@ export default function NotificationChannelsPage() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/api/v1/notifications/${id}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['notification-channels'] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['notification-channels'] }); setDeleteTarget(null) },
   })
 
   const testMutation = useMutation({
@@ -254,7 +256,7 @@ export default function NotificationChannelsPage() {
                         : <TestTube2 className="w-3.5 h-3.5" />}
                       Test
                     </button>
-                    <button onClick={() => { if (confirm('Kanal löschen?')) deleteMutation.mutate(ch.id) }}
+                    <button onClick={() => setDeleteTarget(ch.id)}
                       title="Löschen" className="text-gray-400 hover:text-red-500">
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -268,6 +270,17 @@ export default function NotificationChannelsPage() {
           <div className="p-8 text-center text-gray-400 text-sm">Keine Kanäle konfiguriert.</div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Kanal löschen"
+        message="Soll dieser Benachrichtigungskanal wirklich gelöscht werden?"
+        confirmLabel="Löschen"
+        variant="danger"
+        loading={deleteMutation.isPending}
+        onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget)}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   )
 }

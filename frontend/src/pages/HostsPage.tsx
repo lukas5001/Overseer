@@ -4,6 +4,7 @@ import { Monitor, Server, Router, Printer, Shield, Wifi, HelpCircle, Plus, X, Se
 import { Link } from 'react-router-dom'
 import clsx from 'clsx'
 import { api } from '../api/client'
+import ConfirmDialog from '../components/ConfirmDialog'
 
 interface HostItem {
   id: string
@@ -201,6 +202,7 @@ export default function HostsPage() {
     } catch { return new Set() }
   })
   const [showInactive, setShowInactive] = useState(true)
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
 
   // Load user preference for show_inactive
   const { data: userProfile } = useQuery<{ show_inactive?: boolean }>({
@@ -228,7 +230,8 @@ export default function HostsPage() {
 
   const deleteHostMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/api/v1/hosts/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hosts-all'] }),
+    onSuccess: () => { setDeleteTarget(null); queryClient.invalidateQueries({ queryKey: ['hosts-all'] }) },
+    onError: () => setDeleteTarget(null),
   })
 
   const copyHostMutation = useMutation({
@@ -337,6 +340,16 @@ export default function HostsPage() {
 
   return (
     <div className="p-8">
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Host löschen"
+        message={`Host "${deleteTarget?.name}" endgültig löschen?\n\nAlle Services, Check-Ergebnisse und Downtimes werden unwiderruflich gelöscht.`}
+        confirmLabel="Endgültig löschen"
+        variant="danger"
+        loading={deleteHostMutation.isPending}
+        onConfirm={() => deleteTarget && deleteHostMutation.mutate(deleteTarget.id)}
+        onCancel={() => setDeleteTarget(null)}
+      />
       {showAdd && (
         <AddHostModal
           onClose={() => setShowAdd(false)}
@@ -602,12 +615,7 @@ export default function HostsPage() {
                                     <Power className="w-3.5 h-3.5" />
                                   </button>
                                   <button
-                                    onClick={(e) => {
-                                      e.preventDefault()
-                                      if (confirm(`Host "${host.display_name || host.hostname}" endgültig löschen?`)) {
-                                        deleteHostMutation.mutate(host.id)
-                                      }
-                                    }}
+                                    onClick={(e) => { e.preventDefault(); setDeleteTarget({ id: host.id, name: host.display_name || host.hostname }) }}
                                     className="p-1 rounded border border-gray-200 text-gray-400 hover:text-red-600 hover:border-red-300 transition-colors"
                                     title="Host endgültig löschen"
                                   >

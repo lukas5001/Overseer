@@ -4,6 +4,7 @@ import { ScrollText, Trash2, AlertTriangle, ChevronLeft, ChevronRight } from 'lu
 import clsx from 'clsx'
 import { api } from '../api/client'
 import { formatDateTime } from '../lib/format'
+import ConfirmDialog from '../components/ConfirmDialog'
 
 // ── Types ───────────────────────────────────────────────────────────────────────
 
@@ -201,6 +202,7 @@ function AuditLogTab() {
 
 function DeadLettersTab() {
   const queryClient = useQueryClient()
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
 
   const { data: letters = [], isLoading } = useQuery<DeadLetter[]>({
     queryKey: ['dead-letters'],
@@ -210,7 +212,7 @@ function DeadLettersTab() {
 
   const deleteMutation = useMutation({
     mutationFn: (streamId: string) => api.delete(`/api/v1/audit/dead-letters/${encodeURIComponent(streamId)}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['dead-letters'] }),
+    onSuccess: () => { setDeleteTarget(null); queryClient.invalidateQueries({ queryKey: ['dead-letters'] }) },
   })
 
   return (
@@ -259,11 +261,7 @@ function DeadLettersTab() {
                 </div>
 
                 <button
-                  onClick={() => {
-                    if (confirm('Dead Letter entfernen?')) {
-                      deleteMutation.mutate(dl.stream_id)
-                    }
-                  }}
+                  onClick={() => setDeleteTarget(dl.stream_id)}
                   disabled={deleteMutation.isPending}
                   title="Entfernen"
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 text-red-600 text-xs font-medium hover:bg-red-50 transition-colors disabled:opacity-50 flex-shrink-0"
@@ -276,6 +274,17 @@ function DeadLettersTab() {
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Dead Letter entfernen"
+        message="Diese Dead Letter wirklich entfernen?"
+        confirmLabel="Entfernen"
+        variant="danger"
+        loading={deleteMutation.isPending}
+        onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget)}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   )
 }

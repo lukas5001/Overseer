@@ -7,6 +7,7 @@ import type {
   AlertRule, AlertRuleCreate, NotificationChannel,
   Tenant, EscalationStep, CheckStatus,
 } from '../types'
+import ConfirmDialog from '../components/ConfirmDialog'
 
 const STATUS_OPTIONS: { value: CheckStatus; label: string; color: string }[] = [
   { value: 'CRITICAL', label: 'Critical', color: 'bg-red-100 text-red-800' },
@@ -239,6 +240,7 @@ export default function AlertRulesPage() {
   const qc = useQueryClient()
   const [showModal, setShowModal] = useState(false)
   const [editRule, setEditRule] = useState<AlertRule | undefined>()
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
 
   const { data: rules = [], isLoading } = useQuery<AlertRule[]>({
     queryKey: ['alert-rules'],
@@ -263,7 +265,7 @@ export default function AlertRulesPage() {
 
   const deleteRule = useMutation({
     mutationFn: (id: string) => api.delete(`/api/v1/alert-rules/${id}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['alert-rules'] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['alert-rules'] }); setDeleteTarget(null) },
   })
 
   const testRule = useMutation({
@@ -345,7 +347,7 @@ export default function AlertRulesPage() {
                     <button onClick={() => setEditRule(rule)} title="Bearbeiten" className="text-gray-400 hover:text-overseer-600">
                       <Zap className="w-4 h-4" />
                     </button>
-                    <button onClick={() => { if (confirm('Regel löschen?')) deleteRule.mutate(rule.id) }}
+                    <button onClick={() => setDeleteTarget(rule.id)}
                       title="Löschen" className="text-gray-400 hover:text-red-500">
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -359,6 +361,17 @@ export default function AlertRulesPage() {
           <div className="p-8 text-center text-gray-400 text-sm">Keine Alert-Regeln konfiguriert.</div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Regel löschen"
+        message="Soll diese Alert-Regel wirklich gelöscht werden?"
+        confirmLabel="Löschen"
+        variant="danger"
+        loading={deleteRule.isPending}
+        onConfirm={() => deleteTarget && deleteRule.mutate(deleteTarget)}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   )
 }

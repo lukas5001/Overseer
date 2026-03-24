@@ -4,6 +4,7 @@ import { Users, Plus, X, Trash2, Key } from 'lucide-react'
 import clsx from 'clsx'
 import { api } from '../api/client'
 import { formatDateTime } from '../lib/format'
+import ConfirmDialog from '../components/ConfirmDialog'
 
 interface UserItem {
   id: string
@@ -204,6 +205,7 @@ export default function UsersPage() {
   const queryClient = useQueryClient()
   const [showAdd, setShowAdd] = useState(false)
   const [pwTarget, setPwTarget] = useState<{ id: string; email: string } | null>(null)
+  const [deactivateTarget, setDeactivateTarget] = useState<{ id: string; email: string } | null>(null)
 
   const { data: users = [], isLoading } = useQuery<UserItem[]>({
     queryKey: ['users-list'],
@@ -220,7 +222,7 @@ export default function UsersPage() {
 
   const deactivateMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/api/v1/users/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users-list'] }),
+    onSuccess: () => { setDeactivateTarget(null); queryClient.invalidateQueries({ queryKey: ['users-list'] }) },
   })
 
   const roleChangeMutation = useMutation({
@@ -327,11 +329,7 @@ export default function UsersPage() {
                     </button>
                     {u.active && (
                       <button
-                        onClick={() => {
-                          if (confirm(`Benutzer ${u.email} deaktivieren?`)) {
-                            deactivateMutation.mutate(u.id)
-                          }
-                        }}
+                        onClick={() => setDeactivateTarget({ id: u.id, email: u.email })}
                         title="Deaktivieren"
                         className="text-gray-300 hover:text-red-500 transition-colors"
                       >
@@ -345,6 +343,17 @@ export default function UsersPage() {
           </tbody>
         </table>
       </div>
+
+      <ConfirmDialog
+        open={!!deactivateTarget}
+        title="Benutzer deaktivieren"
+        message={`Benutzer ${deactivateTarget?.email} wirklich deaktivieren?`}
+        confirmLabel="Deaktivieren"
+        variant="warning"
+        loading={deactivateMutation.isPending}
+        onConfirm={() => deactivateTarget && deactivateMutation.mutate(deactivateTarget.id)}
+        onCancel={() => setDeactivateTarget(null)}
+      />
     </div>
   )
 }

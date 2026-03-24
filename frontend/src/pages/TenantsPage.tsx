@@ -4,6 +4,7 @@ import { Building2, ChevronDown, ChevronRight, Server, Key, Wifi, Plus, X, Copy,
 import clsx from 'clsx'
 import { api } from '../api/client'
 import { formatDateTime } from '../lib/format'
+import ConfirmDialog from '../components/ConfirmDialog'
 
 interface TenantStat {
   tenant_id: string
@@ -309,6 +310,7 @@ export default function TenantsPage() {
   const [keyTarget, setKeyTarget] = useState<{ id: string; name: string } | null>(null)
   const [collectorTarget, setCollectorTarget] = useState<{ id: string; name: string } | null>(null)
   const [showInactive, setShowInactive] = useState(true)
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
 
   // Load user preference for show_inactive
   const { data: userProfile } = useQuery<{ show_inactive?: boolean }>({
@@ -342,7 +344,8 @@ export default function TenantsPage() {
 
   const deleteTenantMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/api/v1/tenants/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tenant-stats'] }),
+    onSuccess: () => { setDeleteTarget(null); queryClient.invalidateQueries({ queryKey: ['tenant-stats'] }) },
+    onError: () => setDeleteTarget(null),
   })
 
   const copyTenantMutation = useMutation({
@@ -372,6 +375,16 @@ export default function TenantsPage() {
           onSaved={() => queryClient.invalidateQueries({ queryKey: ['tenant-stats'] })}
         />
       )}
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Tenant löschen"
+        message={`Tenant "${deleteTarget?.name}" endgültig löschen?\n\nAlle Hosts, Services, Check-Ergebnisse und zugehörige Daten werden unwiderruflich gelöscht.`}
+        confirmLabel="Endgültig löschen"
+        variant="danger"
+        loading={deleteTenantMutation.isPending}
+        onConfirm={() => deleteTarget && deleteTenantMutation.mutate(deleteTarget.id)}
+        onCancel={() => setDeleteTarget(null)}
+      />
       {keyTarget && (
         <GenerateKeyModal
           tenantId={keyTarget.id}
@@ -554,12 +567,7 @@ export default function TenantsPage() {
                   <Power className="w-4 h-4" />
                 </button>
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    if (confirm(`Tenant "${t.tenant_name}" endgültig löschen?\n\nAlle Hosts, Services, Check-Ergebnisse und zugehörige Daten werden unwiderruflich gelöscht.`)) {
-                      deleteTenantMutation.mutate(t.tenant_id)
-                    }
-                  }}
+                  onClick={(e) => { e.stopPropagation(); setDeleteTarget({ id: t.tenant_id, name: t.tenant_name }) }}
                   className="p-1.5 rounded-lg border border-gray-200 text-gray-400 hover:text-red-600 hover:border-red-300 transition-colors"
                   title="Tenant endgültig löschen"
                 >

@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
+import ConfirmDialog from '../components/ConfirmDialog'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, CheckCheck, Clock, Server, Router, Printer, Shield, Wifi, BellOff, X, Search, EyeOff, MessageSquare, ArrowUpDown, Filter, Save, Trash2, Edit2, Star } from 'lucide-react'
 import { Link } from 'react-router-dom'
@@ -578,6 +579,7 @@ export default function ErrorOverviewPage() {
   const [activeStatuses, setActiveStatuses] = useState<Set<string>>(new Set(['CRITICAL', 'WARNING', 'UNKNOWN']))
   const [defaultFilterId, setDefaultFilterId] = useState<string | null>(null)
   const [defaultApplied, setDefaultApplied] = useState(false)
+  const [deleteFilterTarget, setDeleteFilterTarget] = useState<{ id: string; name: string } | null>(null)
 
   const statusesParam = [...activeStatuses].sort().join(',')
 
@@ -624,7 +626,7 @@ export default function ErrorOverviewPage() {
 
   const deleteFilterMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/api/v1/saved-filters/${id}`),
-    onSuccess: () => refetchFilters(),
+    onSuccess: () => { setDeleteFilterTarget(null); refetchFilters() },
   })
 
   const setDefaultMutation = useMutation({
@@ -1075,7 +1077,7 @@ export default function ErrorOverviewPage() {
                 <Edit2 className="w-3 h-3" />
               </button>
               <button
-                onClick={() => { if (confirm(`Filter "${sf.name}" löschen?`)) deleteFilterMutation.mutate(sf.id) }}
+                onClick={() => setDeleteFilterTarget({ id: sf.id, name: sf.name })}
                 className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity p-0.5"
                 title="Löschen"
               >
@@ -1260,6 +1262,17 @@ export default function ErrorOverviewPage() {
           )
         })}
       </div>
+
+      <ConfirmDialog
+        open={!!deleteFilterTarget}
+        title="Filter löschen"
+        message={`Filter "${deleteFilterTarget?.name}" wirklich löschen?`}
+        confirmLabel="Löschen"
+        variant="danger"
+        loading={deleteFilterMutation.isPending}
+        onConfirm={() => deleteFilterTarget && deleteFilterMutation.mutate(deleteFilterTarget.id)}
+        onCancel={() => setDeleteFilterTarget(null)}
+      />
     </div>
   )
 }
