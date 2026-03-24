@@ -31,13 +31,13 @@ RECEIVER_URL = os.getenv("RECEIVER_URL", "http://localhost:8001/api/v1/results")
 
 HOSTS = {
     "dailycrust": {
-        "tenant_id": "efc716f4-9081-4263-b261-4444efb61339",
-        "collector_id": "99055ce7-165b-45e1-9f47-12b81915fdd7",
-        "api_key": "overseer_3G-tCXvcKeTWTv1YywDxHXxLOc7WHkX9jKDXJg3IcG0",
-        "host": "dailycrust-vps",
-        "ip": "212.227.88.119",
-        "ssh_user": "root",
-        "ssh_pass": "rypWe1H8SLL4A4Ev",
+        "tenant_id": os.getenv("COLLECTOR_TENANT_ID", ""),
+        "collector_id": os.getenv("COLLECTOR_ID", ""),
+        "api_key": os.getenv("OVERSEER_API_KEY", ""),
+        "host": os.getenv("COLLECTOR_HOST", ""),
+        "ip": os.getenv("COLLECTOR_IP", ""),
+        "ssh_user": os.getenv("COLLECTOR_SSH_USER", "root"),
+        "ssh_pass": os.getenv("COLLECTOR_SSH_PASS", ""),
         "checks": [
             {"name": "ping", "check_type": "port", "config": {"port": 443}},  # TCP-ping (ICMP blocked by IONOS)
             {"name": "https_port", "check_type": "port", "config": {"port": 443}},
