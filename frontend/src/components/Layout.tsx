@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, AlertTriangle, Monitor, Building2, Shield, ShieldCheck,
   LogOut, Users, Clock, ScrollText, Bell, Layers, Menu, X,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, Wifi, BarChart3, Mail, FileCode2, ShieldAlert, Settings,
 } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -27,6 +27,7 @@ export default function Layout() {
   const role = payload?.role ?? null
   const email = payload?.email ?? null
   const isSuperAdmin = role === 'super_admin'
+  const isAdmin = isSuperAdmin || role === 'tenant_admin'
 
   function toggleCollapsed() {
     const next = !collapsed
@@ -44,18 +45,27 @@ export default function Layout() {
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/errors', label: 'Fehlerübersicht', icon: AlertTriangle },
     { to: '/hosts', label: 'Hosts', icon: Monitor },
+    { to: '/collectors', label: 'Collectors', icon: Wifi },
     { to: '/downtimes', label: 'Downtimes', icon: Clock },
+    { to: '/sla', label: 'SLA Reports', icon: BarChart3 },
+  ]
+
+  const configNav = [
+    ...(isAdmin ? [{ to: '/alert-rules', label: 'Alert-Regeln', icon: Bell }] : []),
+    ...(isAdmin ? [{ to: '/notifications', label: 'Benachrichtigungen', icon: Mail }] : []),
+    ...(isAdmin ? [{ to: '/service-templates', label: 'Templates', icon: FileCode2 }] : []),
     { to: '/templates', label: 'Vorlagen', icon: Layers },
   ]
 
   const adminNav = isSuperAdmin ? [
     { to: '/tenants', label: 'Tenants', icon: Building2 },
     { to: '/users', label: 'Benutzer', icon: Users },
-    { to: '/notifications', label: 'Webhooks', icon: Bell },
+    { to: '/admin', label: 'Administration', icon: ShieldAlert },
     { to: '/audit', label: 'Audit Log', icon: ScrollText },
   ] : []
 
   const settingsNav = [
+    { to: '/settings', label: 'Einstellungen', icon: Settings },
     { to: '/security', label: 'Sicherheit', icon: ShieldCheck },
   ]
 
@@ -113,6 +123,7 @@ export default function Layout() {
         {/* Navigation */}
         <nav className={clsx('flex-1 py-3 space-y-0.5 overflow-y-auto', isCollapsed ? 'px-2' : 'px-3')}>
           {renderNavGroup(mainNav)}
+          {renderNavGroup(configNav, 'Konfiguration', true)}
           {renderNavGroup(adminNav, 'Administration', true)}
           {renderNavGroup(settingsNav, 'Einstellungen', true)}
         </nav>
