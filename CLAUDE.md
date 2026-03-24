@@ -124,3 +124,15 @@ Jeder Service hat seinen eigenen Docker-Build-Context (siehe Dockerfiles):
 - Check schlägt fehl → Soft State (Zähler hochzählen)
 - Nach X aufeinanderfolgenden Fehlschlägen → Hard State
 - Nur Hard States erscheinen in der Fehlerübersicht
+
+## Bekannte Fallstricke
+
+### JWT User-ID existiert nicht in der DB
+Die Produktions-DB wurde mehrfach re-seeded. Dadurch enthalten aktive JWT-Tokens User-IDs (`sub` claim), die nicht mehr in der `users`-Tabelle existieren.
+
+**Regel:** NIEMALS Foreign-Key-Constraints auf `users(id)` verwenden für Spalten die aus `user["sub"]` (JWT) befüllt werden. Die FK-Constraints auf `saved_filters.created_by`, `downtimes.author_id`, `current_status.acknowledged_by` und `audit_log.user_id` wurden entfernt. Bei neuen Tabellen/Spalten die eine User-Referenz speichern: **kein FK**, nur UUID-Spalte.
+
+Ebenso: API-Endpoints die `user["sub"]` nutzen um User in der DB zu suchen (z.B. `/me`) müssen graceful damit umgehen wenn der User nicht existiert.
+
+### datetime-local Inputs im Frontend
+`datetime-local` HTML-Inputs erwarten **lokale Zeit**. Niemals `toISOString().slice(0,16)` verwenden (gibt UTC!). Stattdessen immer `getFullYear()/getMonth()/getDate()/getHours()/getMinutes()` benutzen.

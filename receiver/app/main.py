@@ -13,19 +13,6 @@ import logging
 import os
 from datetime import datetime, timezone
 
-# ==================== ENV Validation ====================
-
-def _validate_env():
-    secret = os.getenv("SECRET_KEY", "")
-    if not secret or secret.startswith("dev_") or len(secret) < 32:
-        raise RuntimeError(
-            "SECRET_KEY ist nicht gesetzt oder unsicher. "
-            "Setze SECRET_KEY auf einen zufälligen String mit mindestens 32 Zeichen. "
-            "Generiere einen Key mit: python -c \"import secrets; print(secrets.token_hex(32))\""
-        )
-
-_validate_env()
-
 import redis.asyncio as redis
 from fastapi import FastAPI, HTTPException, Header, Request
 from fastapi.responses import JSONResponse
@@ -96,6 +83,7 @@ async def check_rate_limit(key_prefix: str) -> None:
 async def validate_api_key(api_key: str) -> dict:
     """Validate API key via DB lookup. Returns {tenant_slug, tenant_id}."""
     key_hash = hashlib.sha256(api_key.encode()).hexdigest()
+    key_prefix = api_key[:12]
 
     async with AsyncSessionLocal() as db:
         result = await db.execute(
@@ -103,11 +91,12 @@ async def validate_api_key(api_key: str) -> dict:
                 SELECT ak.id, ak.tenant_id, t.slug AS tenant_slug
                 FROM api_keys ak
                 JOIN tenants t ON t.id = ak.tenant_id
-                WHERE ak.key_hash = :hash
+                WHERE ak.key_prefix = :prefix
+                  AND ak.key_hash = :hash
                   AND ak.active = true
                   AND t.active = true
             """),
-            {"hash": key_hash},
+            {"prefix": key_prefix, "hash": key_hash},
         )
         row = result.fetchone()
 
@@ -122,7 +111,7 @@ async def validate_api_key(api_key: str) -> dict:
         )
         await db.commit()
 
-    return {"tenant_slug": row.tenant_slug, "tenant_id": str(row.tenant_id)}
+    return {"tenant_slug": row.tenant_slug, "tenant_id": str(row.tenant_id), "key_prefix": key_prefix}
 
 
 # ==================== Endpoints ====================

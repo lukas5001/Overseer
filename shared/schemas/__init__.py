@@ -123,16 +123,6 @@ class HostOut(BaseModel):
     def coerce_ip(cls, v):
         return str(v) if v is not None else None
 
-    @field_validator("winrm_password", mode="before")
-    @classmethod
-    def mask_winrm_password(cls, v):
-        return "***" if v else v
-
-    @field_validator("snmp_community", mode="before")
-    @classmethod
-    def mask_snmp_community(cls, v):
-        return "***" if v else v
-
 
 class ServiceOut(BaseModel):
     id: UUID
@@ -247,10 +237,9 @@ class ServiceCreate(BaseModel):
     name: str
     check_type: str
     check_config: dict = {}
-    interval_seconds: int = Field(default=60, ge=30, le=86400)
+    interval_seconds: int = 60
     threshold_warn: float | None = None
     threshold_crit: float | None = None
-    check_duration_ms: int | None = Field(default=None, le=3_600_000)
     max_check_attempts: int = 3
     check_mode: str = "passive"
 
@@ -258,10 +247,9 @@ class ServiceCreate(BaseModel):
 class ServiceUpdate(BaseModel):
     name: str | None = None
     check_config: dict | None = None
-    interval_seconds: int | None = Field(default=None, ge=30, le=86400)
+    interval_seconds: int | None = None
     threshold_warn: float | None = None
     threshold_crit: float | None = None
-    check_duration_ms: int | None = Field(default=None, le=3_600_000)
     max_check_attempts: int | None = None
     check_mode: str | None = None
     active: bool | None = None
@@ -294,10 +282,6 @@ class ServiceTemplateOut(BaseModel):
     name: str
     description: str
     checks: list[TemplateCheckItem]
-    vendor: str = "generic"
-    category: str = "server"
-    built_in: bool = False
-    tags: list[str] = []
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -314,18 +298,12 @@ class ServiceTemplateCreate(BaseModel):
     name: str
     description: str = ""
     checks: list[TemplateCheckItem] = []
-    vendor: str = "generic"
-    category: str = "server"
-    tags: list[str] = []
 
 
 class ServiceTemplateUpdate(BaseModel):
     name: str | None = None
     description: str | None = None
     checks: list[TemplateCheckItem] | None = None
-    vendor: str | None = None
-    category: str | None = None
-    tags: list[str] | None = None
 
 
 # ==================== Auth ====================

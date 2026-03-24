@@ -276,6 +276,7 @@ class SavedFilter(Base):
     updated_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
 
 
+
 class AlertRule(Base):
     __tablename__ = "alert_rules"
 

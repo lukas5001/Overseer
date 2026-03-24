@@ -21,7 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net"
 	"net/http"
 	"os"
@@ -91,26 +91,38 @@ var (
 
 // ==================== Main ====================
 
+// initLogging sets up structured logging: JSON in production (LOG_FORMAT=json), text otherwise.
+func initLogging() {
+	format := os.Getenv("LOG_FORMAT")
+	var handler slog.Handler
+	if format == "json" {
+		handler = slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo})
+	} else {
+		handler = slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo})
+	}
+	slog.SetDefault(slog.New(handler))
+}
+
 func main() {
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	log.Println("Overseer Collector starting...")
+	initLogging()
+	slog.Info("Overseer Collector starting...")
 
 	if apiKey == "" || collectorID == "" {
-		log.Fatal("OVERSEER_API_KEY and OVERSEER_COLLECTOR_ID must be set")
+		slog.Error("OVERSEER_API_KEY and OVERSEER_COLLECTOR_ID must be set")
+		os.Exit(1)
 	}
 
-	log.Printf("API:      %s", apiURL)
-	log.Printf("Receiver: %s", receiverURL)
-	log.Printf("Collector ID: %s", collectorID)
+	slog.Info("startup", "api", apiURL, "receiver", receiverURL, "collector_id", collectorID)
 
 	// Initial config fetch with retry
 	cfg, err := fetchConfigWithRetry(5)
 	if err != nil {
-		log.Fatalf("Could not load config from server: %s", err)
+		slog.Error("Could not load config from server", "error", err)
+		os.Exit(1)
 	}
 
 	interval := time.Duration(cfg.IntervalSeconds) * time.Second
-	log.Printf("Config loaded: %d hosts, interval=%s", len(cfg.Hosts), interval)
+	slog.Info("config loaded", "hosts", len(cfg.Hosts), "interval", interval)
 
 	// Run immediately, then on ticker
 	runChecks(cfg)
@@ -123,7 +135,7 @@ func main() {
 		if newCfg, err := fetchConfig(); err == nil {
 			cfg = newCfg
 		} else {
-			log.Printf("Config refresh failed (using last known config): %s", err)
+			slog.Warn("config refresh failed, using last known config", "error", err)
 		}
 		runChecks(cfg)
 	}
@@ -166,7 +178,7 @@ func fetchConfigWithRetry(maxAttempts int) (RemoteConfig, error) {
 		}
 		lastErr = err
 		wait := time.Duration(i*i) * time.Second
-		log.Printf("Config fetch attempt %d/%d failed: %s – retrying in %s", i, maxAttempts, err, wait)
+		slog.Warn("config fetch attempt failed", "attempt", i, "max", maxAttempts, "error", err, "retry_in", wait)
 		time.Sleep(wait)
 	}
 	return RemoteConfig{}, lastErr
@@ -175,7 +187,7 @@ func fetchConfigWithRetry(maxAttempts int) (RemoteConfig, error) {
 // ==================== Run Checks ====================
 
 func runChecks(cfg RemoteConfig) {
-	log.Printf("Running checks for %d hosts...", len(cfg.Hosts))
+	slog.Info("running checks", "hosts", len(cfg.Hosts))
 	var results []CheckResult
 
 	for _, host := range cfg.Hosts {
@@ -189,7 +201,7 @@ func runChecks(cfg RemoteConfig) {
 		}
 	}
 
-	log.Printf("Checks done: %d results", len(results))
+	slog.Info("checks complete", "count", len(results))
 
 	if len(results) == 0 {
 		return
@@ -203,14 +215,37 @@ func runChecks(cfg RemoteConfig) {
 	}
 
 	if err := sendResultsWithRetry(payload, 3); err != nil {
-		log.Printf("ERROR sending results: %s", err)
+		slog.Error("failed to send results", "error", err)
+	}
+
+	// Heartbeat: tell the API we're alive
+	sendHeartbeat()
+}
+
+func sendHeartbeat() {
+	url := fmt.Sprintf("%s/api/v1/collectors/%s/heartbeat", apiURL, collectorID)
+	req, err := http.NewRequest("PATCH", url, nil)
+	if err != nil {
+		slog.Error("heartbeat: failed to create request", "error", err)
+		return
+	}
+	req.Header.Set("X-API-Key", apiKey)
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		slog.Error("heartbeat: request failed", "error", err)
+		return
+	}
+	resp.Body.Close()
+	if resp.StatusCode != 200 {
+		slog.Warn("heartbeat: unexpected status", "status", resp.StatusCode)
 	}
 }
 
 func executeCheck(host HostConfig, target string, check CheckConfig) CheckResult {
+	var result CheckResult
 	switch check.Type {
 	case "ping":
-		return doPingCheck(host.Hostname, target, check.Name)
+		result = doPingCheck(host.Hostname, target, check.Name)
 	case "port":
 		port := 0
 		if p, ok := check.Config["port"]; ok {
@@ -222,23 +257,44 @@ func executeCheck(host HostConfig, target string, check CheckConfig) CheckResult
 			}
 		}
 		if port > 0 {
-			return doPortCheck(host.Hostname, target, port, check.Name)
+			result = doPortCheck(host.Hostname, target, port, check.Name)
+		} else {
+			result = unknownResult(host.Hostname, check.Name, check.Type, "missing port in config")
 		}
-		return unknownResult(host.Hostname, check.Name, check.Type, "missing port in config")
 	case "http":
 		url := ""
 		if u, ok := check.Config["url"]; ok {
 			url, _ = u.(string)
 		}
 		if url != "" {
-			return doHTTPCheck(host.Hostname, url, check.Name)
+			result = doHTTPCheck(host.Hostname, url, check.Name)
+		} else {
+			result = unknownResult(host.Hostname, check.Name, check.Type, "missing url in config")
 		}
-		return unknownResult(host.Hostname, check.Name, check.Type, "missing url in config")
+	case "snmp":
+		result = doSNMPCheck(host, check)
+	case "snmp_interface":
+		result = doInterfaceStatusCheck(host, check)
+	case "ssh_disk":
+		result = doSSHDiskCheck(host, check)
+	case "ssh_cpu":
+		result = doSSHCPUCheck(host, check)
+	case "ssh_mem":
+		result = doSSHMemCheck(host, check)
+	case "ssh_process":
+		result = doSSHProcessCheck(host, check)
+	case "ssh_service":
+		result = doSSHServiceCheck(host, check)
+	case "ssh_custom":
+		result = doSSHCustomCheck(host, check)
 	default:
-		// snmp, ssh_disk, ssh_cpu, ssh_mem, script – not yet implemented
-		return unknownResult(host.Hostname, check.Name, check.Type,
+		// script – not yet implemented
+		result = unknownResult(host.Hostname, check.Name, check.Type,
 			fmt.Sprintf("check type '%s' not yet implemented in collector", check.Type))
 	}
+
+	// Apply server-configured thresholds on top of check result
+	return applyThresholds(result, check.ThresholdWarn, check.ThresholdCrit)
 }
 
 func unknownResult(hostname, name, checkType, msg string) CheckResult {
@@ -249,6 +305,23 @@ func unknownResult(hostname, name, checkType, msg string) CheckResult {
 		Message:   msg,
 		CheckType: checkType,
 	}
+}
+
+// applyThresholds overrides the status of a result based on configured thresholds.
+// Only applied when the check has a numeric value and the check didn't already fail
+// for a connectivity reason (UNKNOWN stays UNKNOWN).
+func applyThresholds(r CheckResult, warn, crit *float64) CheckResult {
+	if r.Value == nil || r.Status == "UNKNOWN" {
+		return r
+	}
+	if crit != nil && *r.Value >= *crit {
+		r.Status = "CRITICAL"
+		r.Message = fmt.Sprintf("%s (%.2f >= crit %.2f)", r.Message, *r.Value, *crit)
+	} else if warn != nil && *r.Value >= *warn {
+		r.Status = "WARNING"
+		r.Message = fmt.Sprintf("%s (%.2f >= warn %.2f)", r.Message, *r.Value, *warn)
+	}
+	return r
 }
 
 // ==================== Send Results ====================
@@ -262,7 +335,7 @@ func sendResultsWithRetry(payload Payload, maxAttempts int) error {
 			lastErr = err
 			if i < maxAttempts {
 				wait := time.Duration(i*2) * time.Second
-				log.Printf("Send attempt %d/%d failed: %s – retrying in %s", i, maxAttempts, err, wait)
+				slog.Warn("send attempt failed", "attempt", i, "max", maxAttempts, "error", err, "retry_in", wait)
 				time.Sleep(wait)
 			}
 		}
@@ -294,7 +367,7 @@ func sendResults(payload Payload) error {
 		return fmt.Errorf("unexpected status %d: %s", resp.StatusCode, string(body))
 	}
 
-	log.Printf("Sent %d results → 202 Accepted", len(payload.Checks))
+	slog.Info("results sent", "count", len(payload.Checks), "status", "202 Accepted")
 	return nil
 }
 

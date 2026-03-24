@@ -124,6 +124,57 @@ overseer/
 | Queue | Redis 7 Streams |
 | Container | Docker + Docker Compose |
 
+## Docker Compose (alle Services auf einmal)
+
+```bash
+# Alles bauen und starten
+docker compose up -d --build
+
+# Schema laden (beim ersten Start)
+docker compose exec postgres psql -U overseer -d overseer -f /dev/stdin < migrations/001_initial.sql
+
+# Testdaten einspielen
+docker compose exec api python scripts/seed_dev_data.py
+```
+
+Frontend: http://localhost:3000
+API: http://localhost:8000/docs
+
+## Erstes Login
+
+Nach `seed_dev_data.py`:
+- **E-Mail:** `admin@overseer.local`
+- **Passwort:** `admin123`
+
+## Collector einrichten
+
+Auf der Kunden-VM (Linux, x86_64):
+
+```bash
+# 1. Collector in der DB anlegen (im Frontend: Tenants → API Key generieren)
+# 2. Install-Script ausführen
+sudo OVERSEER_API_URL=https://overseer.example.com \
+     OVERSEER_RECEIVER_URL=https://overseer.example.com \
+     OVERSEER_API_KEY=overseer_xxx... \
+     OVERSEER_COLLECTOR_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx \
+     bash scripts/install-collector.sh
+
+# 3. Status prüfen
+journalctl -u overseer-collector -f
+```
+
+Der Collector baut keine Abhängigkeiten – es handelt sich um ein einzelnes Go-Binary.
+Bauen für Linux: `cd collector && GOOS=linux GOARCH=amd64 go build -o overseer-collector ./cmd/`
+
+## Rollen
+
+| Rolle | Rechte |
+|-------|--------|
+| `super_admin` | Alles (Tenants, User, Hosts, Checks) |
+| `tenant_admin` | Hosts/Checks anlegen im eigenen Tenant |
+| `tenant_operator` | ACK + Downtime setzen |
+| `tenant_viewer` | Nur lesen |
+
 ## Lizenz
 
 Proprietär – Interne Nutzung.

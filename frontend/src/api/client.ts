@@ -16,11 +16,29 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// Response interceptor: handle 401
+// Response interceptor: on 401 try refresh, then redirect to login
+let isRefreshing = false
+
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
+  async (error) => {
+    const originalRequest = error.config
+    if (error.response?.status === 401 && !originalRequest._retry && !isRefreshing) {
+      originalRequest._retry = true
+      isRefreshing = true
+      try {
+        const resp = await api.post('/api/v1/auth/refresh')
+        const newToken = resp.data.access_token
+        localStorage.setItem('overseer_token', newToken)
+        originalRequest.headers.Authorization = `Bearer ${newToken}`
+        isRefreshing = false
+        return api(originalRequest)
+      } catch {
+        isRefreshing = false
+        localStorage.removeItem('overseer_token')
+        window.location.href = '/login'
+      }
+    } else if (error.response?.status === 401) {
       localStorage.removeItem('overseer_token')
       window.location.href = '/login'
     }

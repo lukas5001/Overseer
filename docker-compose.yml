@@ -43,8 +43,7 @@ services:
     environment:
       REDIS_URL: redis://redis:6379
       DATABASE_URL: postgresql+asyncpg://overseer:${POSTGRES_PASSWORD:-overseer_dev_password}@postgres:5432/overseer
-      SECRET_KEY: ${SECRET_KEY}
-      FIELD_ENCRYPTION_KEY: ${FIELD_ENCRYPTION_KEY}
+      SECRET_KEY: ${SECRET_KEY:-dev_secret_key_change_in_production}
     depends_on:
       postgres:
         condition: service_healthy
@@ -56,11 +55,10 @@ services:
       context: .
       dockerfile: worker/Dockerfile
     deploy:
-      replicas: 3
+      replicas: 2
     environment:
       REDIS_URL: redis://redis:6379
       DATABASE_URL: postgresql+asyncpg://overseer:${POSTGRES_PASSWORD:-overseer_dev_password}@postgres:5432/overseer
-      FIELD_ENCRYPTION_KEY: ${FIELD_ENCRYPTION_KEY}
     depends_on:
       postgres:
         condition: service_healthy
@@ -77,38 +75,12 @@ services:
     environment:
       REDIS_URL: redis://redis:6379
       DATABASE_URL: postgresql+asyncpg://overseer:${POSTGRES_PASSWORD:-overseer_dev_password}@postgres:5432/overseer
-      SECRET_KEY: ${SECRET_KEY}
-      FIELD_ENCRYPTION_KEY: ${FIELD_ENCRYPTION_KEY}
-      SMTP_HOST: ${SMTP_HOST:-smtp.ionos.de}
-      SMTP_PORT: ${SMTP_PORT:-587}
-      SMTP_USER: ${SMTP_USER}
-      SMTP_PASS: ${SMTP_PASS}
-      SMTP_FROM: ${SMTP_FROM:-overseer@dailycrust.it}
+      SECRET_KEY: ${SECRET_KEY:-dev_secret_key_change_in_production}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:5173}
-      AI_ENABLED: ${AI_ENABLED:-false}
-      LICENSE_KEY: ${LICENSE_KEY:-}
     depends_on:
       postgres:
         condition: service_healthy
       redis:
-        condition: service_healthy
-
-  ai-service:
-    build:
-      context: .
-      dockerfile: ai_service/Dockerfile
-    container_name: overseer-ai-service
-    ports:
-      - "8002:8002"
-    environment:
-      DATABASE_URL: postgresql+asyncpg://overseer:${POSTGRES_PASSWORD:-overseer_dev_password}@postgres:5432/overseer
-      SECRET_KEY: ${SECRET_KEY}
-      OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1:8b}
-      AI_ENABLED: ${AI_ENABLED:-false}
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:5173}
-    depends_on:
-      postgres:
         condition: service_healthy
 
   frontend:
@@ -120,19 +92,6 @@ services:
       - "3000:80"
     depends_on:
       - api
-
-  nginx:
-    image: nginx:alpine
-    container_name: overseer-nginx
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./frontend/dist:/usr/share/nginx/html:ro
-    depends_on:
-      - api
-      - receiver
 
 volumes:
   pgdata:

@@ -6,8 +6,7 @@ that employees watch continuously.
 """
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
-from pydantic import BaseModel, Field
-from typing import Annotated
+from pydantic import BaseModel
 from sqlalchemy import select, func, case
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
@@ -271,7 +270,7 @@ async def remove_acknowledgement(service_id: UUID, db: AsyncSession = Depends(ge
 
 
 class BulkAcknowledgeBody(BaseModel):
-    service_ids: Annotated[list[UUID], Field(max_length=500)]
+    service_ids: list[UUID]
     comment: str
 
 
