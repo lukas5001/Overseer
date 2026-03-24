@@ -233,7 +233,7 @@ async def login(request: Request, ...):
 
 ---
 
-### 1.5 CORS Hardening
+### ✅ 1.5 CORS Hardening
 
 **Was**: `allow_methods=["*"]` und `allow_headers=["*"]` durch explizite Listen ersetzen.
 **Warum**: Wildcards erlauben Methoden wie CONNECT und TRACE und beliebige Header.
