@@ -7,8 +7,10 @@ from datetime import datetime, timedelta, timezone
 
 import bcrypt as _bcrypt
 import pyotp
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from jose import jwt
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,6 +22,7 @@ from api.app.routers.audit import write_audit
 from shared.schemas import LoginRequest, LoginResponse, TokenResponse, TwoFAVerifyRequest
 
 router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 
 SECRET_KEY = os.getenv("SECRET_KEY", "dev_secret_key_change_in_production")
 ALGORITHM = "HS256"
@@ -63,7 +66,8 @@ async def _build_full_token(user: User, db: AsyncSession) -> str:
 
 
 @router.post("/login", response_model=LoginResponse)
-async def login(req: LoginRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit("10/minute")
+async def login(request: Request, req: LoginRequest, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User).where(User.email == req.email, User.active == True))
     user = result.scalar_one_or_none()
 
@@ -122,7 +126,9 @@ async def login(req: LoginRequest, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/2fa/verify", response_model=TokenResponse)
+@limiter.limit("10/minute")
 async def verify_2fa(
+    request: Request,
     req: TwoFAVerifyRequest,
     db: AsyncSession = Depends(get_db),
     pending_user: dict = Depends(get_2fa_pending_user),

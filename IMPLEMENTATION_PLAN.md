@@ -189,7 +189,7 @@ def decrypt_field(ciphertext: str) -> str:
 
 ---
 
-### 1.4 API Rate Limiting mit slowapi
+### ✅ 1.4 API Rate Limiting mit slowapi
 
 **Was**: Globales Rate Limiting 100 req/min pro authenticated User. Auth-Endpoints (Login, 2FA-Verify) 10 req/min.
 **Warum**: Aktuell kein Schutz gegen Brute-Force und API-Abuse.
