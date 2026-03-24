@@ -1535,26 +1535,24 @@ export default function HostDetailPage() {
 
             <div className="text-sm text-gray-700">
               {setupTab === 'windows' ? (
-                <div className="bg-gray-50 rounded-lg px-4 py-3 font-mono text-xs space-y-2">
-                  <p><span className="text-gray-400">1.</span> Agent herunterladen:</p>
+                <div className="bg-gray-50 rounded-lg px-4 py-3 text-xs space-y-3">
+                  <p className="font-sans"><span className="text-gray-400 font-mono">1.</span> Installer herunterladen:</p>
                   <a
-                    href="/agent/overseer-agent-windows-amd64.exe"
+                    href="/agent/overseer-agent-setup.exe"
                     download
                     className="flex items-center gap-2 px-3 py-2 bg-overseer-600 text-white rounded-lg text-xs font-medium hover:bg-overseer-700 transition-colors no-underline w-fit font-sans"
                   >
                     <Download className="w-3.5 h-3.5" />
-                    overseer-agent.exe (Windows, 9.6 MB)
+                    overseer-agent-setup.exe (5.6 MB)
                   </a>
-                  <p><span className="text-gray-400">2.</span> Als Administrator ausführen:</p>
-                  <div className="bg-gray-900 rounded px-3 py-2 text-emerald-400 select-all">overseer-agent.exe install</div>
-                  <p><span className="text-gray-400">3.</span> Config-Datei bearbeiten:</p>
-                  <p className="text-gray-500 text-[11px]">C:\ProgramData\Overseer\Agent\config.yaml</p>
-                  <div className="bg-gray-900 rounded px-3 py-2 text-gray-300">
-                    <p><span className="text-blue-400">server</span>: https://overseer.dailycrust.it</p>
-                    <p><span className="text-blue-400">token</span>: <span className="text-emerald-400">{generatedToken}</span></p>
+                  <p className="font-sans"><span className="text-gray-400 font-mono">2.</span> Setup als Administrator ausführen</p>
+                  <p className="font-sans"><span className="text-gray-400 font-mono">3.</span> Server-URL und Token eingeben:</p>
+                  <div className="bg-gray-900 rounded px-3 py-2 text-gray-300 font-mono">
+                    <p><span className="text-blue-400">Server</span>: https://overseer.dailycrust.it</p>
+                    <p><span className="text-blue-400">Token</span>: <span className="text-emerald-400 break-all">{generatedToken}</span></p>
                   </div>
-                  <p><span className="text-gray-400">4.</span> Service starten:</p>
-                  <div className="bg-gray-900 rounded px-3 py-2 text-emerald-400 select-all">net start OverseerAgent</div>
+                  <p className="font-sans"><span className="text-gray-400 font-mono">4.</span> Weiter klicken — der Installer erledigt den Rest</p>
+                  <p className="text-gray-400 font-sans">(Service wird automatisch installiert und gestartet)</p>
                 </div>
               ) : (
                 <div className="bg-gray-50 rounded-lg px-4 py-3 font-mono text-xs space-y-2">
