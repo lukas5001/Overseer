@@ -1,11 +1,12 @@
 """
-Overseer Check Executor – Runs network checks (ping, port, HTTP, SSH).
+Overseer Check Executor – Runs network checks (ping, port, HTTP, SSH, SNMP).
 
 Used by:
 - Active Check Scheduler (server-side)
 - "Check Now" API endpoint
 - real_collector.py script
 """
+import re
 import shlex
 import socket
 import ssl
@@ -411,15 +412,142 @@ def check_winrm_custom(ip: str, config: dict, **_) -> tuple[str, float | None, s
         return ("UNKNOWN", None, "", f"WinRM CUSTOM UNKNOWN - {e}")
 
 
+def check_ssh_command(ip: str, config: dict, ssh_user: str = "", ssh_pass: str = "", **_) -> tuple[str, float | None, str, str]:
+    """Arbitrary SSH command with regex matching.
+
+    Config keys:
+      command:        Shell command to execute via SSH
+      match_regex:    Regex to match against stdout (optional)
+      fail_if_match:  If True, CRITICAL when regex matches (default False → CRITICAL when it doesn't)
+      extract_value:  Regex with capture group to extract a numeric value (optional)
+      value_unit:     Unit for the extracted value (e.g. "s", "%")
+    """
+    command = config.get("command", "")
+    if not command:
+        return ("UNKNOWN", None, "", "SSH_COMMAND UNKNOWN - no command configured")
+
+    match_regex = config.get("match_regex", "")
+    fail_if_match = config.get("fail_if_match", False)
+    extract_value = config.get("extract_value", "")
+    value_unit = config.get("value_unit", "")
+
+    try:
+        output = _ssh_cmd(ip, ssh_user, ssh_pass, command)
+
+        # Extract numeric value if configured
+        value = None
+        if extract_value:
+            m = re.search(extract_value, output)
+            if m and m.group(1):
+                try:
+                    value = float(m.group(1))
+                except (ValueError, IndexError):
+                    pass
+
+        # Regex matching for status
+        if match_regex:
+            matched = bool(re.search(match_regex, output, re.MULTILINE))
+            if fail_if_match:
+                status = "CRITICAL" if matched else "OK"
+            else:
+                status = "OK" if matched else "CRITICAL"
+        else:
+            # No regex: OK if command succeeded (we got here without exception)
+            status = "OK"
+
+        return (status, value, value_unit, f"SSH_CMD {status} - {output[:200]}")
+    except Exception as e:
+        return ("UNKNOWN", None, "", f"SSH_CMD UNKNOWN - {e}")
+
+
+def check_snmp_string(ip: str, config: dict, **_) -> tuple[str, float | None, str, str]:
+    """SNMP OID with string/pattern matching.
+
+    Config keys:
+      oid:            SNMP OID to query
+      community:      SNMP community string (default "public")
+      version:        "1" or "2c" (default "2c")
+      match_value:    Expected value or regex pattern
+      fail_if_match:  If True, CRITICAL when value matches (default False)
+      is_regex:       Treat match_value as regex (default False → exact match)
+    """
+    import asyncio
+
+    try:
+        from pysnmp.hlapi.asyncio import (
+            SnmpEngine, CommunityData, UdpTransportTarget,
+            ContextData, ObjectType, ObjectIdentity, getCmd,
+        )
+    except ImportError:
+        return ("UNKNOWN", None, "", "SNMP_STRING UNKNOWN - pysnmp not installed")
+
+    oid = config.get("oid")
+    if not oid:
+        return ("UNKNOWN", None, "", "SNMP_STRING UNKNOWN - no OID configured")
+
+    community = config.get("community", "public")
+    version_str = config.get("version", "2c")
+    mp_model = 0 if version_str == "1" else 1
+    match_value = config.get("match_value", "")
+    fail_if_match = config.get("fail_if_match", False)
+    is_regex = config.get("is_regex", False)
+
+    async def _do_get():
+        engine = SnmpEngine()
+        try:
+            result = await getCmd(
+                engine,
+                CommunityData(community, mpModel=mp_model),
+                UdpTransportTarget((ip, 161), timeout=5, retries=1),
+                ContextData(),
+                ObjectType(ObjectIdentity(oid)),
+            )
+            return result
+        finally:
+            engine.closeDispatcher()
+
+    try:
+        error_indication, error_status, error_index, var_binds = asyncio.run(_do_get())
+
+        if error_indication:
+            return ("UNKNOWN", None, "", f"SNMP_STRING UNKNOWN - {error_indication}")
+        if error_status:
+            return ("UNKNOWN", None, "", f"SNMP_STRING UNKNOWN - {error_status.prettyPrint()}")
+
+        for _oid, val in var_binds:
+            raw = val.prettyPrint()
+
+            if not match_value:
+                return ("OK", None, "", f"SNMP_STRING OK - {oid} = {raw}")
+
+            if is_regex:
+                matched = bool(re.search(match_value, raw, re.IGNORECASE))
+            else:
+                matched = raw.strip() == match_value.strip()
+
+            if fail_if_match:
+                status = "CRITICAL" if matched else "OK"
+            else:
+                status = "OK" if matched else "CRITICAL"
+
+            return (status, None, "", f"SNMP_STRING {status} - {oid} = {raw}")
+
+        return ("UNKNOWN", None, "", "SNMP_STRING UNKNOWN - no data returned")
+    except Exception as e:
+        return ("UNKNOWN", None, "", f"SNMP_STRING UNKNOWN - {e}")
+
+
 CHECK_FUNCTIONS = {
     "ping": check_ping,
     "port": check_port,
     "http": check_http,
     "snmp": check_snmp,
     "snmp_interface": check_snmp_interface,
+    "snmp_string": check_snmp_string,
     "ssh_cpu": check_ssh_cpu,
     "ssh_mem": check_ssh_mem,
     "ssh_disk": check_ssh_disk,
+    "ssh_command": check_ssh_command,
     "winrm_cpu": check_winrm_cpu,
     "winrm_mem": check_winrm_mem,
     "winrm_disk": check_winrm_disk,

@@ -294,6 +294,10 @@ class ServiceTemplateOut(BaseModel):
     name: str
     description: str
     checks: list[TemplateCheckItem]
+    vendor: str = "generic"
+    category: str = "server"
+    built_in: bool = False
+    tags: list[str] = []
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -310,12 +314,18 @@ class ServiceTemplateCreate(BaseModel):
     name: str
     description: str = ""
     checks: list[TemplateCheckItem] = []
+    vendor: str = "generic"
+    category: str = "server"
+    tags: list[str] = []
 
 
 class ServiceTemplateUpdate(BaseModel):
     name: str | None = None
     description: str | None = None
     checks: list[TemplateCheckItem] | None = None
+    vendor: str | None = None
+    category: str | None = None
+    tags: list[str] | None = None
 
 
 # ==================== Auth ====================

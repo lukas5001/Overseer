@@ -2,9 +2,9 @@
 from datetime import datetime, timezone
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
-from sqlalchemy import select, text
+from sqlalchemy import select, text, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.app.core.database import get_db
@@ -16,12 +16,48 @@ from shared.schemas import ServiceTemplateOut, ServiceTemplateCreate, ServiceTem
 router = APIRouter()
 
 
-@router.get("/", response_model=list[ServiceTemplateOut])
-async def list_templates(
+@router.get("/vendors")
+async def list_vendors(
     db: AsyncSession = Depends(get_db),
     _user: dict = Depends(get_current_user),
 ):
-    result = await db.execute(select(ServiceTemplate).order_by(ServiceTemplate.name))
+    result = await db.execute(
+        select(ServiceTemplate.vendor).distinct().order_by(ServiceTemplate.vendor)
+    )
+    return {"vendors": [row[0] for row in result.all()]}
+
+
+@router.get("/categories")
+async def list_categories(
+    db: AsyncSession = Depends(get_db),
+    _user: dict = Depends(get_current_user),
+):
+    result = await db.execute(
+        select(ServiceTemplate.category).distinct().order_by(ServiceTemplate.category)
+    )
+    return {"categories": [row[0] for row in result.all()]}
+
+
+@router.get("/", response_model=list[ServiceTemplateOut])
+async def list_templates(
+    vendor: str | None = Query(None),
+    category: str | None = Query(None),
+    built_in: bool | None = Query(None),
+    tag: str | None = Query(None),
+    db: AsyncSession = Depends(get_db),
+    _user: dict = Depends(get_current_user),
+):
+    query = select(ServiceTemplate)
+    if vendor is not None:
+        query = query.where(ServiceTemplate.vendor == vendor)
+    if category is not None:
+        query = query.where(ServiceTemplate.category == category)
+    if built_in is not None:
+        query = query.where(ServiceTemplate.built_in == built_in)
+    if tag is not None:
+        query = query.where(ServiceTemplate.tags.contains([tag]))
+    query = query.order_by(ServiceTemplate.vendor, ServiceTemplate.name)
+    result = await db.execute(query)
     return result.scalars().all()
 
 
@@ -48,6 +84,10 @@ async def create_template(
         name=body.name,
         description=body.description,
         checks=[c.model_dump() for c in body.checks],
+        vendor=body.vendor,
+        category=body.category,
+        built_in=False,  # Users cannot create built-in templates
+        tags=body.tags,
     )
     db.add(tpl)
     await db.commit()
@@ -66,12 +106,20 @@ async def update_template(
     tpl = result.scalar_one_or_none()
     if not tpl:
         raise HTTPException(status_code=404, detail="Template not found")
+    if tpl.built_in:
+        raise HTTPException(status_code=403, detail="Built-in templates cannot be modified")
     if body.name is not None:
         tpl.name = body.name
     if body.description is not None:
         tpl.description = body.description
     if body.checks is not None:
         tpl.checks = [c.model_dump() for c in body.checks]
+    if body.vendor is not None:
+        tpl.vendor = body.vendor
+    if body.category is not None:
+        tpl.category = body.category
+    if body.tags is not None:
+        tpl.tags = body.tags
     tpl.updated_at = datetime.now(timezone.utc)
     await db.commit()
     await db.refresh(tpl)
@@ -88,6 +136,8 @@ async def delete_template(
     tpl = result.scalar_one_or_none()
     if not tpl:
         raise HTTPException(status_code=404, detail="Template not found")
+    if tpl.built_in:
+        raise HTTPException(status_code=403, detail="Built-in templates cannot be deleted")
     await db.delete(tpl)
     await db.commit()
 

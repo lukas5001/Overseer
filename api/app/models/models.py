@@ -242,6 +242,10 @@ class ServiceTemplate(Base):
     name = Column(String(255), nullable=False)
     description = Column(Text, nullable=False, default="")
     checks = Column(JSONB, nullable=False, default=list)
+    vendor = Column(String(100), nullable=False, default="generic")
+    category = Column(String(100), nullable=False, default="server")
+    built_in = Column(Boolean, nullable=False, default=False)
+    tags = Column(ARRAY(String), nullable=False, default=list)
     created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
 
