@@ -105,6 +105,7 @@ class HostOut(BaseModel):
     snmp_community: str | None = None
     snmp_version: str | None = None
     tags: list
+    agent_managed: bool = False
     active: bool
     created_at: datetime
     tenant_name: str | None = None

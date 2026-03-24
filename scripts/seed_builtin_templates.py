@@ -49,13 +49,17 @@ BUILTIN_TEMPLATES = [
     },
     {
         "name": "Generic Windows Server",
-        "description": "Standard checks for Windows servers via Agent: ping, RDP port.",
+        "description": "Standard checks for Windows servers via Agent: ping, RDP port, CPU, RAM, Disk C:.",
         "vendor": "generic",
         "category": "server",
         "tags": ["windows", "agent"],
         "checks": [
             {"name": "ping", "check_type": "ping", "check_config": {}, "interval_seconds": 60},
             {"name": "rdp", "check_type": "port", "check_config": {"port": 3389}, "interval_seconds": 60},
+            {"name": "agent_cpu", "check_type": "agent_cpu", "check_config": {}, "threshold_warn": 80, "threshold_crit": 95, "interval_seconds": 60, "check_mode": "agent"},
+            {"name": "agent_memory", "check_type": "agent_memory", "check_config": {}, "threshold_warn": 85, "threshold_crit": 95, "interval_seconds": 60, "check_mode": "agent"},
+            {"name": "agent_disk_c", "check_type": "agent_disk", "check_config": {"path": "C:"}, "threshold_warn": 80, "threshold_crit": 90, "interval_seconds": 300, "check_mode": "agent"},
+            {"name": "agent_w32time", "check_type": "agent_service", "check_config": {"service": "W32Time"}, "interval_seconds": 120, "check_mode": "agent"},
         ],
     },
     {
@@ -525,6 +529,23 @@ BUILTIN_TEMPLATES = [
             {"name": "dns_tcp", "check_type": "port", "check_config": {"port": 53}, "interval_seconds": 60},
             {"name": "cpu", "check_type": "ssh_cpu", "check_config": {}, "threshold_warn": 80, "threshold_crit": 95, "interval_seconds": 120},
             {"name": "memory", "check_type": "ssh_mem", "check_config": {}, "threshold_warn": 85, "threshold_crit": 95, "interval_seconds": 120},
+        ],
+    },
+
+    # ── Agent-based Templates ────────────────────────────────────────────
+    {
+        "name": "Generic Linux Server (Agent)",
+        "description": "Linux server monitoring via Overseer Agent: ping, SSH, CPU, RAM, Disk, sshd.",
+        "vendor": "generic",
+        "category": "server",
+        "tags": ["linux", "agent"],
+        "checks": [
+            {"name": "ping", "check_type": "ping", "check_config": {}, "interval_seconds": 60},
+            {"name": "ssh_port", "check_type": "port", "check_config": {"port": 22}, "interval_seconds": 60},
+            {"name": "agent_cpu", "check_type": "agent_cpu", "check_config": {}, "threshold_warn": 80, "threshold_crit": 95, "interval_seconds": 60, "check_mode": "agent"},
+            {"name": "agent_memory", "check_type": "agent_memory", "check_config": {}, "threshold_warn": 85, "threshold_crit": 95, "interval_seconds": 60, "check_mode": "agent"},
+            {"name": "agent_disk_root", "check_type": "agent_disk", "check_config": {"path": "/"}, "threshold_warn": 80, "threshold_crit": 90, "interval_seconds": 300, "check_mode": "agent"},
+            {"name": "agent_sshd", "check_type": "agent_service", "check_config": {"service": "sshd"}, "interval_seconds": 120, "check_mode": "agent"},
         ],
     },
 ]

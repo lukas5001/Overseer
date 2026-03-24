@@ -143,11 +143,20 @@ export interface Host {
   snmp_community: string | null
   snmp_version: string | null
   tags: string[]
+  agent_managed: boolean
   active: boolean
   created_at: string
   tenant_name?: string
   tenant_active?: boolean
   collector_offline?: boolean
+}
+
+export interface AgentTokenInfo {
+  active: boolean
+  last_seen_at: string | null
+  agent_version: string | null
+  agent_os: string | null
+  created_at: string
 }
 
 export interface HostCreate {
@@ -187,7 +196,7 @@ export interface Service {
   threshold_warn: number | null
   threshold_crit: number | null
   max_check_attempts: number
-  check_mode: 'passive' | 'active'
+  check_mode: 'passive' | 'active' | 'agent'
   active: boolean
   created_at: string
 }

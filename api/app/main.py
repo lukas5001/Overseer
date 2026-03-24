@@ -14,7 +14,7 @@ from slowapi.errors import RateLimitExceeded
 from sqlalchemy import text
 
 from api.app.core.database import AsyncSessionLocal
-from api.app.routers import auth, status, tenants, hosts, services, collectors, downtimes, config, history, users, audit, notifications, templates, two_factor, saved_filters, alert_rules, sla, admin
+from api.app.routers import auth, status, tenants, hosts, services, collectors, downtimes, config, history, users, audit, notifications, templates, two_factor, saved_filters, alert_rules, sla, admin, agent
 
 # ==================== ENV Validation ====================
 
@@ -86,7 +86,7 @@ app.add_middleware(
     allow_origins=[o.strip() for o in CORS_ORIGINS],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+    allow_headers=["Content-Type", "Authorization", "X-Requested-With", "Accept", "X-Agent-Token"],
     expose_headers=["X-Total-Count"],
 )
 
@@ -110,6 +110,7 @@ app.include_router(saved_filters.router, prefix="/api/v1/saved-filters", tags=["
 app.include_router(alert_rules.router, prefix="/api/v1/alert-rules", tags=["alert-rules"])
 app.include_router(sla.router, prefix="/api/v1", tags=["sla"])
 app.include_router(admin.router, prefix="/api/v1/admin", tags=["admin"])
+app.include_router(agent.router, prefix="/api/v1", tags=["agent"])
 
 
 @app.get("/health")

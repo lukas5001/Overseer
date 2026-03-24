@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Server, Router, Printer, Shield, Wifi, ArrowLeft, Play, Search,
   CheckCircle, XCircle, AlertTriangle, HelpCircle, Clock, Plus, X, Trash2, TrendingUp, Pencil, Settings2, Power, Copy,
+  Monitor, ClipboardCopy, KeyRound,
 } from 'lucide-react'
 import clsx from 'clsx'
 import { formatDistanceToNow } from 'date-fns'
@@ -23,7 +24,16 @@ interface Host {
   snmp_community: string | null
   snmp_version: string | null
   tags: string[]
+  agent_managed: boolean
   active: boolean
+  created_at: string
+}
+
+interface AgentTokenInfo {
+  active: boolean
+  last_seen_at: string | null
+  agent_version: string | null
+  agent_os: string | null
   created_at: string
 }
 
@@ -253,6 +263,7 @@ const CHECK_TYPES = [
   'ping', 'port', 'http',
   'snmp', 'snmp_interface',
   'ssh_disk', 'ssh_cpu', 'ssh_mem', 'ssh_process', 'ssh_service', 'ssh_custom',
+  'agent_cpu', 'agent_memory', 'agent_disk', 'agent_service', 'agent_process', 'agent_eventlog', 'agent_custom',
 ]
 
 function ConfigFields({ checkType, config, onChange }: {
@@ -280,6 +291,13 @@ function ConfigFields({ checkType, config, onChange }: {
     case 'ssh_process': return <>{field('Prozessname', 'process', 'nginx')}{field('SSH-User', 'username', 'root')}{field('SSH-Passwort', 'password', '')}</>
     case 'ssh_service': return <>{field('Servicename', 'service', 'nginx')}{field('SSH-User', 'username', 'root')}{field('SSH-Passwort', 'password', '')}</>
     case 'ssh_custom':  return <>{field('Kommando', 'command', 'echo OK')}{field('SSH-User', 'username', 'root')}{field('SSH-Passwort', 'password', '')}</>
+    case 'agent_cpu':     return null
+    case 'agent_memory':  return null
+    case 'agent_disk':    return <>{field('Pfad', 'path', 'C: oder /')}</>
+    case 'agent_service': return <>{field('Servicename', 'service', 'MSSQLSERVER')}</>
+    case 'agent_process': return <>{field('Prozessname', 'process', 'nginx')}</>
+    case 'agent_eventlog': return <>{field('Log', 'log', 'System')}{field('Level', 'level', 'Error')}{field('Minuten', 'minutes', '30')}</>
+    case 'agent_custom':  return <>{field('Kommando', 'command', 'Get-Process | Measure')}{field('OK Pattern', 'ok_pattern', '.')}{field('Critical Pattern', 'crit_pattern', '')}</>
     default: return null
   }
 }
@@ -341,7 +359,7 @@ function AddCheckModal({ host, onClose, onSaved }: AddCheckModalProps) {
       threshold_warn: form.threshold_warn ? parseFloat(form.threshold_warn) : null,
       threshold_crit: form.threshold_crit ? parseFloat(form.threshold_crit) : null,
       max_check_attempts: parseInt(form.max_check_attempts) || 3,
-      check_mode: form.check_mode,
+      check_mode: form.check_type.startsWith('agent_') ? 'agent' : form.check_mode,
     }),
     onSuccess: () => { onSaved(); onClose() },
     onError: (e: any) => setError(e.response?.data?.detail ?? 'Fehler beim Speichern'),
@@ -512,18 +530,24 @@ function AddCheckModal({ host, onClose, onSaved }: AddCheckModalProps) {
 
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Check-Modus</label>
-                <div className="flex gap-3 mt-1">
-                  <label className="inline-flex items-center gap-1.5 text-sm cursor-pointer">
-                    <input type="radio" name="check_mode" value="active" checked={form.check_mode === 'active'}
-                      onChange={setF('check_mode')} className="w-4 h-4 text-overseer-600 focus:ring-overseer-500" />
-                    <span>Aktiv <span className="text-xs text-gray-400">(Server prüft)</span></span>
-                  </label>
-                  <label className="inline-flex items-center gap-1.5 text-sm cursor-pointer">
-                    <input type="radio" name="check_mode" value="passive" checked={form.check_mode === 'passive'}
-                      onChange={setF('check_mode')} className="w-4 h-4 text-overseer-600 focus:ring-overseer-500" />
-                    <span>Passiv <span className="text-xs text-gray-400">(Collector sendet)</span></span>
-                  </label>
-                </div>
+                {form.check_type.startsWith('agent_') ? (
+                  <div className="text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-lg">
+                    Agent <span className="text-xs text-gray-400">(wird automatisch gesetzt)</span>
+                  </div>
+                ) : (
+                  <div className="flex gap-3 mt-1">
+                    <label className="inline-flex items-center gap-1.5 text-sm cursor-pointer">
+                      <input type="radio" name="check_mode" value="active" checked={form.check_mode === 'active'}
+                        onChange={setF('check_mode')} className="w-4 h-4 text-overseer-600 focus:ring-overseer-500" />
+                      <span>Aktiv <span className="text-xs text-gray-400">(Server prüft)</span></span>
+                    </label>
+                    <label className="inline-flex items-center gap-1.5 text-sm cursor-pointer">
+                      <input type="radio" name="check_mode" value="passive" checked={form.check_mode === 'passive'}
+                        onChange={setF('check_mode')} className="w-4 h-4 text-overseer-600 focus:ring-overseer-500" />
+                      <span>Passiv <span className="text-xs text-gray-400">(Collector sendet)</span></span>
+                    </label>
+                  </div>
+                )}
               </div>
 
               {error && (
@@ -750,18 +774,24 @@ function EditServiceModal({ service, onClose, onSaved }: EditServiceModalProps) 
 
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Check-Modus</label>
-            <div className="flex gap-3 mt-1">
-              <label className="inline-flex items-center gap-1.5 text-sm cursor-pointer">
-                <input type="radio" name="edit_check_mode" value="active" checked={form.check_mode === 'active'}
-                  onChange={setF('check_mode')} className="w-4 h-4 text-overseer-600 focus:ring-overseer-500" />
-                <span>Aktiv <span className="text-xs text-gray-400">(Server prüft)</span></span>
-              </label>
-              <label className="inline-flex items-center gap-1.5 text-sm cursor-pointer">
-                <input type="radio" name="edit_check_mode" value="passive" checked={form.check_mode === 'passive'}
-                  onChange={setF('check_mode')} className="w-4 h-4 text-overseer-600 focus:ring-overseer-500" />
-                <span>Passiv <span className="text-xs text-gray-400">(Collector sendet)</span></span>
-              </label>
-            </div>
+            {service.check_type.startsWith('agent_') ? (
+              <div className="text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-lg">
+                Agent <span className="text-xs text-gray-400">(wird automatisch gesetzt)</span>
+              </div>
+            ) : (
+              <div className="flex gap-3 mt-1">
+                <label className="inline-flex items-center gap-1.5 text-sm cursor-pointer">
+                  <input type="radio" name="edit_check_mode" value="active" checked={form.check_mode === 'active'}
+                    onChange={setF('check_mode')} className="w-4 h-4 text-overseer-600 focus:ring-overseer-500" />
+                  <span>Aktiv <span className="text-xs text-gray-400">(Server prüft)</span></span>
+                </label>
+                <label className="inline-flex items-center gap-1.5 text-sm cursor-pointer">
+                  <input type="radio" name="edit_check_mode" value="passive" checked={form.check_mode === 'passive'}
+                    onChange={setF('check_mode')} className="w-4 h-4 text-overseer-600 focus:ring-overseer-500" />
+                  <span>Passiv <span className="text-xs text-gray-400">(Collector sendet)</span></span>
+                </label>
+              </div>
+            )}
           </div>
 
           {error && (
@@ -1038,6 +1068,10 @@ export default function HostDetailPage() {
   const [editService, setEditService] = useState<ServiceItem | null>(null)
   const [historyTarget, setHistoryTarget] = useState<{ id: string; name: string } | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showAgentSetup, setShowAgentSetup] = useState(false)
+  const [generatedToken, setGeneratedToken] = useState<string | null>(null)
+  const [tokenCopied, setTokenCopied] = useState(false)
+  const [revokeConfirm, setRevokeConfirm] = useState(false)
 
   const { data: host, isLoading: hostLoading } = useQuery<Host>({
     queryKey: ['host', hostId],
@@ -1056,6 +1090,33 @@ export default function HostDetailPage() {
     queryKey: ['services', hostId],
     queryFn: () => api.get(`/api/v1/services/?host_id=${hostId}&include_inactive=true`).then(r => r.data),
     enabled: !!hostId,
+  })
+
+  // Agent token info (only fetched when host is agent_managed)
+  const { data: agentTokenInfo } = useQuery<AgentTokenInfo>({
+    queryKey: ['agent-token', hostId],
+    queryFn: () => api.get(`/api/v1/hosts/${hostId}/agent-token`).then(r => r.data),
+    enabled: !!hostId && !!host?.agent_managed,
+    refetchInterval: 30000,
+  })
+
+  const generateTokenMutation = useMutation({
+    mutationFn: () => api.post(`/api/v1/hosts/${hostId}/agent-token`),
+    onSuccess: (resp) => {
+      setGeneratedToken(resp.data.token)
+      setShowAgentSetup(true)
+      queryClient.invalidateQueries({ queryKey: ['host', hostId] })
+      queryClient.invalidateQueries({ queryKey: ['agent-token', hostId] })
+    },
+  })
+
+  const revokeTokenMutation = useMutation({
+    mutationFn: () => api.delete(`/api/v1/hosts/${hostId}/agent-token`),
+    onSuccess: () => {
+      setRevokeConfirm(false)
+      queryClient.invalidateQueries({ queryKey: ['host', hostId] })
+      queryClient.invalidateQueries({ queryKey: ['agent-token', hostId] })
+    },
   })
 
   const deleteServiceMutation = useMutation({
@@ -1353,6 +1414,149 @@ export default function HostDetailPage() {
         </div>
       </div>
 
+      {/* Agent section */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Monitor className="w-5 h-5 text-gray-400" />
+            <h2 className="font-semibold text-gray-800">Agent</h2>
+          </div>
+          {host.agent_managed && agentTokenInfo && (
+            <button
+              onClick={() => setRevokeConfirm(true)}
+              className="text-xs text-red-500 hover:text-red-700 transition-colors"
+            >
+              Token widerrufen
+            </button>
+          )}
+        </div>
+
+        {!host.agent_managed ? (
+          <div className="mt-3 flex items-center justify-between bg-gray-50 rounded-lg px-4 py-3">
+            <p className="text-sm text-gray-500">Kein Agent eingerichtet</p>
+            <button
+              onClick={() => generateTokenMutation.mutate()}
+              disabled={generateTokenMutation.isPending}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-overseer-600 text-white text-xs font-medium rounded-lg hover:bg-overseer-700 disabled:opacity-50 transition-colors"
+            >
+              <KeyRound className="w-3.5 h-3.5" />
+              {generateTokenMutation.isPending ? 'Generiere…' : 'Agent einrichten'}
+            </button>
+          </div>
+        ) : agentTokenInfo ? (
+          <div className="mt-3 flex items-center gap-4 bg-gray-50 rounded-lg px-4 py-3">
+            <div className="flex items-center gap-2">
+              <div className={clsx(
+                'w-2.5 h-2.5 rounded-full',
+                agentTokenInfo.last_seen_at && (Date.now() - new Date(agentTokenInfo.last_seen_at).getTime()) < 3 * 60 * 1000
+                  ? 'bg-emerald-500' : 'bg-red-500'
+              )} />
+              <span className="text-sm font-medium text-gray-800">
+                {agentTokenInfo.last_seen_at && (Date.now() - new Date(agentTokenInfo.last_seen_at).getTime()) < 3 * 60 * 1000
+                  ? 'Agent online' : 'Agent offline'}
+              </span>
+            </div>
+            <div className="flex items-center gap-3 text-xs text-gray-500">
+              {agentTokenInfo.agent_version && <span>v{agentTokenInfo.agent_version}</span>}
+              {agentTokenInfo.agent_os && <span>{agentTokenInfo.agent_os}</span>}
+              {agentTokenInfo.last_seen_at && (
+                <span>Zuletzt: {formatDistanceToNow(new Date(agentTokenInfo.last_seen_at), { locale: de, addSuffix: true })}</span>
+              )}
+              {!agentTokenInfo.last_seen_at && <span className="text-amber-500">Noch nie verbunden</span>}
+            </div>
+          </div>
+        ) : (
+          <div className="mt-3 text-sm text-gray-400">Lade Agent-Status…</div>
+        )}
+
+        {/* Revoke confirmation */}
+        {revokeConfirm && (
+          <div className="mt-3 bg-red-50 border border-red-200 rounded-lg px-4 py-3 flex items-center justify-between">
+            <span className="text-sm text-red-700">Token wirklich widerrufen? Der Agent wird sich nicht mehr verbinden können.</span>
+            <div className="flex gap-2">
+              <button onClick={() => setRevokeConfirm(false)} className="text-xs text-gray-500 hover:text-gray-700">Abbrechen</button>
+              <button
+                onClick={() => revokeTokenMutation.mutate()}
+                disabled={revokeTokenMutation.isPending}
+                className="text-xs text-red-600 font-medium hover:text-red-800"
+              >
+                {revokeTokenMutation.isPending ? 'Widerrufe…' : 'Ja, widerrufen'}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Agent Setup Dialog (Token generated) */}
+      {showAgentSetup && generatedToken && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-semibold text-gray-900">Agent einrichten</h2>
+              <button onClick={() => { setShowAgentSetup(false); setGeneratedToken(null); setTokenCopied(false) }}
+                className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+            </div>
+
+            <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-4">
+              <p className="text-sm text-amber-800 font-medium">Token wird nur einmal angezeigt!</p>
+              <p className="text-xs text-amber-600 mt-1">Kopiere den Token jetzt und trage ihn in die Agent-Konfiguration ein.</p>
+            </div>
+
+            <div className="bg-gray-900 rounded-lg px-4 py-3 mb-4 flex items-center justify-between">
+              <code className="text-sm text-emerald-400 break-all select-all">{generatedToken}</code>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(generatedToken)
+                  setTokenCopied(true)
+                  setTimeout(() => setTokenCopied(false), 3000)
+                }}
+                className={clsx('ml-3 flex-shrink-0 p-1.5 rounded transition-colors',
+                  tokenCopied ? 'text-emerald-400' : 'text-gray-400 hover:text-white')}
+                title="In Zwischenablage kopieren"
+              >
+                {tokenCopied ? <CheckCircle className="w-4 h-4" /> : <ClipboardCopy className="w-4 h-4" />}
+              </button>
+            </div>
+
+            <div className="space-y-4 text-sm text-gray-700">
+              <div>
+                <h3 className="font-medium text-gray-900 mb-2">Windows</h3>
+                <div className="bg-gray-50 rounded-lg px-3 py-2 font-mono text-xs space-y-1">
+                  <p>1. overseer-agent.exe herunterladen</p>
+                  <p>2. Als Administrator: <span className="text-overseer-600">overseer-agent.exe install</span></p>
+                  <p>3. Config bearbeiten: <span className="text-gray-500">C:\ProgramData\Overseer\Agent\config.yaml</span></p>
+                  <div className="bg-gray-100 rounded px-2 py-1 mt-1">
+                    <p>server: https://overseer.dailycrust.it</p>
+                    <p>token: {generatedToken}</p>
+                  </div>
+                  <p>4. <span className="text-overseer-600">net start OverseerAgent</span></p>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-medium text-gray-900 mb-2">Linux</h3>
+                <div className="bg-gray-50 rounded-lg px-3 py-2 font-mono text-xs space-y-1">
+                  <p>1. Agent herunterladen + installieren</p>
+                  <p>2. Config: <span className="text-gray-500">/etc/overseer-agent/config.yaml</span></p>
+                  <div className="bg-gray-100 rounded px-2 py-1 mt-1">
+                    <p>server: https://overseer.dailycrust.it</p>
+                    <p>token: {generatedToken}</p>
+                  </div>
+                  <p>3. <span className="text-overseer-600">systemctl enable --now overseer-agent</span></p>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => { setShowAgentSetup(false); setGeneratedToken(null); setTokenCopied(false) }}
+              className="w-full mt-5 py-2 rounded-lg bg-overseer-600 text-white text-sm font-medium hover:bg-overseer-700"
+            >
+              Verstanden
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Services table */}
       <div className="bg-white rounded-xl border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
@@ -1438,6 +1642,9 @@ export default function HostDetailPage() {
                         {meta?.check_type ?? '–'}
                         {meta?.check_mode === 'active' && (
                           <span className="text-[10px] font-sans font-medium bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded">aktiv</span>
+                        )}
+                        {meta?.check_mode === 'agent' && (
+                          <span className="text-[10px] font-sans font-medium bg-violet-100 text-violet-600 px-1.5 py-0.5 rounded">agent</span>
                         )}
                       </span>
                     </td>

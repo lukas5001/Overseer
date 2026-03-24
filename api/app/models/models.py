@@ -126,6 +126,7 @@ class Host(Base):
     snmp_community = Column(String(255))
     snmp_version = Column(String(10), default="2c")
     tags = Column(JSONB, nullable=False, default=list)
+    agent_managed = Column(Boolean, nullable=False, default=False)
     active = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)

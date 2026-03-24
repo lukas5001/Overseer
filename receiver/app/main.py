@@ -111,19 +111,70 @@ async def validate_api_key(api_key: str) -> dict:
         )
         await db.commit()
 
-    return {"tenant_slug": row.tenant_slug, "tenant_id": str(row.tenant_id), "key_prefix": key_prefix}
+    return {"tenant_slug": row.tenant_slug, "tenant_id": str(row.tenant_id), "key_prefix": key_prefix, "source": "api_key"}
+
+
+# ==================== Agent Token Validation ====================
+
+async def validate_agent_token(agent_token: str) -> dict:
+    """Validate agent token via DB lookup. Returns {tenant_slug, tenant_id, host_id}."""
+    token_hash = hashlib.sha256(agent_token.encode()).hexdigest()
+    token_prefix = agent_token[:16]
+
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(
+            text("""
+                SELECT at.id AS token_id, at.host_id, at.tenant_id, t.slug AS tenant_slug
+                FROM agent_tokens at
+                JOIN tenants t ON t.id = at.tenant_id
+                WHERE at.token_hash = :hash
+                  AND at.active = true
+                  AND t.active = true
+            """),
+            {"hash": token_hash},
+        )
+        row = result.fetchone()
+
+    if not row:
+        raise HTTPException(status_code=401, detail="Invalid agent token")
+
+    # Update last_seen_at on agent_tokens
+    async with AsyncSessionLocal() as db:
+        await db.execute(
+            text("UPDATE agent_tokens SET last_seen_at = :now WHERE id = :id"),
+            {"now": datetime.now(timezone.utc), "id": row.token_id},
+        )
+        await db.commit()
+
+    return {
+        "tenant_slug": row.tenant_slug,
+        "tenant_id": str(row.tenant_id),
+        "key_prefix": token_prefix,
+        "source": "agent_token",
+        "host_id": str(row.host_id),
+    }
 
 
 # ==================== Endpoints ====================
 
 @app.post("/api/v1/results", status_code=202)
 async def receive_check_results(
+    request: Request,
     payload: CollectorPayload,
-    x_api_key: str = Header(..., alias="X-API-Key"),
 ):
-    """Receive check results from a Collector."""
-    await check_rate_limit(x_api_key[:12])
-    tenant_info = await validate_api_key(x_api_key)
+    """Receive check results from a Collector or Agent."""
+    # Accept either X-API-Key or X-Agent-Token
+    api_key = request.headers.get("X-API-Key")
+    agent_token = request.headers.get("X-Agent-Token")
+
+    if agent_token:
+        await check_rate_limit(agent_token[:16])
+        tenant_info = await validate_agent_token(agent_token)
+    elif api_key:
+        await check_rate_limit(api_key[:12])
+        tenant_info = await validate_api_key(api_key)
+    else:
+        raise HTTPException(status_code=401, detail="Missing X-API-Key or X-Agent-Token header")
 
     message = {
         "tenant_slug": tenant_info["tenant_slug"],
@@ -135,17 +186,19 @@ async def receive_check_results(
 
     await redis_pool.xadd(STREAM_NAME, {"data": json.dumps(message)})
 
-    # Update collector last_seen_at (receiving data = collector is alive)
-    async with AsyncSessionLocal() as db:
-        await db.execute(
-            text("UPDATE collectors SET last_seen_at = :now WHERE id = CAST(:cid AS uuid)"),
-            {"now": datetime.now(timezone.utc), "cid": payload.collector_id},
-        )
-        await db.commit()
+    # Update collector last_seen_at only for API key auth (collectors)
+    if tenant_info.get("source") == "api_key":
+        async with AsyncSessionLocal() as db:
+            await db.execute(
+                text("UPDATE collectors SET last_seen_at = :now WHERE id = CAST(:cid AS uuid)"),
+                {"now": datetime.now(timezone.utc), "cid": payload.collector_id},
+            )
+            await db.commit()
 
     logger.info(
-        "Received %d checks from collector=%s tenant=%s",
+        "Received %d checks from %s=%s tenant=%s",
         len(payload.checks),
+        "agent" if tenant_info.get("source") == "agent_token" else "collector",
         payload.collector_id,
         tenant_info["tenant_slug"],
     )
