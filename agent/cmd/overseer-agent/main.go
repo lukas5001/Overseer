@@ -16,6 +16,7 @@ import (
 	"github.com/lukas5001/overseer-agent/internal/heartbeat"
 	"github.com/lukas5001/overseer-agent/internal/scheduler"
 	"github.com/lukas5001/overseer-agent/internal/sender"
+	"github.com/lukas5001/overseer-agent/internal/service"
 	"github.com/lukas5001/overseer-agent/internal/types"
 	"github.com/lukas5001/overseer-agent/internal/version"
 )
@@ -23,7 +24,6 @@ import (
 func main() {
 	configPath := flag.String("config", config.DefaultConfigPath(), "Path to config file")
 	showVersion := flag.Bool("version", false, "Show version and exit")
-	runForeground := flag.Bool("run", false, "Run in foreground mode")
 	flag.Parse()
 
 	if *showVersion {
@@ -31,12 +31,41 @@ func main() {
 		os.Exit(0)
 	}
 
-	// On Windows, detect if running as service (will be implemented in Prompt 5)
-	_ = runForeground
+	// Handle subcommands (install, uninstall, start, stop, status, run)
+	args := flag.Args()
+	if len(args) > 0 {
+		if err := handleCommand(args[0], *configPath); err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
+		return
+	}
 
-	if err := run(*configPath); err != nil {
-		fmt.Fprintf(os.Stderr, "fatal: %v\n", err)
-		os.Exit(1)
+	// Auto-detect: Windows service or foreground
+	if service.IsWindowsService() {
+		if err := service.RunAsService(func() error {
+			return run(*configPath)
+		}); err != nil {
+			fmt.Fprintf(os.Stderr, "service error: %v\n", err)
+			os.Exit(1)
+		}
+	} else {
+		if err := run(*configPath); err != nil {
+			fmt.Fprintf(os.Stderr, "fatal: %v\n", err)
+			os.Exit(1)
+		}
+	}
+}
+
+func handleCommand(cmd, configPath string) error {
+	switch cmd {
+	case "run":
+		return run(configPath)
+	case "version":
+		fmt.Printf("Overseer Agent %s (built %s, commit %s)\n", version.Version, version.BuildTime, version.GitCommit)
+		return nil
+	default:
+		return handlePlatformCommand(cmd, configPath)
 	}
 }
 
