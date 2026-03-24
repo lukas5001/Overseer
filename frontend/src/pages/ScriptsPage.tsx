@@ -220,7 +220,7 @@ export default function ScriptsPage() {
         <div className="text-center py-12 text-gray-400">
           <FileCode2 className="w-12 h-12 mx-auto mb-3 opacity-30" />
           <p>Noch keine Scripts angelegt.</p>
-          <p className="text-sm mt-1">Scripts werden zentral verwaltet und vom Agent auf den Zielrechnern ausgefuehrt.</p>
+          <p className="text-sm mt-1">Scripts werden zentral verwaltet und vom Agent auf den Zielrechnern ausgeführt.</p>
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
@@ -260,7 +260,7 @@ export default function ScriptsPage() {
                         <Pencil className="w-4 h-4" />
                       </button>
                       <button onClick={() => setDeleting(s)}
-                        title="Loeschen"
+                        title="Löschen"
                         className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-gray-100 transition-colors">
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -278,11 +278,11 @@ export default function ScriptsPage() {
       {deleting && (
         <ConfirmDialog
           open={true}
-          title="Script loeschen"
-          message={`Moechten Sie das Script "${deleting.name}" wirklich loeschen? Es wird aus allen zugewiesenen Checks entfernt.`}
+          title="Script löschen"
+          message={`Möchten Sie das Script "${deleting.name}" wirklich löschen? Es wird aus allen zugewiesenen Checks entfernt.`}
           onConfirm={() => deleteMut.mutate(deleting.id)}
           onCancel={() => setDeleting(null)}
-          confirmLabel="Loeschen"
+          confirmLabel="Löschen"
           variant="danger"
         />
       )}
