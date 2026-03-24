@@ -3,15 +3,19 @@
 ## Projektübersicht
 
 Overseer ist ein push-basiertes Monitoring-System für Multi-Tenant-Kundenumgebungen.
-Bei jedem Kunden steht eine Linux-VM ("Collector"), die Checks gegen Server, Switches,
-Router und andere Hardware ausführt und die Ergebnisse an den zentralen Server sendet.
+Zwei Monitoring-Modi:
+1. **Collector** — Linux-VM beim Kunden, führt Checks remote aus (SNMP, Ping, SSH, HTTP)
+2. **Agent** — Go-Binary direkt auf dem Zielrechner (Windows/Linux), führt Checks lokal aus
 
 ## Architektur
 
 ```
-[Collector VMs] --HTTPS POST--> [Receiver] --> [Redis Stream] --> [Worker Pool] --> [PostgreSQL + TimescaleDB]
-                                                                                          |
-                                                                        [REST API (FastAPI)] <--> [React Frontend]
+[Collector VMs] ──HTTPS POST──┐
+                               ├──> [Receiver] --> [Redis Stream] --> [Worker Pool] --> [PostgreSQL + TimescaleDB]
+[Agents (Go)]   ──HTTPS POST──┘                                                              |
+       │                                                                   [REST API (FastAPI)] <--> [React Frontend]
+       └── GET /api/v1/agent/config (Check-Definitionen holen)
+       └── POST /api/v1/agent/heartbeat (Keepalive)
 ```
 
 ## Tech Stack
@@ -19,6 +23,7 @@ Router und andere Hardware ausführt und die Ergebnisse an den zentralen Server 
 | Komponente | Technologie | Verzeichnis |
 |-----------|-------------|-------------|
 | Collector | Go 1.22+ | `/collector` |
+| Agent | Go 1.22+ (Cross-Platform) | `/agent` |
 | Receiver | Python 3.12 + FastAPI | `/receiver` |
 | Worker | Python 3.12 + asyncio | `/worker` |
 | API | Python 3.12 + FastAPI | `/api` |
@@ -54,6 +59,9 @@ cd frontend && npm run dev
 
 # Collector bauen
 cd collector && go build -o overseer-collector ./cmd/
+
+# Agent bauen (Cross-Platform)
+cd agent && make build-all   # → bin/overseer-agent + bin/overseer-agent.exe
 ```
 
 ## Konventionen
@@ -68,10 +76,11 @@ cd collector && go build -o overseer-collector ./cmd/
 ## Wichtige Design-Entscheidungen
 
 1. **Kein Alerting** – Es gibt keine automatische Benachrichtigung. Stattdessen eine Live-Fehlerübersicht die Mitarbeiter ständig beobachten.
-2. **Collector statt Agent** – Kein Agent auf Zielmaschinen. Pro Kunde eine Linux-VM die alle Checks remote ausführt (SNMP, Ping, SSH, HTTP).
-3. **Zentrale Konfiguration** – Collector holt seine Config vom Server. Kein manuelles YAML-Editieren auf Kunden-VMs.
+2. **Collector + Agent** – Collector (Linux-VM) für remote Checks (SNMP, Ping, SSH, HTTP). Agent (Go-Binary) auf Zielmaschinen für lokale Checks (CPU, RAM, Disk, Services). Agent ersetzt WinRM-basierte Windows-Überwachung.
+3. **Zentrale Konfiguration** – Collector und Agent holen ihre Config vom Server. Kein manuelles YAML-Editieren auf Kunden-VMs (nur `server_url` + `token`).
 4. **Tenant-Isolation** – Jede DB-Query enthält automatisch einen tenant_id Filter. Auf ORM-Ebene erzwungen.
-5. **Push-basiert** – Collectors senden Ergebnisse, Server empfängt passiv.
+5. **Push-basiert** – Collectors und Agents senden Ergebnisse, Server empfängt passiv.
+6. **Agent statt WinRM** – WinRM erfordert Inbound-Ports, Firewall-Konfiguration und Credentials. Der Agent braucht nur Outbound HTTPS 443, ist ein Single-Binary (~10 MB), und authentifiziert sich mit einem SHA256-gehashten Token.
 
 ## Sicherheitsarchitektur
 
@@ -97,10 +106,19 @@ Jeder Service hat seinen eigenen Docker-Build-Context (siehe Dockerfiles):
 - 5 Fehlversuche → 30-Minuten-Lockout (HTTP 429 mit `Retry-After`)
 - Felder: `two_fa_email_code_hash`, `two_fa_attempts`, `two_fa_lockout_until` (seit Migration 013)
 
-### API-Keys
+### API-Keys (Collectors)
 - `key_prefix` wird für neue Keys nicht mehr geschrieben (leerer String)
 - Lookup im Receiver erfolgt ausschließlich über `key_hash` (SHA256)
 - Der volle Key wird dem User **einmalig** beim Erstellen zurückgegeben
+
+### Agent-Tokens
+- Format: `overseer_agent_` + 32 Zeichen (URL-safe Base64)
+- Gespeichert als SHA256-Hash in `agent_tokens.token_hash`
+- 1:1 Bindung an einen Host (1 Token pro Host)
+- Auth über `X-Agent-Token` Header (separate Validierung, kein JWT)
+- Receiver akzeptiert sowohl `X-API-Key` (Collector) als auch `X-Agent-Token` (Agent)
+- Check-Typen mit Agent: `agent_cpu`, `agent_memory`, `agent_disk`, `agent_service`, `agent_process`, `agent_eventlog`, `agent_custom`
+- Check-Mode für Agent-Checks: `agent` (statt `passive` oder `active`)
 
 ### Rate Limiting (slowapi)
 - Login-Endpoint `/api/v1/auth/login`: 10 req/min pro IP

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Activity, AlertTriangle, XCircle, HelpCircle, CheckCircle, Building2 } from 'lucide-react'
+import { Activity, AlertTriangle, XCircle, HelpCircle, CheckCircle, Building2, Monitor } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import clsx from 'clsx'
 import { api } from '../api/client'
@@ -54,6 +54,12 @@ export default function DashboardPage() {
     refetchInterval: 10000,
   })
 
+  const { data: agentSummary } = useQuery<{ total: number; online: number }>({
+    queryKey: ['agents-summary'],
+    queryFn: () => api.get('/api/v1/agents/summary').then(r => r.data),
+    refetchInterval: 10000,
+  })
+
   return (
     <div className="p-8">
       {/* Header */}
@@ -84,17 +90,35 @@ export default function DashboardPage() {
         })}
       </div>
 
-      {/* Total + last updated */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-gray-500">Checks gesamt</p>
-            <p className="text-4xl font-bold text-gray-900 mt-1">
-              {isLoading ? '–' : summary?.total ?? 0}
-            </p>
+      {/* Total + Agents row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-500">Checks gesamt</p>
+              <p className="text-4xl font-bold text-gray-900 mt-1">
+                {isLoading ? '–' : summary?.total ?? 0}
+              </p>
+            </div>
+            <p className="text-sm text-gray-400">Aktualisiert alle 10s</p>
           </div>
-          <p className="text-sm text-gray-400">Aktualisiert alle 10 Sekunden</p>
         </div>
+        {agentSummary && agentSummary.total > 0 && (
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-500 flex items-center gap-1.5">
+                  <Monitor className="w-4 h-4" /> Agents
+                </p>
+                <p className="text-4xl font-bold text-gray-900 mt-1">
+                  <span className="text-emerald-600">{agentSummary.online}</span>
+                  <span className="text-lg font-normal text-gray-400"> / {agentSummary.total}</span>
+                </p>
+              </div>
+              <p className="text-sm text-gray-400">online / gesamt</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Per-Tenant Breakdown */}

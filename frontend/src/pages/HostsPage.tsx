@@ -17,6 +17,7 @@ interface HostItem {
   active: boolean
   tenant_active: boolean
   collector_offline: boolean
+  agent_managed: boolean
 }
 
 interface StatusSummary {
@@ -202,6 +203,7 @@ export default function HostsPage() {
     } catch { return new Set() }
   })
   const [showInactive, setShowInactive] = useState(true)
+  const [filterAgent, setFilterAgent] = useState<'all' | 'agent' | 'no-agent'>('all')
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
 
   // Load user preference for show_inactive
@@ -288,17 +290,20 @@ export default function HostsPage() {
     }
   }
 
-  // Filter hosts by search
+  // Filter hosts by search + agent filter
   const filteredHosts = useMemo(() => {
-    if (!search) return hosts
+    let result = hosts
+    if (filterAgent === 'agent') result = result.filter(h => h.agent_managed)
+    else if (filterAgent === 'no-agent') result = result.filter(h => !h.agent_managed)
+    if (!search) return result
     const q = search.toLowerCase()
-    return hosts.filter(h =>
+    return result.filter(h =>
       h.hostname.toLowerCase().includes(q) ||
       (h.display_name?.toLowerCase().includes(q) ?? false) ||
       (h.ip_address?.toLowerCase().includes(q) ?? false) ||
       (h.tenant_name?.toLowerCase().includes(q) ?? false)
     )
-  }, [hosts, search])
+  }, [hosts, search, filterAgent])
 
   // Group by tenant
   const tenantGroups = useMemo(() => {
@@ -460,6 +465,15 @@ export default function HostsPage() {
             className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-overseer-500 outline-none"
           />
         </div>
+        <select
+          value={filterAgent}
+          onChange={e => setFilterAgent(e.target.value as 'all' | 'agent' | 'no-agent')}
+          className="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none"
+        >
+          <option value="all">Alle Hosts</option>
+          <option value="agent">Agent-Hosts</option>
+          <option value="no-agent">Ohne Agent</option>
+        </select>
         <div className="flex items-center gap-1 text-xs">
           <button onClick={expandAll} className="px-2 py-1.5 text-gray-500 hover:text-gray-700 rounded border border-gray-200 hover:bg-gray-50">
             Alle aufklappen
@@ -558,9 +572,16 @@ export default function HostsPage() {
                               >
                                 <HostIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
                                 <div>
-                                  <p className={clsx('font-medium', effectiveActive ? 'text-gray-900' : 'text-gray-400 line-through')}>
-                                    {host.display_name || host.hostname}
-                                  </p>
+                                  <div className="flex items-center gap-1.5">
+                                    <p className={clsx('font-medium', effectiveActive ? 'text-gray-900' : 'text-gray-400 line-through')}>
+                                      {host.display_name || host.hostname}
+                                    </p>
+                                    {host.agent_managed && (
+                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-100 text-blue-700">
+                                        Agent
+                                      </span>
+                                    )}
+                                  </div>
                                   {host.display_name && (
                                     <p className="text-xs text-gray-400">{host.hostname}</p>
                                   )}

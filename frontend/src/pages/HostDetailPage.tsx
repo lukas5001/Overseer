@@ -1072,6 +1072,7 @@ export default function HostDetailPage() {
   const [generatedToken, setGeneratedToken] = useState<string | null>(null)
   const [tokenCopied, setTokenCopied] = useState(false)
   const [revokeConfirm, setRevokeConfirm] = useState(false)
+  const [setupTab, setSetupTab] = useState<'windows' | 'linux'>('windows')
 
   const { data: host, isLoading: hostLoading } = useQuery<Host>({
     queryKey: ['host', hostId],
@@ -1518,34 +1519,59 @@ export default function HostDetailPage() {
               </button>
             </div>
 
-            <div className="space-y-4 text-sm text-gray-700">
-              <div>
-                <h3 className="font-medium text-gray-900 mb-2">Windows</h3>
-                <div className="bg-gray-50 rounded-lg px-3 py-2 font-mono text-xs space-y-1">
-                  <p>1. overseer-agent.exe herunterladen</p>
-                  <p>2. Als Administrator: <span className="text-overseer-600">overseer-agent.exe install</span></p>
-                  <p>3. Config bearbeiten: <span className="text-gray-500">C:\ProgramData\Overseer\Agent\config.yaml</span></p>
-                  <div className="bg-gray-100 rounded px-2 py-1 mt-1">
-                    <p>server: https://overseer.dailycrust.it</p>
-                    <p>token: {generatedToken}</p>
-                  </div>
-                  <p>4. <span className="text-overseer-600">net start OverseerAgent</span></p>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="font-medium text-gray-900 mb-2">Linux</h3>
-                <div className="bg-gray-50 rounded-lg px-3 py-2 font-mono text-xs space-y-1">
-                  <p>1. Agent herunterladen + installieren</p>
-                  <p>2. Config: <span className="text-gray-500">/etc/overseer-agent/config.yaml</span></p>
-                  <div className="bg-gray-100 rounded px-2 py-1 mt-1">
-                    <p>server: https://overseer.dailycrust.it</p>
-                    <p>token: {generatedToken}</p>
-                  </div>
-                  <p>3. <span className="text-overseer-600">systemctl enable --now overseer-agent</span></p>
-                </div>
-              </div>
+            {/* Tab selector */}
+            <div className="flex border-b border-gray-200 mb-4">
+              <button
+                onClick={() => setSetupTab('windows')}
+                className={clsx('px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px',
+                  setupTab === 'windows' ? 'border-overseer-600 text-overseer-700' : 'border-transparent text-gray-500 hover:text-gray-700')}
+              >Windows</button>
+              <button
+                onClick={() => setSetupTab('linux')}
+                className={clsx('px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px',
+                  setupTab === 'linux' ? 'border-overseer-600 text-overseer-700' : 'border-transparent text-gray-500 hover:text-gray-700')}
+              >Linux</button>
             </div>
+
+            <div className="text-sm text-gray-700">
+              {setupTab === 'windows' ? (
+                <div className="bg-gray-50 rounded-lg px-4 py-3 font-mono text-xs space-y-2">
+                  <p><span className="text-gray-400">1.</span> overseer-agent.exe herunterladen</p>
+                  <p><span className="text-gray-400">2.</span> Als Administrator ausführen:</p>
+                  <div className="bg-gray-900 rounded px-3 py-2 text-emerald-400 select-all">overseer-agent.exe install</div>
+                  <p><span className="text-gray-400">3.</span> Config-Datei bearbeiten:</p>
+                  <p className="text-gray-500 text-[11px]">C:\ProgramData\Overseer\Agent\config.yaml</p>
+                  <div className="bg-gray-900 rounded px-3 py-2 text-gray-300">
+                    <p><span className="text-blue-400">server</span>: https://overseer.dailycrust.it</p>
+                    <p><span className="text-blue-400">token</span>: <span className="text-emerald-400">{generatedToken}</span></p>
+                  </div>
+                  <p><span className="text-gray-400">4.</span> Service starten:</p>
+                  <div className="bg-gray-900 rounded px-3 py-2 text-emerald-400 select-all">net start OverseerAgent</div>
+                </div>
+              ) : (
+                <div className="bg-gray-50 rounded-lg px-4 py-3 font-mono text-xs space-y-2">
+                  <p><span className="text-gray-400">1.</span> Agent herunterladen:</p>
+                  <div className="bg-gray-900 rounded px-3 py-2 text-emerald-400 select-all break-all">wget https://overseer.dailycrust.it/agent/overseer-agent-linux-amd64</div>
+                  <p><span className="text-gray-400">2.</span> Installieren:</p>
+                  <div className="bg-gray-900 rounded px-3 py-2 text-emerald-400 select-all space-y-0.5">
+                    <p>chmod +x overseer-agent-linux-amd64</p>
+                    <p>sudo mv overseer-agent-linux-amd64 /usr/local/bin/overseer-agent</p>
+                    <p>sudo mkdir -p /etc/overseer-agent</p>
+                  </div>
+                  <p><span className="text-gray-400">3.</span> Config erstellen:</p>
+                  <div className="bg-gray-900 rounded px-3 py-2 text-gray-300 select-all">
+                    <p>sudo tee /etc/overseer-agent/config.yaml {'<<'}EOF</p>
+                    <p><span className="text-blue-400">server</span>: https://overseer.dailycrust.it</p>
+                    <p><span className="text-blue-400">token</span>: <span className="text-emerald-400">{generatedToken}</span></p>
+                    <p>EOF</p>
+                  </div>
+                  <p><span className="text-gray-400">4.</span> systemd-Service einrichten + starten:</p>
+                  <div className="bg-gray-900 rounded px-3 py-2 text-emerald-400 select-all">sudo systemctl enable --now overseer-agent</div>
+                </div>
+              )}
+            </div>
+
+            <p className="text-xs text-gray-400 mt-3">Sobald der Agent sich meldet, erscheint der Status oben.</p>
 
             <button
               onClick={() => { setShowAgentSetup(false); setGeneratedToken(null); setTokenCopied(false) }}

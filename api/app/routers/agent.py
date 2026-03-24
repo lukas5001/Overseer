@@ -241,6 +241,41 @@ async def get_agent_token_info(
     )
 
 
+class AgentSummaryResponse(BaseModel):
+    total: int
+    online: int
+
+
+@router.get("/agents/summary", response_model=AgentSummaryResponse)
+async def get_agent_summary(
+    user: dict = Depends(get_current_user),
+    scope=Depends(tenant_scope),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get total and online agent count (for dashboard)."""
+    scope_filter = ""
+    params: dict = {}
+    if scope is not None:
+        placeholders = ", ".join(f":t{i}" for i in range(len(scope)))
+        scope_filter = f"AND at.tenant_id IN ({placeholders})"
+        for i, tid in enumerate(scope):
+            params[f"t{i}"] = tid
+
+    result = await db.execute(
+        text(f"""
+            SELECT
+                COUNT(*) AS total,
+                COUNT(*) FILTER (WHERE at.last_seen_at > NOW() - INTERVAL '3 minutes') AS online
+            FROM agent_tokens at
+            JOIN hosts h ON h.id = at.host_id
+            WHERE at.active = true AND h.active = true {scope_filter}
+        """),
+        params,
+    )
+    row = result.fetchone()
+    return AgentSummaryResponse(total=row.total or 0, online=row.online or 0)
+
+
 # ── Agent-Facing Endpoints (Token Auth) ─────────────────────────────────────
 
 @router.get("/agent/config", response_model=AgentConfigResponse)
