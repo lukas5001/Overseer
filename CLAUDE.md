@@ -73,6 +73,45 @@ cd collector && go build -o overseer-collector ./cmd/
 4. **Tenant-Isolation** – Jede DB-Query enthält automatisch einen tenant_id Filter. Auf ORM-Ebene erzwungen.
 5. **Push-basiert** – Collectors senden Ergebnisse, Server empfängt passiv.
 
+## Sicherheitsarchitektur
+
+### Shared-Code zwischen Services
+Jeder Service hat seinen eigenen Docker-Build-Context (siehe Dockerfiles):
+- `api`: kopiert nur `shared/` und `api/`
+- `worker`: kopiert nur `shared/` und `worker/`
+- `receiver`: kopiert nur `shared/` und `receiver/`
+
+**Konsequenz**: Code der von mehreren Services benötigt wird, muss in `shared/` liegen — nicht in `api/app/core/`. Beispiel: `shared/encryption.py` (nicht `api/app/core/`). `api/app/core/encryption.py` existiert nur als Re-Export für API-interne Importe.
+
+### Feldverschlüsselung (AES-256-GCM)
+- `winrm_password` und `snmp_community` auf der `hosts`-Tabelle sind AES-256-GCM-verschlüsselt
+- Implementierung: `shared/encryption.py` — `encrypt_field()` / `decrypt_field()`
+- Der Worker entschlüsselt in `scheduler.py` nach `inject_host_credentials()`, bevor Checks ausgeführt werden
+- Die API maskiert beide Felder in `HostOut` als `"***"` — sie werden nie im Klartext zurückgegeben
+- Legacy-Werte (unverschlüsselt) werden von `decrypt_field()` transparent durchgereicht (Fallback)
+- **ENV**: `FIELD_ENCRYPTION_KEY` muss ein Base64url-kodierter 32-Byte-Key sein
+
+### Email-2FA
+- Codes sind 8-stellig (statt früher 6)
+- Codes werden als SHA256-Hash gespeichert — Plaintext nie in DB
+- 5 Fehlversuche → 30-Minuten-Lockout (HTTP 429 mit `Retry-After`)
+- Felder: `two_fa_email_code_hash`, `two_fa_attempts`, `two_fa_lockout_until` (seit Migration 013)
+
+### API-Keys
+- `key_prefix` wird für neue Keys nicht mehr geschrieben (leerer String)
+- Lookup im Receiver erfolgt ausschließlich über `key_hash` (SHA256)
+- Der volle Key wird dem User **einmalig** beim Erstellen zurückgegeben
+
+### Rate Limiting (slowapi)
+- Login-Endpoint `/api/v1/auth/login`: 10 req/min pro IP
+- 2FA-Verify `/api/v1/auth/2fa/verify`: 10 req/min pro IP
+- Globaler Limiter registriert in `api/app/main.py`
+
+### Distributed Locking
+- `downtime_expiry_watcher` und `dead_collector_watcher` in `api/app/main.py` laufen hinter Redis-Locks
+- Lock-Keys: `overseer:lock:downtime_watcher`, `overseer:lock:dead_collector_watcher`
+- Timeout: 55 s, blocking_timeout: 1 s → bei mehreren API-Replicas läuft nur eine Instanz pro Watcher
+
 ## Status-Modell
 
 - `OK` (0) – Alles in Ordnung
