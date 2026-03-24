@@ -247,9 +247,10 @@ class ServiceCreate(BaseModel):
     name: str
     check_type: str
     check_config: dict = {}
-    interval_seconds: int = 60
+    interval_seconds: int = Field(default=60, ge=30, le=86400)
     threshold_warn: float | None = None
     threshold_crit: float | None = None
+    check_duration_ms: int | None = Field(default=None, le=3_600_000)
     max_check_attempts: int = 3
     check_mode: str = "passive"
 
@@ -257,9 +258,10 @@ class ServiceCreate(BaseModel):
 class ServiceUpdate(BaseModel):
     name: str | None = None
     check_config: dict | None = None
-    interval_seconds: int | None = None
+    interval_seconds: int | None = Field(default=None, ge=30, le=86400)
     threshold_warn: float | None = None
     threshold_crit: float | None = None
+    check_duration_ms: int | None = Field(default=None, le=3_600_000)
     max_check_attempts: int | None = None
     check_mode: str | None = None
     active: bool | None = None

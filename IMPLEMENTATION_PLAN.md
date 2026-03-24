@@ -314,7 +314,7 @@ class BulkAcknowledgeRequest(BaseModel):
 
 ---
 
-### 1.8 Input Validation auf Service-Feldern
+### ✅ 1.8 Input Validation auf Service-Feldern
 
 **Was**: `interval_seconds` muss zwischen 30 und 86400 liegen. `check_duration_ms` muss ≤ 3.600.000 sein.
 **Warum**: Keine Eingabevalidierung erlaubt absurde Werte (z.B. interval=0 → Endlosschleife im Scheduler).
