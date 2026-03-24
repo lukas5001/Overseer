@@ -317,3 +317,37 @@ class LoginRequest(BaseModel):
 
 class TwoFAVerifyRequest(BaseModel):
     code: str
+
+
+# ==================== Monitoring Scripts ====================
+
+class MonitoringScriptOut(BaseModel):
+    id: UUID
+    tenant_id: UUID
+    name: str
+    description: str
+    interpreter: str
+    script_body: str
+    expected_output: str
+    created_by: UUID | None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class MonitoringScriptCreate(BaseModel):
+    tenant_id: UUID
+    name: str
+    description: str = ""
+    interpreter: str = "powershell"
+    script_body: str
+    expected_output: str = "nagios"
+
+
+class MonitoringScriptUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    interpreter: str | None = None
+    script_body: str | None = None
+    expected_output: str | None = None

@@ -298,19 +298,45 @@ async def get_agent_config(
     )
     rows = result.fetchall()
 
-    checks = [
-        AgentCheckDef(
+    # Resolve server-managed scripts for agent_script checks
+    script_ids = []
+    for r in rows:
+        if r.check_type == "agent_script" and r.check_config and r.check_config.get("script_id"):
+            script_ids.append(r.check_config["script_id"])
+
+    scripts_map: dict = {}
+    if script_ids:
+        script_result = await db.execute(
+            text("SELECT id, script_body, interpreter, expected_output FROM monitoring_scripts WHERE id = ANY(:ids)"),
+            {"ids": script_ids},
+        )
+        for sr in script_result.fetchall():
+            scripts_map[str(sr.id)] = {
+                "script_content": sr.script_body,
+                "script_interpreter": sr.interpreter,
+                "expected_output": sr.expected_output,
+            }
+
+    checks = []
+    for r in rows:
+        config = dict(r.check_config or {})
+        # Inject script content for server-managed scripts
+        if r.check_type == "agent_script" and config.get("script_id"):
+            script_data = scripts_map.get(config["script_id"])
+            if script_data:
+                config.update(script_data)
+            del config["script_id"]  # Agent doesn't need the DB ID
+
+        checks.append(AgentCheckDef(
             service_id=str(r.id),
             name=r.name,
             check_type=r.check_type,
-            config=r.check_config or {},
+            config=config,
             interval_seconds=r.interval_seconds,
             threshold_warn=r.threshold_warn,
             threshold_crit=r.threshold_crit,
             max_check_attempts=r.max_check_attempts,
-        )
-        for r in rows
-    ]
+        ))
 
     return AgentConfigResponse(
         host_id=agent["host_id"],

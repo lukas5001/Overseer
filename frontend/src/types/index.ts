@@ -584,6 +584,30 @@ export interface AiQueryResponse {
   sql_used: string
 }
 
+// ── Monitoring Script ────────────────────────────────────────────────────────
+
+export interface MonitoringScript {
+  id: string
+  tenant_id: string
+  name: string
+  description: string
+  interpreter: 'powershell' | 'bash' | 'python'
+  script_body: string
+  expected_output: 'nagios' | 'text' | 'json'
+  created_by: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface MonitoringScriptCreate {
+  tenant_id: string
+  name: string
+  description?: string
+  interpreter: string
+  script_body: string
+  expected_output?: string
+}
+
 // ── Auth ─────────────────────────────────────────────────────────────────────
 
 export interface LoginRequest {

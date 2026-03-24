@@ -12,13 +12,15 @@ import (
 type CheckFunc func(config map[string]any, warn, crit *float64) types.CheckResult
 
 var registry = map[string]CheckFunc{
-	"agent_cpu":      checkCPU,
-	"agent_memory":   checkMemory,
-	"agent_disk":     checkDisk,
-	"agent_service":  checkService,
-	"agent_process":  checkProcess,
-	"agent_eventlog": checkEventlog,
-	"agent_custom":   checkCustom,
+	"agent_cpu":           checkCPU,
+	"agent_memory":        checkMemory,
+	"agent_disk":          checkDisk,
+	"agent_service":       checkService,
+	"agent_process":       checkProcess,
+	"agent_eventlog":      checkEventlog,
+	"agent_custom":        checkCustom,
+	"agent_script":        checkScript,
+	"agent_services_auto": checkServicesAuto,
 }
 
 // Execute runs a check by type with timeout and panic recovery

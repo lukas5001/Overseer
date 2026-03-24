@@ -299,6 +299,23 @@ class ActiveAlert(Base):
     escalation_step = Column(Integer, nullable=False, default=0)
 
 
+class MonitoringScript(Base):
+    __tablename__ = "monitoring_scripts"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
+    name = Column(String(255), nullable=False)
+    description = Column(Text, nullable=False, default="")
+    interpreter = Column(String(20), nullable=False, default="powershell")
+    script_body = Column(Text, nullable=False)
+    expected_output = Column(String(20), nullable=False, default="nagios")
+    created_by = Column(UUID(as_uuid=True), nullable=True)  # NO FK per convention
+    created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+
+    __table_args__ = (UniqueConstraint("tenant_id", "name"),)
+
+
 class EscalationPolicy(Base):
     __tablename__ = "escalation_policies"
 

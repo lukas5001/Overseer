@@ -264,6 +264,7 @@ const CHECK_TYPES = [
   'snmp', 'snmp_interface',
   'ssh_disk', 'ssh_cpu', 'ssh_mem', 'ssh_process', 'ssh_service', 'ssh_custom',
   'agent_cpu', 'agent_memory', 'agent_disk', 'agent_service', 'agent_process', 'agent_eventlog', 'agent_custom',
+  'agent_script', 'agent_services_auto',
 ]
 
 function ConfigFields({ checkType, config, onChange }: {
@@ -298,6 +299,8 @@ function ConfigFields({ checkType, config, onChange }: {
     case 'agent_process': return <>{field('Prozessname', 'process', 'nginx')}</>
     case 'agent_eventlog': return <>{field('Log', 'log', 'System')}{field('Level', 'level', 'Error')}{field('Minuten', 'minutes', '30')}</>
     case 'agent_custom':  return <>{field('Kommando', 'command', 'Get-Process | Measure')}{field('OK Pattern', 'ok_pattern', '.')}{field('Critical Pattern', 'crit_pattern', '')}</>
+    case 'agent_script':  return <>{field('Script-ID (Server)', 'script_id', 'UUID des Scripts aus der Scripts-Seite')}{field('Lokaler Pfad (alternativ)', 'script_path', 'C:\\Scripts\\check.ps1')}{field('Interpreter', 'script_interpreter', 'powershell / bash / python')}{field('Output-Format', 'expected_output', 'nagios / text / json')}</>
+    case 'agent_services_auto': return <>{field('Exclude-Liste (kommagetrennt)', 'exclude', 'gupdate,gupdatem,sppsvc,RemoteRegistry')}</>
     default: return null
   }
 }
@@ -349,18 +352,25 @@ function AddCheckModal({ host, onClose, onSaved }: AddCheckModalProps) {
   const [error, setError] = useState<string | null>(null)
 
   const mutation = useMutation({
-    mutationFn: () => api.post('/api/v1/services/', {
-      host_id: host.id,
-      tenant_id: host.tenant_id,
-      name: form.name,
-      check_type: form.check_type,
-      check_config: config,
-      interval_seconds: parseInt(form.interval_seconds) || 60,
-      threshold_warn: form.threshold_warn ? parseFloat(form.threshold_warn) : null,
-      threshold_crit: form.threshold_crit ? parseFloat(form.threshold_crit) : null,
-      max_check_attempts: parseInt(form.max_check_attempts) || 3,
-      check_mode: form.check_type.startsWith('agent_') ? 'agent' : form.check_mode,
-    }),
+    mutationFn: () => {
+      // Transform comma-separated fields to arrays where needed
+      const finalConfig: Record<string, unknown> = { ...config }
+      if (form.check_type === 'agent_services_auto' && typeof finalConfig.exclude === 'string') {
+        finalConfig.exclude = (finalConfig.exclude as string).split(',').map(s => s.trim()).filter(Boolean)
+      }
+      return api.post('/api/v1/services/', {
+        host_id: host.id,
+        tenant_id: host.tenant_id,
+        name: form.name,
+        check_type: form.check_type,
+        check_config: finalConfig,
+        interval_seconds: parseInt(form.interval_seconds) || 60,
+        threshold_warn: form.threshold_warn ? parseFloat(form.threshold_warn) : null,
+        threshold_crit: form.threshold_crit ? parseFloat(form.threshold_crit) : null,
+        max_check_attempts: parseInt(form.max_check_attempts) || 3,
+        check_mode: form.check_type.startsWith('agent_') ? 'agent' : form.check_mode,
+      })
+    },
     onSuccess: () => { onSaved(); onClose() },
     onError: (e: any) => setError(e.response?.data?.detail ?? 'Fehler beim Speichern'),
   })
@@ -700,20 +710,26 @@ function EditServiceModal({ service, onClose, onSaved }: EditServiceModalProps) 
     check_mode: service.check_mode ?? 'passive',
   })
   const [config, setConfig] = useState<Record<string, string>>(
-    Object.fromEntries(Object.entries(service.check_config).map(([k, v]) => [k, String(v)]))
+    Object.fromEntries(Object.entries(service.check_config).map(([k, v]) => [k, Array.isArray(v) ? v.join(', ') : String(v)]))
   )
   const [error, setError] = useState<string | null>(null)
 
   const mutation = useMutation({
-    mutationFn: () => api.patch(`/api/v1/services/${service.id}`, {
-      name: form.name,
-      check_config: config,
-      interval_seconds: parseInt(form.interval_seconds) || 60,
-      threshold_warn: form.threshold_warn ? parseFloat(form.threshold_warn) : null,
-      threshold_crit: form.threshold_crit ? parseFloat(form.threshold_crit) : null,
-      max_check_attempts: parseInt(form.max_check_attempts) || 3,
-      check_mode: form.check_mode,
-    }),
+    mutationFn: () => {
+      const finalConfig: Record<string, unknown> = { ...config }
+      if (service.check_type === 'agent_services_auto' && typeof finalConfig.exclude === 'string') {
+        finalConfig.exclude = (finalConfig.exclude as string).split(',').map(s => s.trim()).filter(Boolean)
+      }
+      return api.patch(`/api/v1/services/${service.id}`, {
+        name: form.name,
+        check_config: finalConfig,
+        interval_seconds: parseInt(form.interval_seconds) || 60,
+        threshold_warn: form.threshold_warn ? parseFloat(form.threshold_warn) : null,
+        threshold_crit: form.threshold_crit ? parseFloat(form.threshold_crit) : null,
+        max_check_attempts: parseInt(form.max_check_attempts) || 3,
+        check_mode: form.check_mode,
+      })
+    },
     onSuccess: () => { onSaved(); onClose() },
     onError: (e: any) => setError(e.response?.data?.detail ?? 'Fehler beim Speichern'),
   })

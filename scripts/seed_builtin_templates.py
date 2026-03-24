@@ -49,17 +49,15 @@ BUILTIN_TEMPLATES = [
     },
     {
         "name": "Generic Windows Server",
-        "description": "Standard checks for Windows servers via Agent: ping, RDP port, CPU, RAM, Disk C:.",
+        "description": "Standard Agent checks for Windows servers: CPU, RAM, Disk C:, automatic services.",
         "vendor": "generic",
         "category": "server",
         "tags": ["windows", "agent"],
         "checks": [
-            {"name": "ping", "check_type": "ping", "check_config": {}, "interval_seconds": 60},
-            {"name": "rdp", "check_type": "port", "check_config": {"port": 3389}, "interval_seconds": 60},
             {"name": "agent_cpu", "check_type": "agent_cpu", "check_config": {}, "threshold_warn": 80, "threshold_crit": 95, "interval_seconds": 60, "check_mode": "agent"},
             {"name": "agent_memory", "check_type": "agent_memory", "check_config": {}, "threshold_warn": 85, "threshold_crit": 95, "interval_seconds": 60, "check_mode": "agent"},
             {"name": "agent_disk_c", "check_type": "agent_disk", "check_config": {"path": "C:"}, "threshold_warn": 80, "threshold_crit": 90, "interval_seconds": 300, "check_mode": "agent"},
-            {"name": "agent_w32time", "check_type": "agent_service", "check_config": {"service": "W32Time"}, "interval_seconds": 120, "check_mode": "agent"},
+            {"name": "agent_services_auto", "check_type": "agent_services_auto", "check_config": {"exclude": ["gupdate", "gupdatem", "sppsvc", "RemoteRegistry"]}, "interval_seconds": 120, "check_mode": "agent"},
         ],
     },
     {
