@@ -60,7 +60,7 @@ function NewHostModal({
     mutationFn: async () => {
       const host = await api.post('/api/v1/hosts/', form).then(r => r.data)
       if (templateId) {
-        await api.post(`/api/v1/templates/${templateId}/apply`, { host_id: host.id })
+        await api.post(`/api/v1/service-templates/${templateId}/apply`, { host_id: host.id })
       }
       return host
     },
@@ -266,7 +266,7 @@ export default function HostsPage() {
   })
   const { data: templates = [] } = useQuery<ServiceTemplate[]>({
     queryKey: ['service-templates'],
-    queryFn: () => api.get('/api/v1/templates/').then(r => r.data),
+    queryFn: () => api.get('/api/v1/service-templates/').then(r => r.data),
   })
 
   // Worst status per host

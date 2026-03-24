@@ -463,14 +463,14 @@ export function useDeleteDowntime() {
 export function useServiceTemplates() {
   return useQuery<ServiceTemplate[]>({
     queryKey: ['service-templates'],
-    queryFn: () => api.get('/api/v1/templates/').then(r => r.data),
+    queryFn: () => api.get('/api/v1/service-templates/').then(r => r.data),
   })
 }
 
 export function useServiceTemplate(templateId?: string) {
   return useQuery<ServiceTemplate>({
     queryKey: ['service-template', templateId],
-    queryFn: () => api.get(`/api/v1/templates/${templateId}`).then(r => r.data),
+    queryFn: () => api.get(`/api/v1/service-templates/${templateId}`).then(r => r.data),
     enabled: !!templateId,
   })
 }
@@ -478,7 +478,7 @@ export function useServiceTemplate(templateId?: string) {
 export function useCreateTemplate() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (body: ServiceTemplateCreate) => api.post('/api/v1/templates/', body).then(r => r.data),
+    mutationFn: (body: ServiceTemplateCreate) => api.post('/api/v1/service-templates/', body).then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['service-templates'] }),
   })
 }
@@ -487,7 +487,7 @@ export function useUpdateTemplate() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ id, ...body }: ServiceTemplateUpdate & { id: string }) =>
-      api.put(`/api/v1/templates/${id}`, body).then(r => r.data),
+      api.put(`/api/v1/service-templates/${id}`, body).then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['service-templates'] }),
   })
 }
@@ -495,7 +495,7 @@ export function useUpdateTemplate() {
 export function useDeleteTemplate() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id: string) => api.delete(`/api/v1/templates/${id}`),
+    mutationFn: (id: string) => api.delete(`/api/v1/service-templates/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['service-templates'] }),
   })
 }
@@ -504,7 +504,7 @@ export function useApplyTemplate() {
   const qc = useQueryClient()
   return useMutation<TemplateApplyResponse, unknown, { templateId: string } & TemplateApplyRequest>({
     mutationFn: ({ templateId, ...body }) =>
-      api.post(`/api/v1/templates/${templateId}/apply`, body).then(r => r.data),
+      api.post(`/api/v1/service-templates/${templateId}/apply`, body).then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['services'] }),
   })
 }

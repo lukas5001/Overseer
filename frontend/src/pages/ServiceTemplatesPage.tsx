@@ -16,8 +16,8 @@ function TemplateModal({ onClose, existing }: { onClose: () => void; existing?: 
   const mutation = useMutation({
     mutationFn: () => {
       const body: ServiceTemplateCreate = { name, description, checks }
-      if (existing) return api.put(`/api/v1/templates/${existing.id}`, body).then(r => r.data)
-      return api.post('/api/v1/templates/', body).then(r => r.data)
+      if (existing) return api.put(`/api/v1/service-templates/${existing.id}`, body).then(r => r.data)
+      return api.post('/api/v1/service-templates/', body).then(r => r.data)
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['service-templates'] }); onClose() },
     onError: (e: any) => setError(e.response?.data?.detail ?? 'Fehler'),
@@ -145,7 +145,7 @@ function ApplyModal({ templateId, onClose }: { templateId: string; onClose: () =
   })
 
   const mutation = useMutation({
-    mutationFn: () => api.post(`/api/v1/templates/${templateId}/apply`, { host_id: hostId }).then(r => r.data),
+    mutationFn: () => api.post(`/api/v1/service-templates/${templateId}/apply`, { host_id: hostId }).then(r => r.data),
     onSuccess: (data: any) => { setResult(data); qc.invalidateQueries({ queryKey: ['services'] }) },
     onError: (e: any) => setError(e.response?.data?.detail ?? 'Fehler'),
   })
@@ -208,11 +208,11 @@ export default function ServiceTemplatesPage() {
 
   const { data: templates = [], isLoading } = useQuery<ServiceTemplate[]>({
     queryKey: ['service-templates'],
-    queryFn: () => api.get('/api/v1/templates/').then(r => r.data),
+    queryFn: () => api.get('/api/v1/service-templates/').then(r => r.data),
   })
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => api.delete(`/api/v1/templates/${id}`),
+    mutationFn: (id: string) => api.delete(`/api/v1/service-templates/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['service-templates'] }),
   })
 
