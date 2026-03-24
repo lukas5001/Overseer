@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Server, Router, Printer, Shield, Wifi, ArrowLeft, Play, Search,
   CheckCircle, XCircle, AlertTriangle, HelpCircle, Clock, Plus, X, Trash2, TrendingUp, Pencil, Settings2, Power, Copy,
-  Monitor, ClipboardCopy, KeyRound,
+  Monitor, ClipboardCopy, KeyRound, Download,
 } from 'lucide-react'
 import clsx from 'clsx'
 import { formatDistanceToNow } from 'date-fns'
@@ -1536,7 +1536,15 @@ export default function HostDetailPage() {
             <div className="text-sm text-gray-700">
               {setupTab === 'windows' ? (
                 <div className="bg-gray-50 rounded-lg px-4 py-3 font-mono text-xs space-y-2">
-                  <p><span className="text-gray-400">1.</span> overseer-agent.exe herunterladen</p>
+                  <p><span className="text-gray-400">1.</span> Agent herunterladen:</p>
+                  <a
+                    href="/agent/overseer-agent-windows-amd64.exe"
+                    download
+                    className="flex items-center gap-2 px-3 py-2 bg-overseer-600 text-white rounded-lg text-xs font-medium hover:bg-overseer-700 transition-colors no-underline w-fit font-sans"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    overseer-agent.exe (Windows, 9.6 MB)
+                  </a>
                   <p><span className="text-gray-400">2.</span> Als Administrator ausführen:</p>
                   <div className="bg-gray-900 rounded px-3 py-2 text-emerald-400 select-all">overseer-agent.exe install</div>
                   <p><span className="text-gray-400">3.</span> Config-Datei bearbeiten:</p>
@@ -1551,6 +1559,15 @@ export default function HostDetailPage() {
               ) : (
                 <div className="bg-gray-50 rounded-lg px-4 py-3 font-mono text-xs space-y-2">
                   <p><span className="text-gray-400">1.</span> Agent herunterladen:</p>
+                  <a
+                    href="/agent/overseer-agent-linux-amd64"
+                    download
+                    className="flex items-center gap-2 px-3 py-2 bg-overseer-600 text-white rounded-lg text-xs font-medium hover:bg-overseer-700 transition-colors no-underline w-fit font-sans"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    overseer-agent (Linux, 9.3 MB)
+                  </a>
+                  <p className="text-gray-400 text-[11px]">Oder per Terminal:</p>
                   <div className="bg-gray-900 rounded px-3 py-2 text-emerald-400 select-all break-all">wget https://overseer.dailycrust.it/agent/overseer-agent-linux-amd64</div>
                   <p><span className="text-gray-400">2.</span> Installieren:</p>
                   <div className="bg-gray-900 rounded px-3 py-2 text-emerald-400 select-all space-y-0.5">
