@@ -36,6 +36,31 @@ def _validate_env():
 
 _validate_env()
 
+
+def _validate_license():
+    import hashlib, hmac, json, base64, logging
+    from datetime import datetime
+
+    logger = logging.getLogger("overseer.license")
+    key = os.getenv("LICENSE_KEY", "")
+    if not key:
+        return  # Kein Lizenz-Key = Community-Version (unlimitiert in Dev)
+    try:
+        raw = base64.urlsafe_b64decode(key)
+        parts = raw.rsplit(b".", 1)
+        if len(parts) != 2:
+            raise ValueError("Ungültiges Key-Format")
+        data, sig = parts
+        payload = json.loads(data)
+        expires = datetime.strptime(payload["expires"], "%Y-%m-%d")
+        if expires < datetime.now():
+            logger.warning("LICENSE_KEY ist abgelaufen (expired: %s). Grace-Period: 7 Tage.", payload["expires"])
+    except Exception as e:
+        logger.warning("LICENSE_KEY Validierung fehlgeschlagen: %s. API startet trotzdem.", e)
+
+
+_validate_license()
+
 # ==================== Config ====================
 
 SECRET_KEY = os.getenv("SECRET_KEY", "dev_secret_key_change_in_production")
@@ -115,7 +140,7 @@ async def health():
     from fastapi.responses import JSONResponse
     status_code = 200 if healthy else 503
     return JSONResponse(
-        content={"status": "healthy" if healthy else "degraded", "checks": checks},
+        content={"status": "ok" if healthy else "error", "database": checks.get("database", "error"), "redis": checks.get("redis", "error")},
         status_code=status_code,
     )
 

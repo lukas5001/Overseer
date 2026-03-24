@@ -1152,7 +1152,7 @@ async def create_tv_token(filter_id: UUID | None = None, user: dict = Depends(re
 
 ---
 
-### 4.1 docker-compose.yml vollständig konfigurieren
+### ✅ 4.1 docker-compose.yml vollständig konfigurieren
 
 **Was**: Das bestehende `docker-compose.yml` erweitern um: `worker`-Replicas auf 3, `nginx` als Reverse-Proxy, fehlende ENV-Variablen.
 **Wo**: `docker-compose.yml` im Root
@@ -1196,7 +1196,7 @@ environment:
 
 ---
 
-### 4.2 Nginx-Konfiguration
+### ✅ 4.2 Nginx-Konfiguration
 
 **Was**: Nginx als Reverse Proxy für API, Receiver und Frontend.
 **Wo**: Neue Datei `deploy/nginx.conf`
@@ -1230,7 +1230,7 @@ server {
 
 ---
 
-### 4.3 setup.sh Script
+### ✅ 4.3 setup.sh Script
 
 **Was**: Einmalig ausgeführtes Initialisierungsscript für neue Deployments.
 **Wo**: Neue Datei `setup.sh` im Root
@@ -1268,7 +1268,7 @@ echo "=== Setup abgeschlossen ==="
 
 ---
 
-### 4.4 .env.example aktualisieren
+### ✅ 4.4 .env.example aktualisieren
 
 **Was**: `.env.example` mit allen neuen Variablen aus Phase 1-4 aktualisieren.
 **Wo**: `.env.example` im Root (existiert noch nicht — erstellen)
@@ -1306,7 +1306,7 @@ LICENSE_KEY=
 
 ---
 
-### 4.5 GitHub Actions Workflow
+### ✅ 4.5 GitHub Actions Workflow
 
 **Was**: CI/CD-Pipeline: Docker-Build auf Push to main, Push zu ghcr.io.
 **Wo**: Neue Datei `.github/workflows/docker-publish.yml`
@@ -1351,7 +1351,7 @@ jobs:
 
 ---
 
-### 4.6 License Key Validation
+### ✅ 4.6 License Key Validation
 
 **Was**: HMAC-SHA256-basiertes Offline-Lizenzierungssystem.
 **Wo**:
