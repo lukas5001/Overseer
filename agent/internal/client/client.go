@@ -126,9 +126,9 @@ func (c *Client) FetchConfig() (*types.RemoteConfig, error) {
 	return &cfg, nil
 }
 
-// SendResults sends check results to the server
+// SendResults sends check results to the receiver endpoint
 func (c *Client) SendResults(payload *types.ResultPayload) error {
-	resp, err := c.doWithRetry("POST", "/api/v1/results", payload)
+	resp, err := c.doWithRetry("POST", "/receiver/api/v1/results", payload)
 	if err != nil {
 		return err
 	}
