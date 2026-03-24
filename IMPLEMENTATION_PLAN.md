@@ -870,7 +870,7 @@ npm install @tanstack/react-query react-router-dom recharts date-fns zustand @ra
 
 ---
 
-### 3.1 Typen und API-Client
+### ✅ 3.1 Typen und API-Client
 
 **Was**: Zentrale TypeScript-Typen und ein typisierter API-Client als Basis für alle Seiten.
 **Wo**:
@@ -906,7 +906,7 @@ export function useHosts(tenantId?: string) {
 
 ---
 
-### 3.2 Dashboard / Fehlerübersicht (Hauptseite)
+### ✅ 3.2 Dashboard / Fehlerübersicht (Hauptseite)
 
 **Was**: Verbesserter Haupt-Dashboard mit Statistik-Header, Filter-Bar, Tabelle mit Bulk-Select, Live-Polling.
 **Wo**: `frontend/src/pages/ErrorOverviewPage.tsx` (existiert bereits — erweitern/ersetzen)
@@ -933,7 +933,7 @@ Status-Farben:
 
 ---
 
-### 3.3 Host Management Page
+### ✅ 3.3 Host Management Page
 
 **Was**: Liste aller Hosts mit Suche, Filter, "Neuer Host"-Modal.
 **Wo**: `frontend/src/pages/HostsPage.tsx` (existiert — erweitern)
@@ -947,7 +947,7 @@ Status-Farben:
 
 ---
 
-### 3.4 Host Detail Page
+### ✅ 3.4 Host Detail Page
 
 **Was**: Detailansicht eines Hosts mit Service-Liste, Mini-Graphen, History-Tab, Downtime-Tab.
 **Wo**: `frontend/src/pages/HostDetailPage.tsx` (existiert — stark erweitern)
@@ -976,7 +976,7 @@ import { LineChart, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis } f
 
 ---
 
-### 3.5 Tenants Page (Super-Admin)
+### ✅ 3.5 Tenants Page (Super-Admin)
 
 **Was**: Tenant-Verwaltung mit Tabs für API-Keys, Users, Quotas, Collectors.
 **Wo**: `frontend/src/pages/TenantsPage.tsx` (existiert — erweitern)
@@ -992,7 +992,7 @@ import { LineChart, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis } f
 
 ---
 
-### 3.6 Collectors Page
+### ✅ 3.6 Collectors Page
 
 **Was**: Verwaltung der Collector-VMs mit Installer-Download.
 **Wo**: Neue Datei `frontend/src/pages/CollectorsPage.tsx`
@@ -1007,7 +1007,7 @@ import { LineChart, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis } f
 
 ---
 
-### 3.7 Alert Rules Page
+### ✅ 3.7 Alert Rules Page
 
 **Was**: Verwaltung von Alert-Regeln pro Tenant.
 **Wo**: Neue Datei `frontend/src/pages/AlertRulesPage.tsx`
@@ -1030,7 +1030,7 @@ import { LineChart, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis } f
 
 ---
 
-### 3.8 Notification Channels Page
+### ✅ 3.8 Notification Channels Page
 
 **Was**: Email- und Webhook-Channels verwalten.
 **Wo**: Neue Datei `frontend/src/pages/NotificationChannelsPage.tsx`
@@ -1049,7 +1049,7 @@ import { LineChart, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis } f
 
 ---
 
-### 3.9 Settings Page
+### ✅ 3.9 Settings Page
 
 **Was**: User-Profil, Passwort, 2FA, Präferenzen.
 **Wo**: Neue Datei `frontend/src/pages/SettingsPage.tsx`
@@ -1067,7 +1067,7 @@ import { LineChart, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis } f
 
 ---
 
-### 3.10 Admin Page
+### ✅ 3.10 Admin Page
 
 **Was**: System-Verwaltung nur für Super-Admins.
 **Wo**: Neue Datei `frontend/src/pages/AdminPage.tsx`
@@ -1082,7 +1082,7 @@ import { LineChart, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis } f
 
 ---
 
-### 3.11 SLA Reports Page
+### ✅ 3.11 SLA Reports Page
 
 **Was**: SLA-Auswertungen pro Tenant und Zeitraum.
 **Wo**: Neue Datei `frontend/src/pages/SlaReportsPage.tsx`
@@ -1097,7 +1097,7 @@ import { LineChart, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis } f
 
 ---
 
-### 3.12 TV Modus
+### ✅ 3.12 TV Modus
 
 **Was**: Vollbild-Dashboard ohne Sidebar, optimiert für Monitor an der Wand. Unterstützt read-only TV-Token.
 **Wo**:
@@ -1130,7 +1130,7 @@ async def create_tv_token(filter_id: UUID | None = None, user: dict = Depends(re
 
 ---
 
-### 3.13 Service Templates Page
+### ✅ 3.13 Service Templates Page
 
 **Was**: Verwaltung von Service-Templates mit Apply-Funktion.
 **Wo**: Neue Datei `frontend/src/pages/ServiceTemplatesPage.tsx`
