@@ -13,6 +13,19 @@ import logging
 import os
 from datetime import datetime, timezone
 
+# ==================== ENV Validation ====================
+
+def _validate_env():
+    secret = os.getenv("SECRET_KEY", "")
+    if not secret or secret.startswith("dev_") or len(secret) < 32:
+        raise RuntimeError(
+            "SECRET_KEY ist nicht gesetzt oder unsicher. "
+            "Setze SECRET_KEY auf einen zufälligen String mit mindestens 32 Zeichen. "
+            "Generiere einen Key mit: python -c \"import secrets; print(secrets.token_hex(32))\""
+        )
+
+_validate_env()
+
 import redis.asyncio as redis
 from fastapi import FastAPI, HTTPException, Header, Request
 from fastapi.responses import JSONResponse

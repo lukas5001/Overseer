@@ -12,6 +12,26 @@ from sqlalchemy import text
 from api.app.core.database import AsyncSessionLocal
 from api.app.routers import auth, status, tenants, hosts, services, collectors, downtimes, config, history, users, audit, notifications, templates, two_factor, saved_filters
 
+# ==================== ENV Validation ====================
+
+def _validate_env():
+    secret = os.getenv("SECRET_KEY", "")
+    if not secret or secret.startswith("dev_") or len(secret) < 32:
+        raise RuntimeError(
+            "SECRET_KEY ist nicht gesetzt oder unsicher. "
+            "Setze SECRET_KEY auf einen zufälligen String mit mindestens 32 Zeichen. "
+            "Generiere einen Key mit: python -c \"import secrets; print(secrets.token_hex(32))\""
+        )
+    enc_key = os.getenv("FIELD_ENCRYPTION_KEY", "")
+    if not enc_key or len(enc_key) < 32:
+        raise RuntimeError(
+            "FIELD_ENCRYPTION_KEY ist nicht gesetzt. "
+            "Setze FIELD_ENCRYPTION_KEY auf einen 32-Byte Base64-URL-sicheren String. "
+            "Generiere: python -c \"import secrets; print(secrets.token_urlsafe(32))\""
+        )
+
+_validate_env()
+
 # ==================== Config ====================
 
 SECRET_KEY = os.getenv("SECRET_KEY", "dev_secret_key_change_in_production")

@@ -28,7 +28,7 @@
 
 ---
 
-### 1.1 Mandatory ENV Validation beim API-Start
+### ✅ 1.1 Mandatory ENV Validation beim API-Start
 
 **Was**: Beim Start des API-Prozesses prüfen ob `SECRET_KEY` unsicher ist. Crash mit erklärendem Fehler wenn ja.
 **Warum**: Aktuell startet die API mit `dev_secret_key_change_in_production` in Produktion problemlos — das ist ein kritisches Sicherheitsproblem.
