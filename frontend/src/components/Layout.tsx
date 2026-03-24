@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, AlertTriangle, Monitor, Building2, Shield, ShieldCheck,
   LogOut, Users, Clock, ScrollText, Bell, Layers, Menu, X,
-  ChevronLeft, ChevronRight, Wifi, BarChart3, Mail, FileCode2, ShieldAlert, Settings,
+  ChevronLeft, ChevronRight, Wifi, BarChart3, Mail, ShieldAlert, Settings,
 } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -53,8 +53,7 @@ export default function Layout() {
   const configNav = [
     ...(isAdmin ? [{ to: '/alert-rules', label: 'Alert-Regeln', icon: Bell }] : []),
     ...(isAdmin ? [{ to: '/notifications', label: 'Benachrichtigungen', icon: Mail }] : []),
-    ...(isAdmin ? [{ to: '/service-templates', label: 'Templates', icon: FileCode2 }] : []),
-    { to: '/templates', label: 'Vorlagen', icon: Layers },
+    ...(isAdmin ? [{ to: '/templates', label: 'Templates', icon: Layers }] : []),
   ]
 
   const adminNav = isSuperAdmin ? [

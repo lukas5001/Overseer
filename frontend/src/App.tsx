@@ -9,7 +9,6 @@ import UsersPage from './pages/UsersPage'
 import DowntimesPage from './pages/DowntimesPage'
 import AuditLogPage from './pages/AuditLogPage'
 import NotificationsPage from './pages/NotificationsPage'
-import TemplatesPage from './pages/TemplatesPage'
 import SecurityPage from './pages/SecurityPage'
 import CollectorsPage from './pages/CollectorsPage'
 import AlertRulesPage from './pages/AlertRulesPage'
@@ -54,8 +53,7 @@ export default function App() {
           <Route path="/alert-rules" element={<AlertRulesPage />} />
           <Route path="/notifications" element={<NotificationChannelsPage />} />
           <Route path="/webhooks" element={<NotificationsPage />} />
-          <Route path="/templates" element={<TemplatesPage />} />
-          <Route path="/service-templates" element={<ServiceTemplatesPage />} />
+          <Route path="/templates" element={<ServiceTemplatesPage />} />
           <Route path="/sla" element={<SlaReportsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/security" element={<SecurityPage />} />
