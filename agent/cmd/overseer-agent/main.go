@@ -13,6 +13,9 @@ import (
 
 	"github.com/lukas5001/overseer-agent/internal/client"
 	"github.com/lukas5001/overseer-agent/internal/config"
+	"github.com/lukas5001/overseer-agent/internal/heartbeat"
+	"github.com/lukas5001/overseer-agent/internal/scheduler"
+	"github.com/lukas5001/overseer-agent/internal/sender"
 	"github.com/lukas5001/overseer-agent/internal/types"
 	"github.com/lukas5001/overseer-agent/internal/version"
 )
@@ -29,7 +32,6 @@ func main() {
 	}
 
 	// On Windows, detect if running as service (will be implemented in Prompt 5)
-	// For now, always run in foreground
 	_ = runForeground
 
 	if err := run(*configPath); err != nil {
@@ -83,73 +85,72 @@ func run(configPath string) error {
 		"checks", len(remoteCfg.Checks),
 	)
 
-	// 5. Send initial heartbeat
-	hostname, _ := os.Hostname()
-	if err := httpClient.SendHeartbeat(&types.HeartbeatInfo{
-		AgentVersion: version.Version,
-		OS:           runtime.GOOS,
-		Hostname:     hostname,
-	}); err != nil {
-		logger.Warn("initial heartbeat failed", "error", err)
-	}
-
-	// 6. Setup context with signal handling
+	// 5. Setup context with signal handling
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 
-	logger.Info("Agent ready — waiting for scheduler (Prompt 3+4)",
-		"checks_configured", len(remoteCfg.Checks),
-	)
+	// 6. Create result channel and components
+	resultsChan := make(chan types.CheckResult, 1000)
 
-	// 7. Main loop placeholder (will be replaced in Prompt 4)
-	// For now: heartbeat every 60s, config refresh every 5min
-	heartbeatTicker := time.NewTicker(60 * time.Second)
-	defer heartbeatTicker.Stop()
+	sched := scheduler.New(remoteCfg.Hostname, resultsChan, logger)
+	sched.UpdateConfig(remoteCfg.Checks)
 
+	snd := sender.New(httpClient, resultsChan, remoteCfg.HostID, remoteCfg.Hostname, remoteCfg.TenantID, logger)
+
+	// 7. Start goroutines
+	go sched.Run(ctx)
+	go snd.Run(ctx)
+	go heartbeat.Run(ctx, httpClient, logger)
+
+	// 8. Config refresh goroutine
 	configRefreshInterval := time.Duration(remoteCfg.ConfigIntervalSeconds) * time.Second
 	if configRefreshInterval < 60*time.Second {
 		configRefreshInterval = 300 * time.Second
 	}
-	configTicker := time.NewTicker(configRefreshInterval)
-	defer configTicker.Stop()
 
-	for {
-		select {
-		case <-sigCh:
-			logger.Info("Shutdown signal received, stopping gracefully...")
-			cancel()
-			logger.Info("Agent stopped gracefully")
-			return nil
-
-		case <-ctx.Done():
-			return nil
-
-		case <-heartbeatTicker.C:
-			if err := httpClient.SendHeartbeat(&types.HeartbeatInfo{
-				AgentVersion: version.Version,
-				OS:           runtime.GOOS,
-				Hostname:     hostname,
-			}); err != nil {
-				logger.Warn("heartbeat failed", "error", err)
-			} else {
-				logger.Debug("heartbeat sent")
+	go func() {
+		ticker := time.NewTicker(configRefreshInterval)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				newCfg, err := httpClient.FetchConfig()
+				if err != nil {
+					logger.Warn("config refresh failed", "error", err)
+					continue
+				}
+				if len(newCfg.Checks) != len(remoteCfg.Checks) {
+					logger.Info("config refreshed", "checks", len(newCfg.Checks))
+				}
+				remoteCfg = newCfg
+				sched.UpdateConfig(newCfg.Checks)
 			}
-
-		case <-configTicker.C:
-			newCfg, err := httpClient.FetchConfig()
-			if err != nil {
-				logger.Warn("config refresh failed", "error", err)
-				continue
-			}
-			if len(newCfg.Checks) != len(remoteCfg.Checks) {
-				logger.Info("config refreshed", "checks", len(newCfg.Checks))
-			}
-			remoteCfg = newCfg
 		}
-	}
+	}()
+
+	logger.Info("Agent ready",
+		"checks_configured", len(remoteCfg.Checks),
+		"config_refresh", configRefreshInterval,
+	)
+
+	// 9. Wait for shutdown signal
+	<-sigCh
+	logger.Info("Shutdown signal received, stopping gracefully...")
+	cancel()
+
+	// Give scheduler time to finish running checks
+	time.Sleep(2 * time.Second)
+
+	// Flush pending results
+	snd.Flush()
+
+	logger.Info("Agent stopped gracefully")
+	return nil
 }
 
 func setupLogger(level, logFile string) *slog.Logger {
