@@ -258,7 +258,7 @@ app.add_middleware(
 
 ---
 
-### 1.6 Distributed Locking für Background-Tasks
+### ✅ 1.6 Distributed Locking für Background-Tasks
 
 **Was**: `downtime_watcher` und `dead_collector_watcher` im Worker verwenden Redis-Lock, sodass nur eine Worker-Instanz diese Tasks gleichzeitig ausführt.
 **Warum**: Bei `replicas: 3` in docker-compose läuft jeder Watcher dreifach — doppelte DB-Schreiboperationen und Race Conditions.

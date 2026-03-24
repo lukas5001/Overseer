@@ -5,6 +5,7 @@ import asyncio
 import os
 from datetime import datetime, timezone, timedelta
 
+import redis.asyncio as aioredis
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -118,90 +119,109 @@ async def health():
 
 # ==================== Background Tasks ====================
 
+_redis_client: aioredis.Redis | None = None
+
+
+def _get_redis() -> aioredis.Redis:
+    global _redis_client
+    if _redis_client is None:
+        _redis_client = aioredis.from_url(REDIS_URL)
+    return _redis_client
+
+
+async def _run_downtime_expiry():
+    """Core logic for downtime expiry – runs under distributed lock."""
+    async with AsyncSessionLocal() as db:
+        now = datetime.now(timezone.utc)
+        expired = await db.execute(text("""
+            SELECT id, service_id, host_id
+            FROM downtimes
+            WHERE active = true AND end_at < :now
+        """), {"now": now})
+        rows = expired.fetchall()
+
+        for row in rows:
+            await db.execute(text(
+                "UPDATE downtimes SET active = false WHERE id = :id"
+            ), {"id": row.id})
+
+            if row.service_id:
+                await db.execute(text("""
+                    UPDATE current_status SET in_downtime = false
+                    WHERE service_id = :sid
+                """), {"sid": row.service_id})
+            elif row.host_id:
+                await db.execute(text("""
+                    UPDATE current_status cs
+                    SET in_downtime = false
+                    FROM services s
+                    WHERE cs.service_id = s.id AND s.host_id = :hid
+                """), {"hid": row.host_id})
+
+        if rows:
+            await db.commit()
+
+
 async def downtime_expiry_watcher():
     """Every 60s: deactivate expired downtimes and clear in_downtime flags."""
     await asyncio.sleep(20)
     while True:
         try:
-            async with AsyncSessionLocal() as db:
-                now = datetime.now(timezone.utc)
-                # Find active downtimes that have passed end_at
-                expired = await db.execute(text("""
-                    SELECT id, service_id, host_id
-                    FROM downtimes
-                    WHERE active = true AND end_at < :now
-                """), {"now": now})
-                rows = expired.fetchall()
-
-                for row in rows:
-                    await db.execute(text(
-                        "UPDATE downtimes SET active = false WHERE id = :id"
-                    ), {"id": row.id})
-
-                    # Clear in_downtime on affected current_status rows
-                    if row.service_id:
-                        await db.execute(text("""
-                            UPDATE current_status SET in_downtime = false
-                            WHERE service_id = :sid
-                        """), {"sid": row.service_id})
-                    elif row.host_id:
-                        await db.execute(text("""
-                            UPDATE current_status cs
-                            SET in_downtime = false
-                            FROM services s
-                            WHERE cs.service_id = s.id AND s.host_id = :hid
-                        """), {"hid": row.host_id})
-
-                if rows:
-                    await db.commit()
-
-        except Exception as e:
-            print(f"[DowntimeExpiry] Error: {e}")
-
+            async with _get_redis().lock("overseer:lock:downtime_watcher", timeout=55, blocking_timeout=1):
+                try:
+                    await _run_downtime_expiry()
+                except Exception as e:
+                    print(f"[DowntimeExpiry] Error: {e}")
+        except Exception:
+            pass  # Could not acquire lock – another instance is running
         await asyncio.sleep(60)
+
+
+async def _run_dead_collector_check():
+    """Core logic for dead collector detection – runs under distributed lock."""
+    async with AsyncSessionLocal() as db:
+        cutoff = datetime.now(timezone.utc) - timedelta(minutes=3)
+        dead = await db.execute(text("""
+            SELECT id, tenant_id, name
+            FROM collectors
+            WHERE active = true
+              AND last_seen_at IS NOT NULL
+              AND last_seen_at < :cutoff
+        """), {"cutoff": cutoff})
+        dead_rows = dead.fetchall()
+
+        for row in dead_rows:
+            await db.execute(text("""
+                UPDATE current_status cs
+                SET status = 'UNKNOWN',
+                    state_type = 'HARD',
+                    status_message = 'Collector offline – keine Daten seit mehr als 3 Minuten',
+                    last_check_at = :now
+                FROM services s
+                JOIN hosts h ON s.host_id = h.id
+                WHERE cs.service_id = s.id
+                  AND h.collector_id = :collector_id
+                  AND cs.status != 'UNKNOWN'
+            """), {"collector_id": row.id, "now": datetime.now(timezone.utc)})
+
+        if dead_rows:
+            await db.commit()
+            for row in dead_rows:
+                print(f"[DeadCollector] {row.name} ({row.id}) – services set to UNKNOWN")
 
 
 async def dead_collector_watcher():
     """Every 60s: find collectors silent for >2×interval, set their services to UNKNOWN."""
-    await asyncio.sleep(15)  # give startup a moment
+    await asyncio.sleep(15)
     while True:
         try:
-            async with AsyncSessionLocal() as db:
-                # Find collectors whose last_seen_at is older than 3 minutes
-                # (conservative: covers up to 3×60s intervals)
-                cutoff = datetime.now(timezone.utc) - timedelta(minutes=3)
-                dead = await db.execute(text("""
-                    SELECT id, tenant_id, name
-                    FROM collectors
-                    WHERE active = true
-                      AND last_seen_at IS NOT NULL
-                      AND last_seen_at < :cutoff
-                """), {"cutoff": cutoff})
-                dead_rows = dead.fetchall()
-
-                for row in dead_rows:
-                    # Set all HARD-state services for this collector to UNKNOWN
-                    await db.execute(text("""
-                        UPDATE current_status cs
-                        SET status = 'UNKNOWN',
-                            state_type = 'HARD',
-                            status_message = 'Collector offline – keine Daten seit mehr als 3 Minuten',
-                            last_check_at = :now
-                        FROM services s
-                        JOIN hosts h ON s.host_id = h.id
-                        WHERE cs.service_id = s.id
-                          AND h.collector_id = :collector_id
-                          AND cs.status != 'UNKNOWN'
-                    """), {"collector_id": row.id, "now": datetime.now(timezone.utc)})
-
-                if dead_rows:
-                    await db.commit()
-                    for row in dead_rows:
-                        print(f"[DeadCollector] {row.name} ({row.id}) – services set to UNKNOWN")
-
-        except Exception as e:
-            print(f"[DeadCollector] Error: {e}")
-
+            async with _get_redis().lock("overseer:lock:dead_collector_watcher", timeout=55, blocking_timeout=1):
+                try:
+                    await _run_dead_collector_check()
+                except Exception as e:
+                    print(f"[DeadCollector] Error: {e}")
+        except Exception:
+            pass  # Could not acquire lock – another instance is running
         await asyncio.sleep(60)
 
 
