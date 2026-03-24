@@ -14,6 +14,7 @@ import SlaReportsPage from './pages/SlaReportsPage'
 import ServiceTemplatesPage from './pages/ServiceTemplatesPage'
 import TvPage from './pages/TvPage'
 import LoginPage from './pages/LoginPage'
+import AiChatWidget from './components/AiChatWidget'
 
 export default function App() {
   const isAuthenticated = !!localStorage.getItem('overseer_token')
@@ -28,28 +29,31 @@ export default function App() {
   }
 
   return (
-    <Routes>
-      {/* TV mode: no sidebar */}
-      <Route path="/tv" element={<TvPage />} />
+    <>
+      <Routes>
+        {/* TV mode: no sidebar */}
+        <Route path="/tv" element={<TvPage />} />
 
-      {/* Main layout */}
-      <Route element={<Layout />}>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/errors" element={<ErrorOverviewPage />} />
-        <Route path="/hosts" element={<HostsPage />} />
-        <Route path="/hosts/:hostId" element={<HostDetailPage />} />
-        <Route path="/collectors" element={<CollectorsPage />} />
-        <Route path="/tenants" element={<TenantsPage />} />
-        <Route path="/alert-rules" element={<AlertRulesPage />} />
-        <Route path="/notifications" element={<NotificationChannelsPage />} />
-        <Route path="/templates" element={<ServiceTemplatesPage />} />
-        <Route path="/sla" element={<SlaReportsPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
-        <Route path="/admin" element={<AdminPage />} />
-      </Route>
+        {/* Main layout */}
+        <Route element={<Layout />}>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/errors" element={<ErrorOverviewPage />} />
+          <Route path="/hosts" element={<HostsPage />} />
+          <Route path="/hosts/:hostId" element={<HostDetailPage />} />
+          <Route path="/collectors" element={<CollectorsPage />} />
+          <Route path="/tenants" element={<TenantsPage />} />
+          <Route path="/alert-rules" element={<AlertRulesPage />} />
+          <Route path="/notifications" element={<NotificationChannelsPage />} />
+          <Route path="/templates" element={<ServiceTemplatesPage />} />
+          <Route path="/sla" element={<SlaReportsPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/admin" element={<AdminPage />} />
+        </Route>
 
-      <Route path="/login" element={<LoginPage onLogin={() => window.location.reload()} />} />
-    </Routes>
+        <Route path="/login" element={<LoginPage onLogin={() => window.location.reload()} />} />
+      </Routes>
+      <AiChatWidget />
+    </>
   )
 }

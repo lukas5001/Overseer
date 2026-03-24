@@ -1401,7 +1401,7 @@ def _validate_license():
 
 ---
 
-### 5.1 AI Service erstellen
+### ✅ 5.1 AI Service erstellen
 
 **Was**: Separater FastAPI-Service auf Port 8002 für AI-Funktionen.
 **Wo**: Neues Verzeichnis `ai_service/` im Root
@@ -1452,7 +1452,7 @@ async def health():
 
 ---
 
-### 5.2 pgvector Extension und Knowledge-Tabelle
+### ✅ 5.2 pgvector Extension und Knowledge-Tabelle
 
 **Was**: PostgreSQL pgvector Extension für Embedding-Speicherung.
 **Wo**: Neue Migration `migrations/018_pgvector.sql`
@@ -1477,7 +1477,7 @@ CREATE INDEX ON knowledge_embeddings USING ivfflat (embedding vector_cosine_ops)
 
 ---
 
-### 5.3 Ollama Client
+### ✅ 5.3 Ollama Client
 
 **Was**: Async HTTP-Client für Ollama API.
 **Wo**: `ai_service/app/services/ollama.py`
@@ -1507,7 +1507,7 @@ async def get_embedding(text: str) -> list[float]:
 
 ---
 
-### 5.4 AI Analyse-Endpoint
+### ✅ 5.4 AI Analyse-Endpoint
 
 **Was**: Analysiert einen fehlerhaften Service und gibt Diagnose zurück.
 **Wo**: `ai_service/app/routers/analysis.py`
@@ -1548,7 +1548,7 @@ Antworte IMMER auf Deutsch. Sei präzise und technisch korrekt.
 
 ---
 
-### 5.5 Natural Language Query Endpoint
+### ✅ 5.5 Natural Language Query Endpoint
 
 **Was**: User stellt Fragen in natürlicher Sprache, AI übersetzt in DB-Abfrage und gibt Antwort.
 **Wo**: `ai_service/app/routers/query.py`
@@ -1577,7 +1577,7 @@ async def natural_language_query(body: NLQueryRequest, db=Depends(get_db)):
 
 ---
 
-### 5.6 Knowledge Base
+### ✅ 5.6 Knowledge Base
 
 **Was**: User-bestätigte Fehler-Ursachen und Lösungen als Vektordatenbank.
 **Wo**: `ai_service/app/routers/knowledge.py`
@@ -1599,7 +1599,7 @@ async def get_relevant_knowledge(service_id: UUID, db=Depends(get_db)):
 
 ---
 
-### 5.7 Frontend AI-Integration
+### ✅ 5.7 Frontend AI-Integration
 
 **Was**: "KI analysieren" Button in Host-Detail-Page, Chat-Widget auf Dashboard.
 **Wo**:

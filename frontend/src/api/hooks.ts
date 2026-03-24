@@ -12,6 +12,7 @@ import type {
   ServiceTemplate, ServiceTemplateCreate, ServiceTemplateUpdate, TemplateApplyRequest, TemplateApplyResponse,
   HistoryBucket, HistoryPoint, HistorySummary, ServiceSla, TenantSlaReport,
   AuditLog, User, ApiKeyCreateResponse,
+  AiAnalysisResponse, AiQueryRequest, AiQueryResponse,
 } from '../types'
 
 // ── Status ───────────────────────────────────────────────────────────────────
@@ -554,6 +555,29 @@ export function useUsers() {
   return useQuery<User[]>({
     queryKey: ['users'],
     queryFn: () => api.get('/api/v1/users/').then(r => r.data),
+  })
+}
+
+// ── AI ──────────────────────────────────────────────────────────────────────
+
+export function useAiAnalyze() {
+  return useMutation<AiAnalysisResponse, unknown, string>({
+    mutationFn: (serviceId: string) =>
+      api.post(`/ai/analyze/${serviceId}`).then(r => r.data),
+  })
+}
+
+export function useAiQuery() {
+  return useMutation<AiQueryResponse, unknown, AiQueryRequest>({
+    mutationFn: (body: AiQueryRequest) =>
+      api.post('/ai/query/', body).then(r => r.data),
+  })
+}
+
+export function useAiAddKnowledge() {
+  return useMutation({
+    mutationFn: (body: { content: string; tenant_id: string; service_id?: string }) =>
+      api.post('/ai/knowledge/', body).then(r => r.data),
   })
 }
 

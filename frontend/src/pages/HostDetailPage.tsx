@@ -4,13 +4,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Server, Router, Printer, Shield, Wifi, ArrowLeft,
   CheckCircle, XCircle, AlertTriangle, HelpCircle, Clock,
-  ChevronDown, ChevronRight, Play, X, Plus,
+  ChevronDown, ChevronRight, Play, X, Plus, Sparkles,
 } from 'lucide-react'
 import clsx from 'clsx'
 import { formatDistanceToNow, format } from 'date-fns'
 import { de } from 'date-fns/locale'
 import { api } from '../api/client'
 import MiniGraph from '../components/MiniGraph'
+import AiAnalysisPanel from '../components/AiAnalysisPanel'
 import type {
   Host, CurrentStatus, Service, HistoryBucket,
   Downtime, StateHistory, CheckStatus,
@@ -35,9 +36,10 @@ const statusOrder: Record<string, number> = { CRITICAL: 0, WARNING: 1, UNKNOWN: 
 
 // ── Expandable Service Row ───────────────────────────────────────────────────
 
-function ServiceRow({ svc, meta }: {
+function ServiceRow({ svc, meta, onAnalyze }: {
   svc: CurrentStatus
   meta?: { name: string; check_type: string; threshold_warn: number | null; threshold_crit: number | null }
+  onAnalyze: (serviceId: string, serviceName: string) => void
 }) {
   const [expanded, setExpanded] = useState(false)
   const qc = useQueryClient()
@@ -92,7 +94,16 @@ function ServiceRow({ svc, meta }: {
               : '–'}
           </span>
         </td>
-        <td className="px-6 py-3 text-right">
+        <td className="px-6 py-3 text-right flex items-center justify-end gap-1.5">
+          {(svc.status === 'CRITICAL' || svc.status === 'UNKNOWN') && (
+            <button
+              onClick={e => { e.stopPropagation(); onAnalyze(svc.service_id, meta?.name ?? 'Service') }}
+              title="KI analysieren"
+              className="text-purple-300 hover:text-purple-600"
+            >
+              <Sparkles className="w-4 h-4" />
+            </button>
+          )}
           <button
             onClick={e => { e.stopPropagation(); checkNow.mutate() }}
             disabled={checkNow.isPending}
@@ -190,6 +201,7 @@ export default function HostDetailPage() {
   const { hostId } = useParams<{ hostId: string }>()
   const [activeTab, setActiveTab] = useState<Tab>('services')
   const [showDowntimeModal, setShowDowntimeModal] = useState(false)
+  const [aiPanel, setAiPanel] = useState<{ serviceId: string; serviceName: string } | null>(null)
 
   const { data: host, isLoading: hostLoading } = useQuery<Host>({
     queryKey: ['host', hostId],
@@ -253,6 +265,14 @@ export default function HostDetailPage() {
     <div className="p-8 max-w-5xl">
       {showDowntimeModal && (
         <DowntimeModal hostId={hostId!} onClose={() => setShowDowntimeModal(false)} />
+      )}
+
+      {aiPanel && (
+        <AiAnalysisPanel
+          serviceId={aiPanel.serviceId}
+          serviceName={aiPanel.serviceName}
+          onClose={() => setAiPanel(null)}
+        />
       )}
 
       {/* Back link */}
@@ -334,7 +354,12 @@ export default function HostDetailPage() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {sorted.map(svc => (
-                  <ServiceRow key={svc.service_id} svc={svc} meta={serviceMeta[svc.service_id]} />
+                  <ServiceRow
+                    key={svc.service_id}
+                    svc={svc}
+                    meta={serviceMeta[svc.service_id]}
+                    onAnalyze={(sid, name) => setAiPanel({ serviceId: sid, serviceName: name })}
+                  />
                 ))}
               </tbody>
             </table>

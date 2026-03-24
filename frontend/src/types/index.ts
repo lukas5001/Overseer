@@ -560,6 +560,36 @@ export interface StateHistory {
   created_at: string
 }
 
+// ── AI ──────────────────────────────────────────────────────────────────────
+
+export interface AiAnalysisResponse {
+  service_id: string
+  service_name: string
+  diagnosis: string
+  similar_cases: AiSimilarCase[]
+}
+
+export interface AiSimilarCase {
+  id: string
+  content: string
+  source: string
+  confirmed: boolean
+  similarity: number
+}
+
+export interface AiQueryRequest {
+  question: string
+  tenant_id: string
+  context_host_id?: string
+}
+
+export interface AiQueryResponse {
+  question: string
+  answer: string
+  data: Record<string, unknown>[]
+  sql_used: string
+}
+
 // ── Auth ─────────────────────────────────────────────────────────────────────
 
 export interface LoginRequest {
