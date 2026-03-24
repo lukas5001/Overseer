@@ -1,5 +1,6 @@
 """Overseer API – Authentication router."""
 import asyncio
+import hashlib
 import os
 import random
 from datetime import datetime, timedelta, timezone
@@ -86,8 +87,9 @@ async def login(req: LoginRequest, db: AsyncSession = Depends(get_db)):
         )
 
         if user.two_fa_method == "email":
-            code = str(random.randint(100000, 999999))
-            user.two_fa_email_code = code
+            code = "%08d" % random.randint(0, 99999999)
+            user.two_fa_email_code = None
+            user.two_fa_email_code_hash = hashlib.sha256(code.encode()).hexdigest()
             user.two_fa_email_code_expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
             await db.commit()
             asyncio.create_task(
@@ -141,16 +143,37 @@ async def verify_2fa(
         if not pyotp.TOTP(user.two_fa_secret).verify(code, valid_window=1):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Ung\u00fcltiger Code")
     elif user.two_fa_method == "email":
-        if not user.two_fa_email_code:
+        now = datetime.now(timezone.utc)
+
+        # Lockout check
+        if user.two_fa_lockout_until and now < user.two_fa_lockout_until:
+            retry_after = int((user.two_fa_lockout_until - now).total_seconds())
+            raise HTTPException(
+                status_code=429,
+                detail=f"Zu viele Fehlversuche. Bitte warte {retry_after} Sekunden.",
+                headers={"Retry-After": str(retry_after)},
+            )
+
+        if not user.two_fa_email_code_hash:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Kein Code vorhanden")
-        if datetime.now(timezone.utc) > user.two_fa_email_code_expires_at:
-            user.two_fa_email_code = None
+        if now > user.two_fa_email_code_expires_at:
+            user.two_fa_email_code_hash = None
             user.two_fa_email_code_expires_at = None
             await db.commit()
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Code abgelaufen")
-        if user.two_fa_email_code != code:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Ung\u00fcltiger Code")
-        user.two_fa_email_code = None
+
+        input_hash = hashlib.sha256(code.encode()).hexdigest()
+        if input_hash != user.two_fa_email_code_hash:
+            user.two_fa_attempts = (user.two_fa_attempts or 0) + 1
+            if user.two_fa_attempts >= 5:
+                user.two_fa_lockout_until = now + timedelta(minutes=30)
+                user.two_fa_attempts = 0
+            await db.commit()
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Ungültiger Code")
+
+        user.two_fa_email_code_hash = None
+        user.two_fa_attempts = 0
+        user.two_fa_lockout_until = None
         user.two_fa_email_code_expires_at = None
     else:
         raise HTTPException(status_code=400, detail="Unknown 2FA method")
@@ -181,8 +204,9 @@ async def resend_2fa_code(
     if not user or user.two_fa_method != "email":
         raise HTTPException(status_code=400, detail="Not an email 2FA user")
 
-    code = str(random.randint(100000, 999999))
-    user.two_fa_email_code = code
+    code = "%08d" % random.randint(0, 99999999)
+    user.two_fa_email_code = None
+    user.two_fa_email_code_hash = hashlib.sha256(code.encode()).hexdigest()
     user.two_fa_email_code_expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
     await db.commit()
 

@@ -1,5 +1,6 @@
 """Overseer API – 2FA setup and management router."""
 import asyncio
+import hashlib
 import io
 import base64
 import random
@@ -105,8 +106,10 @@ async def email_init(
     if not u.email:
         raise HTTPException(status_code=400, detail="Keine E-Mail-Adresse hinterlegt")
 
-    code = str(random.randint(100000, 999999))
-    u.two_fa_email_code = code
+    code = "%08d" % random.randint(0, 99999999)
+    code_hash = hashlib.sha256(code.encode()).hexdigest()
+    u.two_fa_email_code = None
+    u.two_fa_email_code_hash = code_hash
     u.two_fa_email_code_expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
     await db.commit()
 
@@ -136,19 +139,40 @@ async def email_confirm(
     if not u:
         raise HTTPException(status_code=404, detail="User not found")
 
-    if not u.two_fa_email_code:
+    now = datetime.now(timezone.utc)
+
+    # Lockout check
+    if u.two_fa_lockout_until and now < u.two_fa_lockout_until:
+        retry_after = int((u.two_fa_lockout_until - now).total_seconds())
+        raise HTTPException(
+            status_code=429,
+            detail=f"Zu viele Fehlversuche. Bitte warte {retry_after} Sekunden.",
+            headers={"Retry-After": str(retry_after)},
+        )
+
+    if not u.two_fa_email_code_hash:
         raise HTTPException(status_code=400, detail="Kein Code vorhanden")
-    if datetime.now(timezone.utc) > u.two_fa_email_code_expires_at:
-        u.two_fa_email_code = None
+    if now > u.two_fa_email_code_expires_at:
+        u.two_fa_email_code_hash = None
         u.two_fa_email_code_expires_at = None
         await db.commit()
         raise HTTPException(status_code=400, detail="Code abgelaufen")
-    if u.two_fa_email_code != code:
-        raise HTTPException(status_code=400, detail="Ung\u00fcltiger Code")
+
+    input_hash = hashlib.sha256(code.encode()).hexdigest()
+    if input_hash != u.two_fa_email_code_hash:
+        u.two_fa_attempts = (u.two_fa_attempts or 0) + 1
+        if u.two_fa_attempts >= 5:
+            u.two_fa_lockout_until = now + timedelta(minutes=30)
+            u.two_fa_attempts = 0
+        await db.commit()
+        raise HTTPException(status_code=400, detail="Ungültiger Code")
 
     u.two_fa_method = "email"
     u.two_fa_secret = None
     u.two_fa_email_code = None
+    u.two_fa_email_code_hash = None
+    u.two_fa_attempts = 0
+    u.two_fa_lockout_until = None
     u.two_fa_email_code_expires_at = None
     await write_audit(db, user=user, action="2fa_enable",
                       target_type="user", target_id=u.id,
@@ -170,7 +194,10 @@ async def disable_2fa(
     u.two_fa_method = "none"
     u.two_fa_secret = None
     u.two_fa_email_code = None
+    u.two_fa_email_code_hash = None
     u.two_fa_email_code_expires_at = None
+    u.two_fa_attempts = 0
+    u.two_fa_lockout_until = None
     await write_audit(db, user=user, action="2fa_disable",
                       target_type="user", target_id=u.id)
     await db.commit()

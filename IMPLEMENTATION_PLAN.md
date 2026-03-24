@@ -64,7 +64,7 @@ _validate_env()
 
 ---
 
-### 1.2 2FA Hardening
+### ✅ 1.2 2FA Hardening
 
 **Was**:
 - 8-stellige statt 6-stellige Email-2FA-Codes
