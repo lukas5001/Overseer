@@ -5,12 +5,13 @@
 !include "nsDialogs.nsh"
 !include "LogicLib.nsh"
 !include "FileFunc.nsh"
+!include "x64.nsh"
 
 ; ── General ───────────────────────────────────────────────────────────────────
 
 Name "Overseer Agent"
 OutFile "..\bin\overseer-agent-setup.exe"
-InstallDir "$PROGRAMFILES\Overseer Agent"
+InstallDir "$PROGRAMFILES64\Overseer Agent"
 RequestExecutionLevel admin
 Unicode True
 
@@ -120,8 +121,9 @@ FunctionEnd
 Section "Overseer Agent" SecAgent
     SectionIn RO ; mandatory
 
-    StrCpy $ConfigDir "$COMMONAPPDATA\Overseer\Agent"
-    ; Note: $ConfigDir is resolved at runtime to C:\ProgramData\Overseer\Agent
+    ; Use C:\ProgramData for config (SetShellVarContext all makes $APPDATA = ProgramData)
+    SetShellVarContext all
+    StrCpy $ConfigDir "$APPDATA\Overseer\Agent"
 
     ; Stop existing service (ignore errors)
     DetailPrint "Stoppe vorhandenen Service (falls vorhanden)..."
@@ -203,10 +205,11 @@ Section "Uninstall"
     RMDir "$INSTDIR"
 
     ; Remove config (ask user)
+    SetShellVarContext all
     MessageBox MB_YESNO "Soll die Konfiguration (Token, Server-URL) ebenfalls geloescht werden?" IDNO skip_config
-        Delete "$COMMONAPPDATA\Overseer\Agent\config.yaml"
-        RMDir "$COMMONAPPDATA\Overseer\Agent"
-        RMDir "$COMMONAPPDATA\Overseer"
+        Delete "$APPDATA\Overseer\Agent\config.yaml"
+        RMDir "$APPDATA\Overseer\Agent"
+        RMDir "$APPDATA\Overseer"
     skip_config:
 
     ; Remove registry
