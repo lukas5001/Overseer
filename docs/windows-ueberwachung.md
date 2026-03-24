@@ -10,43 +10,42 @@
 
 ## Schritt 1: WinRM auf dem Windows-Rechner aktivieren
 
-PowerShell **als Administrator** öffnen und folgende Befehle ausführen:
+PowerShell **als Administrator** öffnen und folgenden Befehl ausführen:
 
 ```powershell
-# WinRM aktivieren und Firewall-Regel anlegen
-winrm quickconfig -y
+Enable-PSRemoting -Force
+```
 
-# Basic-Auth erlauben (für NTLM)
-winrm set winrm/config/service/auth @{Basic="true"}
+Das macht automatisch:
+- Startet den WinRM-Dienst
+- Setzt den Dienst auf "Automatisch starten"
+- Erstellt einen HTTP-Listener auf Port 5985
+- Konfiguriert die Windows-Firewall
 
-# Unverschlüsselten Traffic erlauben (nur für HTTP/Port 5985)
-winrm set winrm/config/service @{AllowUnencrypted="true"}
+Prüfen ob es funktioniert hat:
 
-# Prüfen ob WinRM läuft
+```powershell
+# WinRM-Dienst läuft?
+Get-Service WinRM
+
+# Listener anzeigen
 winrm enumerate winrm/config/listener
 ```
 
-### Option A: HTTP (einfacher, nur im LAN)
+### Option A: HTTP (Port 5985) — einfach, nur im LAN
 
-Port **5985**, kein Zertifikat nötig. Geeignet für interne Netzwerke / VPN.
+Nach `Enable-PSRemoting -Force` ist HTTP bereits aktiv. Nichts weiter zu tun.
 
-```powershell
-# Listener sollte nach quickconfig bereits auf HTTP/5985 laufen
-# Prüfen:
-winrm enumerate winrm/config/listener
-# Erwartung: Transport = HTTP, Port = 5985
-```
+Geeignet für: Interne Netzwerke, VPN-Verbindungen, gleiche Domain.
 
-### Option B: HTTPS (empfohlen für Produktion)
-
-Port **5986**, braucht ein SSL-Zertifikat.
+### Option B: HTTPS (Port 5986) — empfohlen für Produktion
 
 ```powershell
 # Selbstsigniertes Zertifikat erstellen
 $cert = New-SelfSignedCertificate -DnsName $env:COMPUTERNAME -CertStoreLocation Cert:\LocalMachine\My
 
 # HTTPS-Listener anlegen
-winrm create winrm/config/Listener?Address=*+Transport=HTTPS "@{Hostname=`"$($env:COMPUTERNAME)`"; CertificateThumbprint=`"$($cert.Thumbprint)`"}"
+New-Item -Path WSMan:\localhost\Listener -Transport HTTPS -Address * -CertificateThumbPrint $cert.Thumbprint -Force
 
 # Firewall-Regel für Port 5986
 New-NetFirewallRule -DisplayName "WinRM HTTPS" -Direction Inbound -LocalPort 5986 -Protocol TCP -Action Allow
@@ -55,7 +54,6 @@ New-NetFirewallRule -DisplayName "WinRM HTTPS" -Direction Inbound -LocalPort 598
 ### Verbindung testen (vom Overseer-Server)
 
 ```bash
-# Vom Overseer-Server aus:
 python3 -c "
 import winrm
 s = winrm.Session('http://WINDOWS-IP:5985/wsman', auth=('Administrator', 'PASSWORT'), transport='ntlm')
@@ -63,6 +61,8 @@ r = s.run_ps('hostname')
 print(r.std_out.decode())
 "
 ```
+
+Bei HTTPS: `http://` durch `https://` und `5985` durch `5986` ersetzen.
 
 ---
 
@@ -77,7 +77,7 @@ print(r.std_out.decode())
 3. Host speichern
 4. Host öffnen → **Bearbeiten** (Stift-Icon)
 5. WinRM-Felder ausfüllen:
-   - **WinRM Benutzer**: `Administrator` (oder ein anderer Admin-Account)
+   - **WinRM Benutzer**: `Administrator` (oder Domain: `DOMAIN\Benutzer`)
    - **WinRM Passwort**: Passwort des Benutzers
    - **WinRM Port**: `5985` (HTTP) oder `5986` (HTTPS)
    - **WinRM SSL**: Aus (HTTP) oder An (HTTPS)
@@ -94,8 +94,8 @@ Host öffnen → **Check hinzufügen** und den gewünschten Check-Typ wählen:
 | `winrm_cpu` | CPU-Auslastung (%) | warn: 80, crit: 95 |
 | `winrm_mem` | RAM-Auslastung (%) | warn: 85, crit: 95 |
 | `winrm_disk` | Festplatte (%) | warn: 80, crit: 90 |
-| `winrm_service` | Windows-Dienst läuft? | - |
-| `winrm_custom` | Eigenes PowerShell-Kommando | - |
+| `winrm_service` | Windows-Dienst läuft? | — |
+| `winrm_custom` | Eigenes PowerShell-Kommando | — |
 
 ### Beispiele
 
@@ -125,7 +125,7 @@ Host öffnen → **Check hinzufügen** und den gewünschten Check-Typ wählen:
 
 **Eigenes PowerShell-Kommando:**
 - Typ: `winrm_custom`
-- Name: `Offene Sessions`
+- Name: `Anzahl Prozesse`
 - Konfiguration:
 ```json
 {
@@ -139,34 +139,43 @@ Host öffnen → **Check hinzufügen** und den gewünschten Check-Typ wählen:
 
 ## Schritt 4: Prüfen
 
-Nach dem Anlegen der Checks:
-1. Auf der Host-Detailseite den **Play-Button** neben einem Check klicken → führt den Check sofort aus
+1. Auf der Host-Detailseite den **Play-Button** neben einem Check klicken
 2. Status sollte nach wenigen Sekunden von UNKNOWN auf OK/WARNING/CRITICAL wechseln
-3. Bei Fehlern: Status-Meldung lesen — häufige Probleme:
-   - `WinRM: username und password erforderlich` → WinRM-Credentials im Host nicht eingetragen
-   - `Connection refused` → WinRM auf dem Windows-Rechner nicht aktiviert oder Firewall blockiert
-   - `401 Unauthorized` → Falscher Benutzername/Passwort oder NTLM nicht aktiviert
+3. Bei Fehlern: Status-Meldung lesen (siehe Troubleshooting)
 
 ---
 
-## Häufige Probleme
+## Troubleshooting
 
 **"Connection refused" oder Timeout:**
-- WinRM-Dienst auf Windows prüfen: `Get-Service WinRM`
-- Firewall-Regel prüfen: `Get-NetFirewallRule -DisplayName "*WinRM*"`
-- Port erreichbar? Vom Server: `nc -zv WINDOWS-IP 5985`
+```powershell
+# Auf dem Windows-Rechner prüfen:
+Get-Service WinRM                                    # Läuft der Dienst?
+winrm enumerate winrm/config/listener                # Gibt es einen Listener?
+Get-NetFirewallRule -DisplayName "*WinRM*" | Select DisplayName, Enabled, Action
+```
+Vom Overseer-Server: `nc -zv WINDOWS-IP 5985`
 
 **"401 Unauthorized":**
 - Passwort korrekt?
 - Benutzer ist lokaler Administrator?
 - Bei Domain-Accounts: `DOMAIN\Benutzer` als Username verwenden
-
-**"SSL certificate problem":**
-- Bei selbstsignierten Zertifikaten: WinRM SSL auf `An` und der Server ignoriert die Zertifikatsvalidierung automatisch
+- TrustedHosts prüfen (wenn Rechner nicht in gleicher Domain):
+  ```powershell
+  # Auf dem Windows-Rechner:
+  Set-Item WSMan:\localhost\Client\TrustedHosts -Value "OVERSEER-SERVER-IP" -Force
+  ```
 
 **"Access denied":**
-- PowerShell-Remoting für den Benutzer erlauben:
-  ```powershell
-  Set-PSSessionConfiguration -Name Microsoft.PowerShell -ShowSecurityDescriptorUI
-  ```
-  Dort den Benutzer hinzufügen und "Execute" erlauben.
+```powershell
+# Auf dem Windows-Rechner:
+# Benutzer zur Remote Management Users Gruppe hinzufügen
+Add-LocalGroupMember -Group "Remote Management Users" -Member "BENUTZERNAME"
+```
+
+**"WinRM: username und password erforderlich":**
+- Host in Overseer bearbeiten und WinRM-Credentials eintragen
+
+**"SSL certificate problem":**
+- Overseer ignoriert selbstsignierte Zertifikate automatisch (verify_ssl ist standardmäßig aus)
+- Sicherstellen dass WinRM SSL in Overseer auf "An" steht wenn HTTPS verwendet wird
