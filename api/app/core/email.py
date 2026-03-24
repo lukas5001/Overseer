@@ -30,6 +30,44 @@ async def send_email(to: str, subject: str, body_plain: str, body_html: str | No
     await asyncio.to_thread(_send_sync, to, subject, body_plain, body_html)
 
 
+def render_alert_html(ctx: dict) -> str:
+    status = ctx.get("status", "UNKNOWN")
+    color_map = {"OK": "#16a34a", "WARNING": "#d97706", "CRITICAL": "#dc2626", "UNKNOWN": "#6b7280"}
+    color = color_map.get(status, "#6b7280")
+    is_recovery = status == "OK"
+    is_test = ctx.get("is_test", False)
+    title = "TEST: " if is_test else ""
+    title += "Recovery" if is_recovery else "Alert"
+    return (
+        '<!DOCTYPE html><html><head><meta charset="UTF-8"></head>'
+        '<body style="margin:0;padding:0;background:#f0f4f8;font-family:\'Segoe UI\',Arial,sans-serif;">'
+        '<div style="max-width:520px;margin:40px auto;background:#fff;border-radius:12px;'
+        'overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.08);">'
+        '<div style="background:#1e293b;padding:24px 32px;text-align:center;">'
+        '<div style="color:#fff;font-size:22px;font-weight:700;">Overseer</div>'
+        '<div style="color:#94a3b8;font-size:13px;margin-top:4px;">Monitoring Alert</div>'
+        '</div>'
+        f'<div style="background:{color};padding:12px 32px;text-align:center;">'
+        f'<span style="color:#fff;font-size:16px;font-weight:700;">{title.upper()}: {status}</span>'
+        '</div>'
+        '<div style="padding:28px 32px;">'
+        f'<table style="width:100%;border-collapse:collapse;font-size:14px;color:#334155;">'
+        f'<tr><td style="padding:6px 0;font-weight:600;width:40%;">Rule</td><td>{ctx.get("alert_rule_name","")}</td></tr>'
+        f'<tr><td style="padding:6px 0;font-weight:600;">Service</td><td>{ctx.get("service_name","")}</td></tr>'
+        f'<tr><td style="padding:6px 0;font-weight:600;">Host</td><td>{ctx.get("host_name","")}</td></tr>'
+        f'<tr><td style="padding:6px 0;font-weight:600;">Status</td><td style="color:{color};font-weight:700;">{status}</td></tr>'
+        f'<tr><td style="padding:6px 0;font-weight:600;">Duration</td><td>{ctx.get("duration_minutes",0)} minutes</td></tr>'
+        f'<tr><td style="padding:6px 0;font-weight:600;">Message</td><td>{ctx.get("message","")}</td></tr>'
+        f'<tr><td style="padding:6px 0;font-weight:600;">Fired at</td><td>{ctx.get("fired_at","")}</td></tr>'
+        '</table>'
+        '</div>'
+        '<div style="padding:16px 32px;background:#f8fafc;border-top:1px solid #e2e8f0;">'
+        '<p style="color:#94a3b8;font-size:12px;margin:0;">This is an automated message from Overseer Monitoring.</p>'
+        '</div>'
+        '</div></body></html>'
+    )
+
+
 def render_2fa_code_html(code: str) -> str:
     return (
         '<!DOCTYPE html><html><head><meta charset="UTF-8"></head>'

@@ -391,7 +391,7 @@ SELECT add_retention_policy('check_results', INTERVAL '90 days');
 
 ---
 
-### 2.1 Alert/Notification Engine
+### ✅ 2.1 Alert/Notification Engine
 
 **Was**: Automatische Benachrichtigung bei anhaltenden HARD-State-Fehlern. Deduplication, Recovery-Notifications, Email-Templates.
 **Warum**: Nagios-Ablösung — das ist das meistgefragte Feature von Monitoring-Systemen.
@@ -517,7 +517,7 @@ async def check_alert_rules(db_session, redis_client):
 
 ---
 
-### 2.2 Eskalationspolicy
+### ✅ 2.2 Eskalationspolicy
 
 **Was**: Mehrstufige Eskalation — wenn Alert nach N Minuten nicht resolved, nächste Stufe benachrichtigen.
 **Abhängigkeit**: 2.1 muss fertig sein.
@@ -562,7 +562,7 @@ class EscalationPolicy(Base):
 
 ---
 
-### 2.3 Service History API
+### ✅ 2.3 Service History API
 
 **Was**: Aggregierte Zeitreihen-Daten für Services aus der `check_results` Hypertable.
 **Wo**:
@@ -603,7 +603,7 @@ Gibt alle Services eines Hosts zurück mit `last_status`, `last_check_at`, `last
 
 ---
 
-### 2.4 SLA Calculation
+### ✅ 2.4 SLA Calculation
 
 **Was**: Berechnung des SLA-Prozentsatzes aus historischen Check-Daten, mit Ausschluss von Downtime-Perioden.
 **Wo**:
@@ -650,7 +650,7 @@ Response: `{tenant_id, period: {start, end}, services: [{service_id, service_nam
 
 ---
 
-### 2.5 Template Apply
+### ✅ 2.5 Template Apply
 
 **Was**: Einen Service-Template auf einen Host anwenden — erstellt alle im Template definierten Services.
 **Wo**: `api/app/routers/templates.py` — neuer Endpoint `POST /{id}/apply`
@@ -677,7 +677,7 @@ async def apply_template(template_id: UUID, body: TemplateApplyRequest, ...):
 
 ---
 
-### 2.6 Recurring Downtimes
+### ✅ 2.6 Recurring Downtimes
 
 **Was**: Downtimes können mit RRULE-String für Wiederholung konfiguriert werden. Worker generiert Instanzen für die nächsten 7 Tage.
 **Wo**:
@@ -724,7 +724,7 @@ async def check_recurring_downtimes(db):
 
 ---
 
-### 2.7 Collector Installer Generator
+### ✅ 2.7 Collector Installer Generator
 
 **Was**: API-Endpoint generiert ein Installer-Script (Shell oder PowerShell) für einen Collector.
 **Wo**:
@@ -779,7 +779,7 @@ Windows-Script-Template:
 
 ---
 
-### 2.8 Tenant Resource Quotas
+### ✅ 2.8 Tenant Resource Quotas
 
 **Was**: Tenants haben konfigurierbare Obergrenzen für Hosts, Services, Collectors. Wird beim Erstellen geprüft.
 **Wo**:
@@ -827,7 +827,7 @@ Endpoint `GET /api/v1/tenants/{id}/usage`:
 
 ---
 
-### 2.9 Config Export/Import
+### ✅ 2.9 Config Export/Import
 
 **Was**: Admin kann alle Konfiguration (ohne Secrets und ohne check_results) als JSON exportieren und importieren.
 **Wo**: Neuer Router `api/app/routers/admin.py`, in `main.py` registrieren unter `/api/v1/admin`

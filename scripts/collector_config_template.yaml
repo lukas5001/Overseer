@@ -1,0 +1,8 @@
+# Overseer Collector Konfiguration
+# Automatisch generiert — nicht manuell bearbeiten
+api_key: "{API_KEY}"
+receiver_url: "{RECEIVER_URL}"
+collector_id: "{COLLECTOR_ID}"
+tenant_id: "{TENANT_ID}"
+check_interval: 60
+log_level: info

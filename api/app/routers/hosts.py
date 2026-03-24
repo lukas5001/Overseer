@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from api.app.core.database import get_db
 from api.app.core.auth import get_current_user, require_role, tenant_scope, apply_tenant_filter
 from api.app.core.encryption import encrypt_field, decrypt_field
+from api.app.core.quotas import check_quota
 from api.app.routers.audit import write_audit
 from api.app.models.models import Host, Tenant, Collector, Service, CurrentStatus
 from shared.schemas import HostOut, HostCreate, HostUpdate
@@ -116,6 +117,7 @@ async def create_host(
     db: AsyncSession = Depends(get_db),
     _user: dict = Depends(require_role("super_admin", "tenant_admin")),
 ):
+    await check_quota(db, body.tenant_id, "hosts")
     host = Host(
         tenant_id=body.tenant_id,
         collector_id=body.collector_id,
@@ -345,3 +347,48 @@ async def snmp_walk_host(
         "results": results,
         "truncated": len(results) >= max_results,
     }
+
+
+@router.get("/{host_id}/services/summary")
+async def get_host_services_summary(
+    host_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    _user: dict = Depends(get_current_user),
+    _scope=Depends(tenant_scope),
+):
+    """Return all services for a host with their current status (from current_status table)."""
+    host = await db.get(Host, host_id)
+    if not host:
+        raise HTTPException(status_code=404, detail="Host not found")
+    if _scope is not None and host.tenant_id not in _scope:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    rows = await db.execute(text("""
+        SELECT
+            s.id, s.name, s.check_type, s.interval_seconds, s.active,
+            cs.status, cs.last_check_at, cs.value, cs.unit, cs.status_message,
+            cs.state_type, cs.acknowledged, cs.in_downtime
+        FROM services s
+        LEFT JOIN current_status cs ON cs.service_id = s.id
+        WHERE s.host_id = :host_id
+        ORDER BY s.name
+    """), {"host_id": host_id})
+
+    return [
+        {
+            "service_id": str(row.id),
+            "name": row.name,
+            "check_type": row.check_type,
+            "interval_seconds": row.interval_seconds,
+            "active": row.active,
+            "last_status": row.status,
+            "last_check_at": row.last_check_at.isoformat() if row.last_check_at else None,
+            "last_value": row.value,
+            "last_unit": row.unit,
+            "status_message": row.status_message,
+            "state_type": row.state_type,
+            "acknowledged": row.acknowledged,
+            "in_downtime": row.in_downtime,
+        }
+        for row in rows.fetchall()
+    ]

@@ -231,6 +231,8 @@ class Downtime(Base):
     comment = Column(Text)
     active = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+    recurrence = Column(Text, nullable=True)
+    parent_downtime_id = Column(UUID(as_uuid=True), ForeignKey("downtimes.id", ondelete="CASCADE"), nullable=True)
 
 
 class ServiceTemplate(Base):
@@ -268,3 +270,38 @@ class SavedFilter(Base):
     created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+
+
+class AlertRule(Base):
+    __tablename__ = "alert_rules"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
+    name = Column(String(255), nullable=False)
+    conditions = Column(JSONB, nullable=False, default=dict)
+    notification_channels = Column(ARRAY(UUID(as_uuid=True)), nullable=False, default=list)
+    enabled = Column(Boolean, nullable=False, default=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+
+
+class ActiveAlert(Base):
+    __tablename__ = "active_alerts"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    service_id = Column(UUID(as_uuid=True), ForeignKey("services.id", ondelete="CASCADE"), nullable=False)
+    rule_id = Column(UUID(as_uuid=True), ForeignKey("alert_rules.id", ondelete="CASCADE"), nullable=False)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
+    fired_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+    last_notified_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+    resolved_at = Column(DateTime(timezone=True), nullable=True)
+    escalation_step = Column(Integer, nullable=False, default=0)
+
+
+class EscalationPolicy(Base):
+    __tablename__ = "escalation_policies"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    rule_id = Column(UUID(as_uuid=True), ForeignKey("alert_rules.id", ondelete="CASCADE"), nullable=False, unique=True)
+    steps = Column(JSONB, nullable=False, default=list)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)

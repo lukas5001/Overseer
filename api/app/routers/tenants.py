@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.app.core.database import get_db
 from api.app.core.auth import get_current_user, require_role, tenant_scope, apply_tenant_filter
+from api.app.core.quotas import DEFAULT_QUOTAS
 from api.app.models.models import Tenant, Host, Service, CurrentStatus, ApiKey, Collector
 from api.app.routers.audit import write_audit
 from shared.schemas import TenantOut, TenantCreate, TenantUpdate
@@ -318,4 +319,47 @@ async def get_tenant_detail(
             }
             for k in keys
         ],
+    }
+
+
+@router.get("/{tenant_id}/usage")
+async def get_tenant_usage(
+    tenant_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    _user: dict = Depends(get_current_user),
+    _scope=Depends(tenant_scope),
+):
+    """Return current resource usage and quota limits for a tenant."""
+    if _scope is not None and tenant_id not in _scope:
+        raise HTTPException(status_code=403, detail="Access denied")
+    tenant = await db.get(Tenant, tenant_id)
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+
+    settings = tenant.settings or {}
+    quotas = {**DEFAULT_QUOTAS, **settings.get("quotas", {})}
+
+    host_count = (await db.execute(
+        select(func.count()).select_from(Host).where(Host.tenant_id == tenant_id, Host.active == True)
+    )).scalar() or 0
+
+    svc_count = (await db.execute(
+        select(func.count()).select_from(Service).where(Service.tenant_id == tenant_id, Service.active == True)
+    )).scalar() or 0
+
+    col_count = (await db.execute(
+        select(func.count()).select_from(Collector).where(Collector.tenant_id == tenant_id, Collector.active == True)
+    )).scalar() or 0
+
+    cr_count = (await db.execute(
+        text("SELECT COUNT(*) FROM check_results WHERE tenant_id = :tid"),
+        {"tid": tenant_id},
+    )).scalar() or 0
+
+    return {
+        "tenant_id": str(tenant_id),
+        "hosts": {"current": host_count, "max": quotas["max_hosts"]},
+        "services": {"current": svc_count, "max": quotas["max_services"]},
+        "collectors": {"current": col_count, "max": quotas["max_collectors"]},
+        "check_results_count": cr_count,
     }
