@@ -351,7 +351,7 @@ class ServiceCreate(BaseModel):
 
 ---
 
-### 1.10 TimescaleDB Hypertable-Konfiguration
+### ✅ 1.10 TimescaleDB Hypertable-Konfiguration
 
 **Was**: Chunk-Interval auf 1 Tag setzen, Kompression nach 30 Tagen aktivieren, Retention-Policy 90 Tage.
 **Warum**: Ohne diese Konfiguration wächst die `check_results`-Tabelle unbegrenzt; TimescaleDB wird nicht optimal genutzt.
