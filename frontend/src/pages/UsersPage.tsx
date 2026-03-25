@@ -96,18 +96,18 @@ function AddUserModal({ onClose, onSaved }: AddUserModalProps) {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Kundenzugriff</label>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Tenant-Zugriff</label>
               <select value={form.tenant_access} onChange={set('tenant_access')}
                 className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none">
-                <option value="all">Alle Kunden</option>
-                <option value="selected">Ausgewählte Kunden</option>
+                <option value="all">Alle Tenants</option>
+                <option value="selected">Ausgewählte Tenants</option>
               </select>
             </div>
           </div>
 
           {form.tenant_access === 'selected' && (
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Kunden auswählen</label>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Tenants auswählen</label>
               <div className="border border-gray-300 rounded-lg max-h-32 overflow-y-auto p-2 space-y-1">
                 {tenants.map(t => (
                   <label key={t.id} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-gray-50 cursor-pointer">
@@ -120,7 +120,7 @@ function AddUserModal({ onClose, onSaved }: AddUserModalProps) {
                     <span className="text-sm text-gray-700">{t.name}</span>
                   </label>
                 ))}
-                {tenants.length === 0 && <p className="text-xs text-gray-400 px-2">Keine Kunden vorhanden</p>}
+                {tenants.length === 0 && <p className="text-xs text-gray-400 px-2">Keine Tenants vorhanden</p>}
               </div>
             </div>
           )}
@@ -270,7 +270,7 @@ export default function UsersPage() {
             <tr>
               <th className="px-6 py-3 text-left">Benutzer</th>
               <th className="px-6 py-3 text-left">Rolle</th>
-              <th className="px-6 py-3 text-left">Kunden</th>
+              <th className="px-6 py-3 text-left">Tenants</th>
               <th className="px-6 py-3 text-left">Letzter Login</th>
               <th className="px-6 py-3 text-left">Status</th>
               <th className="px-6 py-3"></th>

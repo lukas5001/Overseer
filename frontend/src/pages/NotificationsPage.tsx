@@ -74,7 +74,7 @@ function ChannelModal({ tenants, channel, onClose, onSaved }: ChannelModalProps)
         <div className="space-y-3">
           {!isEdit && (
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Kunde *</label>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Tenant *</label>
               <select value={tenantId} onChange={e => setTenantId(e.target.value)}
                 className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none">
                 {tenants.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}

@@ -126,7 +126,7 @@ export default function DashboardPage() {
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
           <Building2 className="w-5 h-5 text-gray-400" />
-          <h2 className="font-semibold text-gray-800">Status nach Kunde</h2>
+          <h2 className="font-semibold text-gray-800">Status nach Tenant</h2>
         </div>
 
         {tenantsLoading ? (
@@ -135,7 +135,7 @@ export default function DashboardPage() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
               <tr>
-                <th className="px-6 py-3 text-left">Kunde</th>
+                <th className="px-6 py-3 text-left">Tenant</th>
                 <th className="px-6 py-3 text-center text-red-600">Critical</th>
                 <th className="px-6 py-3 text-center text-amber-600">Warning</th>
                 <th className="px-6 py-3 text-center text-gray-500">Unknown</th>

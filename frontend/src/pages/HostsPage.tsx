@@ -452,7 +452,7 @@ export default function HostsPage() {
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Host, IP, Kunde suchen…"
+            placeholder="Host, IP, Tenant suchen…"
             className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-overseer-500 outline-none"
           />
         </div>

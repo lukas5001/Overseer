@@ -66,7 +66,7 @@ const sortOptions: { key: SortKey; label: string }[] = [
   { key: 'duration',   label: 'Dauer' },
   { key: 'host',       label: 'Host' },
   { key: 'service',    label: 'Service' },
-  { key: 'tenant',     label: 'Kunde' },
+  { key: 'tenant',     label: 'Tenant' },
   { key: 'last_check', label: 'Letzter Check' },
 ]
 
@@ -432,7 +432,7 @@ function SaveFilterModal({ onClose, onSaved, hiddenTenants, activeStatuses, sear
         <div className="space-y-3">
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Name *</label>
-            <input value={name} onChange={e => setName(e.target.value)} placeholder="z.B. Nur kritische Kunden"
+            <input value={name} onChange={e => setName(e.target.value)} placeholder="z.B. Nur kritische Tenants"
               className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" autoFocus />
           </div>
           <div>
@@ -443,7 +443,7 @@ function SaveFilterModal({ onClose, onSaved, hiddenTenants, activeStatuses, sear
 
           <div className="bg-gray-50 rounded-lg px-3 py-2 text-xs text-gray-500 space-y-1">
             <p className="font-medium text-gray-600">Aktuelle Filtereinstellungen:</p>
-            {hiddenTenants.size > 0 && <p>{hiddenTenants.size} Kunde(n) ausgeblendet</p>}
+            {hiddenTenants.size > 0 && <p>{hiddenTenants.size} Tenant(s) ausgeblendet</p>}
             {!isDefault && <p>Status: {allStatuses.filter(s => activeStatuses.has(s)).join(', ')}</p>}
             {search && <p>Suche: "{search}"</p>}
             <p>ACK: {onlyAck ? 'nur ACK' : showAcknowledged ? 'sichtbar' : 'ausgeblendet'}</p>
@@ -489,11 +489,11 @@ function TenantTogglePanel({ tenants, hiddenTenants, onToggle, onClose, errorCou
   return (
     <div className="absolute z-20 mt-1 right-0 w-80 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
       <div className="p-3 border-b border-gray-100 flex items-center justify-between">
-        <p className="text-sm font-semibold text-gray-700">Kunden ein-/ausblenden</p>
+        <p className="text-sm font-semibold text-gray-700">Tenants ein-/ausblenden</p>
         <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
       </div>
       <div className="px-3 py-2 border-b border-gray-100">
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Kunde suchen…"
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Tenant suchen…"
           className="w-full text-sm px-2 py-1.5 border border-gray-200 rounded focus:ring-1 focus:ring-overseer-500 outline-none" />
       </div>
       <div className="overflow-y-auto max-h-64 divide-y divide-gray-50">
@@ -728,7 +728,9 @@ export default function ErrorOverviewPage() {
 
   const applySavedFilter = (sf: SavedFilter) => {
     const cfg = sf.filter_config
-    if (cfg.hidden_tenants) setHiddenTenants(new Set(cfg.hidden_tenants))
+    // Only keep hidden tenant IDs that still exist
+    const existingIds = new Set(tenants.map(t => t.id))
+    if (cfg.hidden_tenants) setHiddenTenants(new Set(cfg.hidden_tenants.filter(id => existingIds.has(id))))
     // New format: statuses array; legacy: single status string
     if (cfg.statuses && cfg.statuses.length > 0) {
       setActiveStatuses(new Set(cfg.statuses))
@@ -803,7 +805,7 @@ export default function ErrorOverviewPage() {
         <div className="mb-4 flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
           <EyeOff className="w-4 h-4 text-amber-600 flex-shrink-0" />
           <span className="text-sm text-amber-800 flex-1">
-            <strong>{hiddenTenantCount} Kunde(n) ausgeblendet</strong>
+            <strong>{hiddenTenantCount} Tenant(s) ausgeblendet</strong>
             <span className="text-amber-600"> — {hiddenTenantNames.join(', ')}</span>
             {hiddenErrorCount > 0 && (
               <span className="text-amber-700 font-medium"> ({hiddenErrorCount} Probleme versteckt)</span>
@@ -892,7 +894,7 @@ export default function ErrorOverviewPage() {
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Host, Service, Kunde…"
+            placeholder="Host, Service, Tenant…"
             className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-overseer-500 outline-none"
           />
         </div>
@@ -1010,7 +1012,7 @@ export default function ErrorOverviewPage() {
             )}
           >
             <Filter className="w-4 h-4" />
-            Kunden
+            Tenants
             {hiddenTenantCount > 0 && (
               <span className="ml-1 px-1.5 py-0.5 rounded-full bg-amber-200 text-amber-800 text-xs font-medium">
                 {hiddenTenantCount}

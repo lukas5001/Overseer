@@ -131,7 +131,7 @@ function HostSelector({ value, onChange, hosts }: HostSelectorProps) {
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Hostname, Kunde…"
+              placeholder="Hostname, Tenant…"
               className="w-full text-sm px-2 py-1.5 border border-gray-200 rounded focus:ring-1 focus:ring-overseer-500 outline-none"
               autoFocus
             />
