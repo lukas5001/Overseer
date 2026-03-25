@@ -480,22 +480,18 @@ function AddCheckModal({ host, onClose, onSaved }: AddCheckModalProps) {
           const compatibleTemplates = templates.filter(tpl => {
             const tplLower = tpl.name.toLowerCase()
             const types = tpl.checks.map(c => c.check_type)
-            const hasAgent = types.some(t => t.startsWith('agent_'))
-            const hasSnmp = types.some(t => t.startsWith('snmp'))
-            const hasSsh = types.some(t => t.startsWith('ssh_'))
-            const hasNetwork = types.some(t => ['ping', 'port'].includes(t))
             // OS-Filter: Windows-Templates nicht für Linux-Hosts und umgekehrt
             if (isLinux && tplLower.includes('windows')) return false
             if (isWindows && tplLower.includes('linux')) return false
-            // Agent-Templates: Host muss agent-fähig sein
-            if (hasAgent && !host.host_type_agent_capable) return false
-            // SNMP-Templates nur wenn SNMP-Typ oder bereits konfiguriert
-            if (hasSnmp && !host.host_type_snmp_enabled && !host.snmp_community) return false
-            // SSH-Templates nur wenn IP vorhanden
-            if (hasSsh && !host.ip_address) return false
-            // Netzwerk-Templates nur wenn IP vorhanden
-            if (hasNetwork && !host.ip_address) return false
-            return true
+            // Mindestens ein Check muss zum Host passen
+            const compatible = types.filter(t => {
+              if (t.startsWith('agent_')) return host.host_type_agent_capable
+              if (t.startsWith('snmp')) return host.host_type_snmp_enabled || !!host.snmp_community
+              if (t.startsWith('ssh_')) return !!host.ip_address
+              if (t === 'ping' || t === 'port') return !!host.ip_address
+              return true
+            })
+            return compatible.length > 0
           })
           return (
           <div className="space-y-2">
