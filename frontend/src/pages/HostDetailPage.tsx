@@ -1164,7 +1164,7 @@ export default function HostDetailPage() {
   const [generatedToken, setGeneratedToken] = useState<string | null>(null)
   const [tokenCopied, setTokenCopied] = useState(false)
   const [revokeConfirm, setRevokeConfirm] = useState(false)
-  const [setupTab, setSetupTab] = useState<'windows' | 'linux'>('windows')
+  const [setupTab, setSetupTab] = useState<'windows' | 'debian' | 'rhel' | 'generic'>('debian')
 
   const { data: host, isLoading: hostLoading } = useQuery<Host>({
     queryKey: ['host', hostId],
@@ -1197,7 +1197,7 @@ export default function HostDetailPage() {
     mutationFn: () => api.post(`/api/v1/hosts/${hostId}/agent-token`),
     onSuccess: (resp) => {
       setGeneratedToken(resp.data.token)
-      setSetupTab(host?.host_type_name?.toLowerCase().includes('windows') ? 'windows' : 'linux')
+      setSetupTab(host?.host_type_name?.toLowerCase().includes('windows') ? 'windows' : 'debian')
       setShowAgentSetup(true)
       queryClient.invalidateQueries({ queryKey: ['host', hostId] })
       queryClient.invalidateQueries({ queryKey: ['agent-token', hostId] })
@@ -1653,16 +1653,19 @@ export default function HostDetailPage() {
 
             {/* Tab selector */}
             <div className="flex border-b border-gray-200 mb-4">
-              <button
-                onClick={() => setSetupTab('windows')}
-                className={clsx('px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px',
-                  setupTab === 'windows' ? 'border-overseer-600 text-overseer-700' : 'border-transparent text-gray-500 hover:text-gray-700')}
-              >Windows</button>
-              <button
-                onClick={() => setSetupTab('linux')}
-                className={clsx('px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px',
-                  setupTab === 'linux' ? 'border-overseer-600 text-overseer-700' : 'border-transparent text-gray-500 hover:text-gray-700')}
-              >Linux</button>
+              {([
+                ['debian', 'Debian / Ubuntu'],
+                ['rhel', 'RHEL / Rocky'],
+                ['generic', 'Andere'],
+                ['windows', 'Windows'],
+              ] as const).map(([key, label]) => (
+                <button
+                  key={key}
+                  onClick={() => setSetupTab(key)}
+                  className={clsx('px-3 py-2 text-xs font-medium border-b-2 transition-colors -mb-px',
+                    setupTab === key ? 'border-overseer-600 text-overseer-700' : 'border-transparent text-gray-500 hover:text-gray-700')}
+                >{label}</button>
+              ))}
             </div>
 
             <div className="text-sm text-gray-700">
@@ -1685,14 +1688,31 @@ export default function HostDetailPage() {
                 </div>
               ) : (
                 <div className="bg-gray-50 rounded-lg px-4 py-3 text-xs space-y-3">
-                  <p className="font-sans text-sm text-gray-700">Folgenden Befehl auf dem Zielrechner als <strong>root</strong> ausführen:</p>
-                  <CodeBlock>{`curl -fsSL ${window.location.origin}/agent/install.sh | sudo bash -s -- ${generatedToken} ${window.location.origin}`}</CodeBlock>
+                  {setupTab === 'debian' && (
+                    <>
+                      <p className="font-sans text-gray-600">Voraussetzung — <code className="bg-gray-200 px-1.5 py-0.5 rounded text-[11px]">wget</code> installieren falls nicht vorhanden:</p>
+                      <CodeBlock>{`apt install -y wget`}</CodeBlock>
+                    </>
+                  )}
+                  {setupTab === 'rhel' && (
+                    <>
+                      <p className="font-sans text-gray-600">Voraussetzung — <code className="bg-gray-200 px-1.5 py-0.5 rounded text-[11px]">wget</code> installieren falls nicht vorhanden:</p>
+                      <CodeBlock>{`dnf install -y wget`}</CodeBlock>
+                    </>
+                  )}
+                  {setupTab === 'generic' && (
+                    <p className="font-sans text-gray-600">
+                      <code className="bg-gray-200 px-1.5 py-0.5 rounded text-[11px]">wget</code> oder <code className="bg-gray-200 px-1.5 py-0.5 rounded text-[11px]">curl</code> muss installiert sein.
+                    </p>
+                  )}
+                  <p className="font-sans text-gray-700">Als <strong>root</strong> ausführen:</p>
+                  <CodeBlock>{`wget -qO- ${window.location.origin}/agent/install.sh | bash -s -- ${generatedToken} ${window.location.origin}`}</CodeBlock>
                   <p className="text-gray-400 text-[11px] font-sans">
                     Das Script lädt den Agent herunter, erstellt Config + systemd-Service und startet den Agent.
                     Bei erneuter Ausführung wird eine bestehende Installation aktualisiert.
                   </p>
                   <p className="text-gray-400 text-[11px] font-sans">
-                    Logs prüfen: <code className="text-emerald-600">sudo journalctl -u overseer-agent -f</code>
+                    Logs: <code className="text-emerald-600">journalctl -u overseer-agent -f</code>
                   </p>
                 </div>
               )}
