@@ -1697,13 +1697,14 @@ export default function HostDetailPage() {
                   <p className="text-gray-400 text-[11px]">Oder per Terminal:</p>
                   <CodeBlock>{`wget ${window.location.origin}/agent/overseer-agent-linux-amd64`}</CodeBlock>
                   <p className="font-mono"><span className="text-gray-400">2.</span> Installieren:</p>
-                  <CodeBlock>{`chmod +x overseer-agent-linux-amd64\nsudo mv overseer-agent-linux-amd64 /usr/local/bin/overseer-agent\nsudo mkdir -p /etc/overseer-agent`}</CodeBlock>
+                  <CodeBlock>{`chmod +x overseer-agent-linux-amd64\nsudo mv overseer-agent-linux-amd64 /usr/local/bin/overseer-agent\nsudo mkdir -p /etc/overseer-agent\nsudo mkdir -p /var/log/overseer-agent`}</CodeBlock>
                   <p className="font-mono"><span className="text-gray-400">3.</span> Config erstellen:</p>
                   <CodeBlock>{`sudo tee /etc/overseer-agent/config.yaml <<EOF\nserver: ${window.location.origin}\ntoken: ${generatedToken}\nEOF`}</CodeBlock>
                   <p className="font-mono"><span className="text-gray-400">4.</span> systemd-Service erstellen:</p>
-                  <CodeBlock>{`sudo tee /etc/systemd/system/overseer-agent.service <<EOF\n[Unit]\nDescription=Overseer Agent\nAfter=network-online.target\nWants=network-online.target\n\n[Service]\nExecStart=/usr/local/bin/overseer-agent\nRestart=always\nRestartSec=10\n\n[Install]\nWantedBy=multi-user.target\nEOF`}</CodeBlock>
+                  <CodeBlock>{`sudo tee /etc/systemd/system/overseer-agent.service <<EOF\n[Unit]\nDescription=Overseer Monitoring Agent\nAfter=network-online.target\nWants=network-online.target\n\n[Service]\nType=simple\nExecStart=/usr/local/bin/overseer-agent --config /etc/overseer-agent/config.yaml\nRestart=on-failure\nRestartSec=10\nNoNewPrivileges=true\nProtectHome=true\nReadWritePaths=/var/log/overseer-agent\nStandardOutput=journal\nStandardError=journal\nSyslogIdentifier=overseer-agent\n\n[Install]\nWantedBy=multi-user.target\nEOF`}</CodeBlock>
                   <p className="font-mono"><span className="text-gray-400">5.</span> Starten:</p>
-                  <CodeBlock>{`sudo systemctl enable --now overseer-agent`}</CodeBlock>
+                  <CodeBlock>{`sudo systemctl daemon-reload\nsudo systemctl enable --now overseer-agent`}</CodeBlock>
+                  <p className="text-gray-400 text-[11px]">Logs prüfen: <code className="text-emerald-600">sudo journalctl -u overseer-agent -f</code></p>
                 </div>
               )}
             </div>
