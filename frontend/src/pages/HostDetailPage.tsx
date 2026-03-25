@@ -1694,7 +1694,24 @@ export default function HostDetailPage() {
                     <p><span className="text-blue-400">token</span>: <span className="text-emerald-400">{generatedToken}</span></p>
                     <p>EOF</p>
                   </div>
-                  <p><span className="text-gray-400">4.</span> systemd-Service einrichten + starten:</p>
+                  <p><span className="text-gray-400">4.</span> systemd-Service erstellen:</p>
+                  <div className="bg-gray-900 rounded px-3 py-2 text-gray-300 select-all space-y-0.5">
+                    <p>sudo tee /etc/systemd/system/overseer-agent.service {'<<'}EOF</p>
+                    <p><span className="text-blue-400">[Unit]</span></p>
+                    <p>Description=Overseer Agent</p>
+                    <p>After=network-online.target</p>
+                    <p>Wants=network-online.target</p>
+                    <p></p>
+                    <p><span className="text-blue-400">[Service]</span></p>
+                    <p>ExecStart=/usr/local/bin/overseer-agent</p>
+                    <p>Restart=always</p>
+                    <p>RestartSec=10</p>
+                    <p></p>
+                    <p><span className="text-blue-400">[Install]</span></p>
+                    <p>WantedBy=multi-user.target</p>
+                    <p>EOF</p>
+                  </div>
+                  <p><span className="text-gray-400">5.</span> Starten:</p>
                   <div className="bg-gray-900 rounded px-3 py-2 text-emerald-400 select-all">sudo systemctl enable --now overseer-agent</div>
                 </div>
               )}
