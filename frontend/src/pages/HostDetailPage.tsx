@@ -1684,27 +1684,16 @@ export default function HostDetailPage() {
                   <p className="text-gray-400 font-sans">(Service wird automatisch installiert und gestartet)</p>
                 </div>
               ) : (
-                <div className="bg-gray-50 rounded-lg px-4 py-3 text-xs space-y-2">
-                  <p className="font-mono"><span className="text-gray-400">1.</span> Agent herunterladen:</p>
-                  <a
-                    href="/agent/overseer-agent-linux-amd64"
-                    download
-                    className="flex items-center gap-2 px-3 py-2 bg-overseer-600 text-white rounded-lg text-xs font-medium hover:bg-overseer-700 transition-colors no-underline w-fit font-sans"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    overseer-agent (Linux, 9.3 MB)
-                  </a>
-                  <p className="text-gray-400 text-[11px]">Oder per Terminal:</p>
-                  <CodeBlock>{`wget ${window.location.origin}/agent/overseer-agent-linux-amd64`}</CodeBlock>
-                  <p className="font-mono"><span className="text-gray-400">2.</span> Installieren:</p>
-                  <CodeBlock>{`chmod +x overseer-agent-linux-amd64\nsudo mv overseer-agent-linux-amd64 /usr/local/bin/overseer-agent\nsudo mkdir -p /etc/overseer-agent\nsudo mkdir -p /var/log/overseer-agent`}</CodeBlock>
-                  <p className="font-mono"><span className="text-gray-400">3.</span> Config erstellen:</p>
-                  <CodeBlock>{`sudo tee /etc/overseer-agent/config.yaml <<EOF\nserver: ${window.location.origin}\ntoken: ${generatedToken}\nEOF`}</CodeBlock>
-                  <p className="font-mono"><span className="text-gray-400">4.</span> systemd-Service erstellen:</p>
-                  <CodeBlock>{`sudo tee /etc/systemd/system/overseer-agent.service <<EOF\n[Unit]\nDescription=Overseer Monitoring Agent\nAfter=network-online.target\nWants=network-online.target\n\n[Service]\nType=simple\nExecStart=/usr/local/bin/overseer-agent --config /etc/overseer-agent/config.yaml\nRestart=on-failure\nRestartSec=10\nNoNewPrivileges=true\nProtectHome=true\nReadWritePaths=/var/log/overseer-agent\nStandardOutput=journal\nStandardError=journal\nSyslogIdentifier=overseer-agent\n\n[Install]\nWantedBy=multi-user.target\nEOF`}</CodeBlock>
-                  <p className="font-mono"><span className="text-gray-400">5.</span> Starten:</p>
-                  <CodeBlock>{`sudo systemctl daemon-reload\nsudo systemctl enable --now overseer-agent`}</CodeBlock>
-                  <p className="text-gray-400 text-[11px]">Logs prüfen: <code className="text-emerald-600">sudo journalctl -u overseer-agent -f</code></p>
+                <div className="bg-gray-50 rounded-lg px-4 py-3 text-xs space-y-3">
+                  <p className="font-sans text-sm text-gray-700">Folgenden Befehl auf dem Zielrechner als <strong>root</strong> ausführen:</p>
+                  <CodeBlock>{`curl -fsSL ${window.location.origin}/agent/install.sh | sudo bash -s -- ${generatedToken} ${window.location.origin}`}</CodeBlock>
+                  <p className="text-gray-400 text-[11px] font-sans">
+                    Das Script lädt den Agent herunter, erstellt Config + systemd-Service und startet den Agent.
+                    Bei erneuter Ausführung wird eine bestehende Installation aktualisiert.
+                  </p>
+                  <p className="text-gray-400 text-[11px] font-sans">
+                    Logs prüfen: <code className="text-emerald-600">sudo journalctl -u overseer-agent -f</code>
+                  </p>
                 </div>
               )}
             </div>
