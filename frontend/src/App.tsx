@@ -70,7 +70,7 @@ export default function App() {
           } />
         </Route>
 
-        <Route path="/login" element={<LoginPage onLogin={() => window.location.reload()} />} />
+        <Route path="/login" element={<Navigate to="/dashboard" replace />} />
       </Routes>
       <AiChatWidget />
     </>
