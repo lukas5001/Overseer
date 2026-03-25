@@ -255,7 +255,61 @@ async def dead_collector_watcher():
         await asyncio.sleep(60)
 
 
+async def _run_dead_agent_check():
+    """Core logic for dead agent detection – runs under distributed lock."""
+    async with AsyncSessionLocal() as db:
+        cutoff = datetime.now(timezone.utc) - timedelta(minutes=3)
+        # Find hosts whose agent token hasn't reported in >3 minutes
+        dead = await db.execute(text("""
+            SELECT DISTINCT at.host_id
+            FROM agent_tokens at
+            JOIN hosts h ON h.id = at.host_id
+            WHERE at.active = true
+              AND h.active = true
+              AND h.agent_managed = true
+              AND at.last_seen_at IS NOT NULL
+              AND at.last_seen_at < :cutoff
+        """), {"cutoff": cutoff})
+        dead_hosts = dead.fetchall()
+
+        updated = 0
+        for row in dead_hosts:
+            result = await db.execute(text("""
+                UPDATE current_status cs
+                SET status = 'UNKNOWN',
+                    state_type = 'HARD',
+                    status_message = 'Agent offline – keine Daten seit mehr als 3 Minuten',
+                    last_check_at = :now
+                FROM services s
+                WHERE cs.service_id = s.id
+                  AND s.host_id = :host_id
+                  AND s.check_mode = 'agent'
+                  AND cs.status != 'UNKNOWN'
+            """), {"host_id": row.host_id, "now": datetime.now(timezone.utc)})
+            updated += result.rowcount
+
+        if updated > 0:
+            await db.commit()
+            print(f"[DeadAgent] {len(dead_hosts)} offline agent(s), {updated} service(s) set to UNKNOWN")
+
+
+async def dead_agent_watcher():
+    """Every 60s: find agents silent for >3min, set their services to UNKNOWN."""
+    await asyncio.sleep(20)
+    while True:
+        try:
+            async with _get_redis().lock("overseer:lock:dead_agent_watcher", timeout=55, blocking_timeout=1):
+                try:
+                    await _run_dead_agent_check()
+                except Exception as e:
+                    print(f"[DeadAgent] Error: {e}")
+        except Exception:
+            pass  # Could not acquire lock – another instance is running
+        await asyncio.sleep(60)
+
+
 @app.on_event("startup")
 async def startup():
     asyncio.create_task(dead_collector_watcher())
     asyncio.create_task(downtime_expiry_watcher())
+    asyncio.create_task(dead_agent_watcher())

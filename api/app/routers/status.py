@@ -194,6 +194,40 @@ async def get_summary_by_tenant(
     ]
 
 
+@router.get("/host-status")
+async def get_host_status_summary(
+    tenant_id: UUID | None = None,
+    db: AsyncSession = Depends(get_db),
+    _user: dict = Depends(get_current_user),
+    _scope = Depends(tenant_scope),
+):
+    """Worst status per host (considers ALL current_status rows, not just HARD errors)."""
+    q = (
+        select(
+            CurrentStatus.host_id,
+            func.min(
+                case(
+                    (CurrentStatus.status == "CRITICAL", 0),
+                    (CurrentStatus.status == "WARNING", 1),
+                    (CurrentStatus.status == "UNKNOWN", 2),
+                    else_=3,
+                )
+            ).label("worst_rank"),
+        )
+        .join(Service, CurrentStatus.service_id == Service.id)
+        .where(Service.active == True)
+        .group_by(CurrentStatus.host_id)
+    )
+    q = apply_tenant_filter(q, CurrentStatus.tenant_id, _scope, tenant_id)
+    result = await db.execute(q)
+
+    rank_to_status = {0: "CRITICAL", 1: "WARNING", 2: "UNKNOWN", 3: "OK"}
+    return {
+        str(row.host_id): rank_to_status[row.worst_rank]
+        for row in result.all()
+    }
+
+
 @router.get("/host/{host_id}", response_model=list[CurrentStatusOut])
 async def get_host_status(host_id: UUID, db: AsyncSession = Depends(get_db), _user: dict = Depends(get_current_user)):
     """Get all service statuses for a specific host."""

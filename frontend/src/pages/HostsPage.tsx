@@ -272,20 +272,11 @@ export default function HostsPage() {
     staleTime: 10000,
   })
 
-  const { data: errors = [] } = useQuery<{ host_id: string; status: string }[]>({
-    queryKey: ['error-overview'],
-    queryFn: () => api.get('/api/v1/status/errors?include_downtime=true').then(r => r.data),
+  const { data: worstStatus = {} } = useQuery<StatusSummary>({
+    queryKey: ['host-status-summary'],
+    queryFn: () => api.get('/api/v1/status/host-status').then(r => r.data),
     refetchInterval: 10000,
   })
-
-  const worstStatus: StatusSummary = {}
-  for (const e of errors) {
-    const cur = worstStatus[e.host_id]
-    const rank: Record<string, number> = { CRITICAL: 3, WARNING: 2, UNKNOWN: 1, OK: 0 }
-    if (!cur || rank[e.status] > rank[cur]) {
-      worstStatus[e.host_id] = e.status as 'OK' | 'WARNING' | 'CRITICAL' | 'UNKNOWN'
-    }
-  }
 
   // Filter hosts by search + agent filter
   const filteredHosts = useMemo(() => {
@@ -313,8 +304,8 @@ export default function HostsPage() {
       if (!effectiveActive) {
         groups[tid].inactiveCount++
       } else {
-        const status = worstStatus[h.id] ?? 'OK'
-        groups[tid].statusCounts[status]++
+        const status = worstStatus[h.id]
+        if (status) groups[tid].statusCounts[status]++
       }
     }
     // Sort by tenant name
@@ -562,8 +553,8 @@ export default function HostsPage() {
                       {tenantHosts.map(host => {
                         const HostIcon = HOST_TYPE_ICONS[host.host_type] ?? HelpCircle
                         const effectiveActive = host.active && host.tenant_active
-                        const status = effectiveActive ? (worstStatus[host.id] ?? 'OK') : 'INACTIVE'
-                        const dotClass = effectiveActive ? getStatusConfig(status).dot : 'bg-gray-300'
+                        const status = effectiveActive ? (worstStatus[host.id] ?? null) : null
+                        const dotClass = status ? getStatusConfig(status).dot : 'bg-gray-300'
                         return (
                           <tr key={host.id} className={clsx('hover:bg-gray-50', !effectiveActive && 'opacity-50')}>
                             <td className="px-6 py-2.5">
