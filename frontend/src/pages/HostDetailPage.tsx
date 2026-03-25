@@ -473,13 +473,21 @@ function AddCheckModal({ host, onClose, onSaved }: AddCheckModalProps) {
         {/* Template picker */}
         {mode === 'template' && (() => {
           // 2.7 Templates nach Kompatibilität filtern
+          const hostTypeLower = (host.host_type_name ?? '').toLowerCase()
+          const isWindows = hostTypeLower.includes('windows')
+          const isLinux = hostTypeLower.includes('linux')
+
           const compatibleTemplates = templates.filter(tpl => {
+            const tplLower = tpl.name.toLowerCase()
             const types = tpl.checks.map(c => c.check_type)
             const hasAgent = types.some(t => t.startsWith('agent_'))
             const hasSnmp = types.some(t => t.startsWith('snmp'))
             const hasSsh = types.some(t => t.startsWith('ssh_'))
             const hasNetwork = types.some(t => ['ping', 'port'].includes(t))
-            // Agent-Templates: Host muss agent-fähig sein (Agent muss nicht bereits eingerichtet sein)
+            // OS-Filter: Windows-Templates nicht für Linux-Hosts und umgekehrt
+            if (isLinux && tplLower.includes('windows')) return false
+            if (isWindows && tplLower.includes('linux')) return false
+            // Agent-Templates: Host muss agent-fähig sein
             if (hasAgent && !host.host_type_agent_capable) return false
             // SNMP-Templates nur wenn SNMP-Typ oder bereits konfiguriert
             if (hasSnmp && !host.host_type_snmp_enabled && !host.snmp_community) return false
