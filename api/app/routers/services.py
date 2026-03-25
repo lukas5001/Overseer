@@ -133,7 +133,7 @@ async def create_service(
                 service_id=old.id,
                 host_id=body.host_id,
                 tenant_id=body.tenant_id,
-                status="UNKNOWN",
+                status="NO_DATA",
                 state_type="SOFT",
                 current_attempt=0,
             )
@@ -162,7 +162,7 @@ async def create_service(
         service_id=svc.id,
         host_id=body.host_id,
         tenant_id=body.tenant_id,
-        status="UNKNOWN",
+        status="NO_DATA",
         state_type="SOFT",
         current_attempt=0,
     )

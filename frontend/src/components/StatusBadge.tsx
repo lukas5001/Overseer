@@ -1,7 +1,7 @@
-import { CheckCircle, AlertTriangle, XCircle, HelpCircle, type LucideIcon } from 'lucide-react'
+import { CheckCircle, AlertTriangle, XCircle, HelpCircle, CircleDashed, type LucideIcon } from 'lucide-react'
 import clsx from 'clsx'
 
-type Status = 'OK' | 'WARNING' | 'CRITICAL' | 'UNKNOWN'
+type Status = 'OK' | 'WARNING' | 'CRITICAL' | 'UNKNOWN' | 'NO_DATA'
 
 interface StatusDef {
   icon: LucideIcon
@@ -18,6 +18,7 @@ export const STATUS_CONFIG: Record<Status, StatusDef> = {
   WARNING:  { icon: AlertTriangle, dot: 'bg-amber-400',   bg: 'bg-amber-100',   text: 'text-amber-800',   color: 'text-amber-500',   border: 'border-amber-300',   label: 'WARNING' },
   CRITICAL: { icon: XCircle,       dot: 'bg-red-500',     bg: 'bg-red-100',     text: 'text-red-800',     color: 'text-red-500',     border: 'border-red-300',     label: 'CRITICAL' },
   UNKNOWN:  { icon: HelpCircle,    dot: 'bg-gray-400',    bg: 'bg-gray-100',    text: 'text-gray-700',    color: 'text-gray-400',    border: 'border-gray-300',    label: 'UNKNOWN' },
+  NO_DATA:  { icon: CircleDashed,  dot: 'bg-orange-400',  bg: 'bg-orange-100',  text: 'text-orange-800',  color: 'text-orange-500',  border: 'border-orange-300',  label: 'NO DATA' },
 }
 
 export function getStatusConfig(status: string): StatusDef {

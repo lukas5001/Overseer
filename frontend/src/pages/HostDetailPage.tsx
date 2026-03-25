@@ -43,7 +43,7 @@ interface ServiceStatus {
   service_id: string
   host_id: string
   tenant_id: string
-  status: 'OK' | 'WARNING' | 'CRITICAL' | 'UNKNOWN'
+  status: 'OK' | 'WARNING' | 'CRITICAL' | 'UNKNOWN' | 'NO_DATA'
   state_type: 'SOFT' | 'HARD'
   current_attempt: number
   status_message: string | null
@@ -70,7 +70,7 @@ interface ServiceItem {
 }
 
 
-const statusOrder = { CRITICAL: 0, WARNING: 1, UNKNOWN: 2, OK: 3 }
+const statusOrder: Record<string, number> = { CRITICAL: 0, WARNING: 1, NO_DATA: 2, UNKNOWN: 3, OK: 4 }
 
 // ── Sparkline (inline SVG, no dependencies) ────────────────────────────────────
 
@@ -200,8 +200,9 @@ function HistoryModal({ serviceId, serviceName, onClose }: HistoryModalProps) {
                         'text-emerald-600': p.status === 'OK',
                         'text-amber-600': p.status === 'WARNING',
                         'text-red-600': p.status === 'CRITICAL',
+                        'text-orange-500': p.status === 'NO_DATA',
                         'text-gray-400': p.status === 'UNKNOWN',
-                      })}>{p.status}</span>
+                      })}>{p.status === 'NO_DATA' ? 'NO DATA' : p.status}</span>
                     </td>
                     <td className="px-4 py-1.5 text-right font-mono text-gray-700">
                       {p.value !== null ? `${p.value}${p.unit ?? ''}` : '–'}
@@ -1250,7 +1251,7 @@ export default function HostDetailPage() {
       service_id: s.id,
       host_id: hostId!,
       tenant_id: host?.tenant_id ?? '',
-      status: 'UNKNOWN' as const,
+      status: 'NO_DATA' as const,
       state_type: 'SOFT' as const,
       current_attempt: 0,
       status_message: null,
@@ -1272,7 +1273,7 @@ export default function HostDetailPage() {
     return statusOrder[a.status] - statusOrder[b.status]
   })
 
-  const counts = { OK: 0, WARNING: 0, CRITICAL: 0, UNKNOWN: 0 }
+  const counts: Record<string, number> = { OK: 0, WARNING: 0, CRITICAL: 0, UNKNOWN: 0, NO_DATA: 0 }
   services.forEach(s => {
     const meta = serviceNames[s.service_id]
     if (meta?.active !== false) counts[s.status]++
@@ -1462,8 +1463,8 @@ export default function HostDetailPage() {
         </div>
 
         {/* Mini stats */}
-        <div className="grid grid-cols-4 gap-3 mt-5 pt-5 border-t border-gray-100">
-          {(['CRITICAL', 'WARNING', 'UNKNOWN', 'OK'] as const).map(s => {
+        <div className="grid grid-cols-5 gap-3 mt-5 pt-5 border-t border-gray-100">
+          {(['CRITICAL', 'WARNING', 'NO_DATA', 'UNKNOWN', 'OK'] as const).map(s => {
             const cfg = getStatusConfig(s)
             const Icon = cfg.icon
             return (

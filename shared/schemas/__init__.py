@@ -15,6 +15,7 @@ class CheckStatus(str, enum.Enum):
     WARNING = "WARNING"
     CRITICAL = "CRITICAL"
     UNKNOWN = "UNKNOWN"
+    NO_DATA = "NO_DATA"
 
 
 class StateType(str, enum.Enum):

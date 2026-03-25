@@ -171,7 +171,7 @@ async def copy_tenant(
                 service_id=new_svc.id,
                 host_id=new_host.id,
                 tenant_id=new_tenant.id,
-                status="UNKNOWN",
+                status="NO_DATA",
                 state_type="SOFT",
                 current_attempt=0,
             )
@@ -249,6 +249,7 @@ async def list_tenant_stats(
             func.sum(case((CurrentStatus.status == "CRITICAL", 1), else_=0)).label("critical"),
             func.sum(case((CurrentStatus.status == "WARNING", 1), else_=0)).label("warning"),
             func.sum(case((CurrentStatus.status == "UNKNOWN", 1), else_=0)).label("unknown"),
+            func.sum(case((CurrentStatus.status == "NO_DATA", 1), else_=0)).label("no_data"),
         )
         .where(
             CurrentStatus.status != "OK",
@@ -273,6 +274,7 @@ async def list_tenant_stats(
             "critical": prob.critical if prob else 0,
             "warning": prob.warning if prob else 0,
             "unknown": prob.unknown if prob else 0,
+            "no_data": prob.no_data if prob else 0,
         })
     return out
 

@@ -50,7 +50,7 @@ engine = create_async_engine(
 )
 AsyncSessionLocal = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
-CheckStatusEnum = SAEnum("OK", "WARNING", "CRITICAL", "UNKNOWN", name="check_status", create_type=False)
+CheckStatusEnum = SAEnum("OK", "WARNING", "CRITICAL", "UNKNOWN", "NO_DATA", name="check_status", create_type=False)
 StateTypeEnum = SAEnum("SOFT", "HARD", name="state_type", create_type=False)
 
 

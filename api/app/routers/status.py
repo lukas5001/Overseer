@@ -72,12 +72,14 @@ async def get_error_overview(
     if acknowledged is not None:
         q = q.where(CurrentStatus.acknowledged == acknowledged)
 
-    # CRITICAL first, then WARNING, then UNKNOWN; within each: longest duration first
+    # CRITICAL first, then WARNING, NO_DATA, UNKNOWN; within each: longest duration first
     q = q.order_by(
         case(
             (CurrentStatus.status == "CRITICAL", 0),
             (CurrentStatus.status == "WARNING", 1),
-            else_=2,
+            (CurrentStatus.status == "NO_DATA", 2),
+            (CurrentStatus.status == "UNKNOWN", 3),
+            else_=4,
         ),
         CurrentStatus.last_state_change_at.asc().nulls_last(),
     )
@@ -148,9 +150,11 @@ async def get_status_summary(
     result = await db.execute(q)
     rows = result.all()
 
-    counts = {"ok": 0, "warning": 0, "critical": 0, "unknown": 0}
+    counts = {"ok": 0, "warning": 0, "critical": 0, "unknown": 0, "no_data": 0}
     for row in rows:
-        counts[row.status.lower()] = row.cnt
+        key = row.status.lower()
+        if key in counts:
+            counts[key] = row.cnt
 
     return {**counts, "total": sum(counts.values())}
 
@@ -170,6 +174,7 @@ async def get_summary_by_tenant(
             func.sum(case((CurrentStatus.status == "WARNING", 1), else_=0)).label("warning"),
             func.sum(case((CurrentStatus.status == "CRITICAL", 1), else_=0)).label("critical"),
             func.sum(case((CurrentStatus.status == "UNKNOWN", 1), else_=0)).label("unknown"),
+            func.sum(case((CurrentStatus.status == "NO_DATA", 1), else_=0)).label("no_data"),
         )
         .join(CurrentStatus, CurrentStatus.tenant_id == Tenant.id)
         .where(Tenant.active == True)
@@ -189,6 +194,7 @@ async def get_summary_by_tenant(
             "warning": row.warning,
             "critical": row.critical,
             "unknown": row.unknown,
+            "no_data": row.no_data,
         }
         for row in result.all()
     ]
@@ -209,8 +215,9 @@ async def get_host_status_summary(
                 case(
                     (CurrentStatus.status == "CRITICAL", 0),
                     (CurrentStatus.status == "WARNING", 1),
-                    (CurrentStatus.status == "UNKNOWN", 2),
-                    else_=3,
+                    (CurrentStatus.status == "NO_DATA", 2),
+                    (CurrentStatus.status == "UNKNOWN", 3),
+                    else_=4,
                 )
             ).label("worst_rank"),
         )
@@ -221,7 +228,7 @@ async def get_host_status_summary(
     q = apply_tenant_filter(q, CurrentStatus.tenant_id, _scope, tenant_id)
     result = await db.execute(q)
 
-    rank_to_status = {0: "CRITICAL", 1: "WARNING", 2: "UNKNOWN", 3: "OK"}
+    rank_to_status = {0: "CRITICAL", 1: "WARNING", 2: "NO_DATA", 3: "UNKNOWN", 4: "OK"}
     return {
         str(row.host_id): rank_to_status[row.worst_rank]
         for row in result.all()

@@ -19,7 +19,7 @@ interface ErrorItem {
   host_type: string
   service_name: string
   check_type: string
-  status: 'WARNING' | 'CRITICAL' | 'UNKNOWN' | 'OK'
+  status: 'WARNING' | 'CRITICAL' | 'UNKNOWN' | 'NO_DATA' | 'OK'
   state_type: 'SOFT' | 'HARD'
   status_message: string | null
   value: number | null
@@ -57,8 +57,9 @@ type SortKey = 'status' | 'duration' | 'host' | 'service' | 'tenant' | 'last_che
 const statusConfig: Record<string, { label: string; bg: string; text: string; border: string; order: number }> = {
   CRITICAL: { label: 'CRITICAL', bg: 'bg-red-100',     text: 'text-red-800',     border: 'border-red-300',     order: 0 },
   WARNING:  { label: 'WARNING',  bg: 'bg-amber-100',   text: 'text-amber-800',   border: 'border-amber-300',   order: 1 },
-  UNKNOWN:  { label: 'UNKNOWN',  bg: 'bg-gray-100',    text: 'text-gray-700',    border: 'border-gray-300',    order: 2 },
-  OK:       { label: 'OK',       bg: 'bg-emerald-100', text: 'text-emerald-800', border: 'border-emerald-300', order: 3 },
+  NO_DATA:  { label: 'NO DATA',  bg: 'bg-orange-100',  text: 'text-orange-800',  border: 'border-orange-300',  order: 2 },
+  UNKNOWN:  { label: 'UNKNOWN',  bg: 'bg-gray-100',    text: 'text-gray-700',    border: 'border-gray-300',    order: 3 },
+  OK:       { label: 'OK',       bg: 'bg-emerald-100', text: 'text-emerald-800', border: 'border-emerald-300', order: 4 },
 }
 
 const sortOptions: { key: SortKey; label: string }[] = [
@@ -417,8 +418,8 @@ function SaveFilterModal({ onClose, onSaved, hiddenTenants, activeStatuses, sear
     onError: (e: any) => setError_(e.response?.data?.detail ?? 'Fehler'),
   })
 
-  const allStatuses = ['CRITICAL', 'WARNING', 'UNKNOWN', 'OK']
-  const defaultStatuses = new Set(['CRITICAL', 'WARNING', 'UNKNOWN'])
+  const allStatuses = ['CRITICAL', 'WARNING', 'NO_DATA', 'UNKNOWN', 'OK']
+  const defaultStatuses = new Set(['CRITICAL', 'WARNING', 'NO_DATA', 'UNKNOWN'])
   const isDefault = activeStatuses.size === defaultStatuses.size && [...defaultStatuses].every(s => activeStatuses.has(s))
 
   return (
@@ -573,7 +574,7 @@ export default function ErrorOverviewPage() {
   const [showTenantPanel, setShowTenantPanel] = useState(false)
   const [showSaveFilter, setShowSaveFilter] = useState(false)
   const [editFilter, setEditFilter] = useState<SavedFilter | null>(null)
-  const [activeStatuses, setActiveStatuses] = useState<Set<string>>(new Set(['CRITICAL', 'WARNING', 'UNKNOWN']))
+  const [activeStatuses, setActiveStatuses] = useState<Set<string>>(new Set(['CRITICAL', 'WARNING', 'NO_DATA', 'UNKNOWN']))
   const [defaultFilterId, setDefaultFilterId] = useState<string | null>(null)
   const [defaultApplied, setDefaultApplied] = useState(false)
   const [deleteFilterTarget, setDeleteFilterTarget] = useState<{ id: string; name: string } | null>(null)
@@ -737,7 +738,7 @@ export default function ErrorOverviewPage() {
     } else if (cfg.status) {
       setActiveStatuses(new Set([cfg.status]))
     } else {
-      setActiveStatuses(new Set(['CRITICAL', 'WARNING', 'UNKNOWN']))
+      setActiveStatuses(new Set(['CRITICAL', 'WARNING', 'NO_DATA', 'UNKNOWN']))
     }
     setSearch(cfg.search ?? '')
     setShowAcknowledged(cfg.show_acknowledged ?? false)
@@ -899,7 +900,7 @@ export default function ErrorOverviewPage() {
           />
         </div>
         <div className="flex items-center gap-1">
-          {(['CRITICAL', 'WARNING', 'UNKNOWN', 'OK'] as const).map(s => {
+          {(['CRITICAL', 'WARNING', 'NO_DATA', 'UNKNOWN', 'OK'] as const).map(s => {
             const cfg = statusConfig[s]
             const active = activeStatuses.has(s)
             return (
@@ -1030,9 +1031,9 @@ export default function ErrorOverviewPage() {
           )}
         </div>
 
-        {(hiddenTenantCount > 0 || activeStatuses.size !== 3 || !['CRITICAL', 'WARNING', 'UNKNOWN'].every(s => activeStatuses.has(s)) || search || showAcknowledged || showDowntime || onlyAck || onlyDowntime) && (
+        {(hiddenTenantCount > 0 || activeStatuses.size !== 4 || !['CRITICAL', 'WARNING', 'NO_DATA', 'UNKNOWN'].every(s => activeStatuses.has(s)) || search || showAcknowledged || showDowntime || onlyAck || onlyDowntime) && (
           <button
-            onClick={() => { setSearch(''); setHiddenTenants(new Set()); setActiveStatuses(new Set(['CRITICAL', 'WARNING', 'UNKNOWN'])); setShowAcknowledged(false); setShowDowntime(false); setOnlyAck(false); setOnlyDowntime(false) }}
+            onClick={() => { setSearch(''); setHiddenTenants(new Set()); setActiveStatuses(new Set(['CRITICAL', 'WARNING', 'NO_DATA', 'UNKNOWN'])); setShowAcknowledged(false); setShowDowntime(false); setOnlyAck(false); setOnlyDowntime(false) }}
             className="text-xs text-gray-500 hover:text-gray-700 underline"
           >
             Filter zurücksetzen

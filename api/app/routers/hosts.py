@@ -275,7 +275,7 @@ async def copy_host(
             service_id=new_svc.id,
             host_id=new_host.id,
             tenant_id=target_tid,
-            status="UNKNOWN",
+            status="NO_DATA",
             state_type="SOFT",
             current_attempt=0,
         )

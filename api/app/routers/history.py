@@ -64,7 +64,8 @@ async def get_history_summary(
                 SUM(CASE WHEN status = 'OK' THEN 1 ELSE 0 END) AS ok_count,
                 SUM(CASE WHEN status = 'WARNING' THEN 1 ELSE 0 END) AS warning_count,
                 SUM(CASE WHEN status = 'CRITICAL' THEN 1 ELSE 0 END) AS critical_count,
-                SUM(CASE WHEN status = 'UNKNOWN' THEN 1 ELSE 0 END) AS unknown_count
+                SUM(CASE WHEN status = 'UNKNOWN' THEN 1 ELSE 0 END) AS unknown_count,
+                SUM(CASE WHEN status = 'NO_DATA' THEN 1 ELSE 0 END) AS no_data_count
             FROM check_results
             WHERE service_id = :sid AND time >= :since
         """),
@@ -83,4 +84,5 @@ async def get_history_summary(
         "warning_count": row.warning_count,
         "critical_count": row.critical_count,
         "unknown_count": row.unknown_count,
+        "no_data_count": row.no_data_count,
     }

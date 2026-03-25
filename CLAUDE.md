@@ -137,7 +137,17 @@ Jeder Service hat seinen eigenen Docker-Build-Context (siehe Dockerfiles):
 - `OK` (0) – Alles in Ordnung
 - `WARNING` (1) – Schwellwert überschritten
 - `CRITICAL` (2) – Kritischer Schwellwert überschritten
-- `UNKNOWN` (3) – Check konnte nicht ausgeführt werden
+- `NO_DATA` (3) – Keine Daten empfangen (neuer Service, Agent/Collector offline). Orange im Frontend.
+- `UNKNOWN` (4) – Check wurde ausgeführt, aber Ergebnis unklar (z.B. Plugin-Exit-Code 3)
+
+### Severity-Reihenfolge
+CRITICAL > WARNING > NO_DATA > UNKNOWN > OK
+
+### Wann wird NO_DATA gesetzt?
+- **Neuer Service erstellt** → initial status = NO_DATA (statt UNKNOWN)
+- **Agent offline** → dead_agent_watcher setzt Services auf NO_DATA
+- **Collector offline** → dead_collector_watcher setzt Services auf NO_DATA
+- Sobald ein Check-Ergebnis eintrifft, wechselt der Status auf das tatsächliche Ergebnis
 
 ## Soft/Hard States
 

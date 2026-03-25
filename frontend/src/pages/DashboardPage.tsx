@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Activity, AlertTriangle, XCircle, HelpCircle, CheckCircle, Building2, Monitor } from 'lucide-react'
+import { Activity, AlertTriangle, XCircle, HelpCircle, CheckCircle, CircleDashed, Building2, Monitor } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import clsx from 'clsx'
 import { api } from '../api/client'
@@ -10,6 +10,7 @@ interface StatusSummary {
   warning: number
   critical: number
   unknown: number
+  no_data: number
   total: number
 }
 
@@ -21,23 +22,26 @@ interface TenantSummary {
   warning: number
   critical: number
   unknown: number
+  no_data: number
 }
 
 const statusCards = [
   { key: 'critical' as const, label: 'Critical', icon: XCircle,       textColor: 'text-red-600',     bgLight: 'bg-red-50',     iconBg: 'bg-red-500' },
   { key: 'warning'  as const, label: 'Warning',  icon: AlertTriangle,  textColor: 'text-amber-600',   bgLight: 'bg-amber-50',   iconBg: 'bg-amber-500' },
+  { key: 'no_data'  as const, label: 'No Data',  icon: CircleDashed,   textColor: 'text-orange-600',  bgLight: 'bg-orange-50',  iconBg: 'bg-orange-500' },
   { key: 'unknown'  as const, label: 'Unknown',  icon: HelpCircle,     textColor: 'text-gray-600',    bgLight: 'bg-gray-100',   iconBg: 'bg-gray-500' },
   { key: 'ok'       as const, label: 'OK',       icon: CheckCircle,    textColor: 'text-emerald-600', bgLight: 'bg-emerald-50', iconBg: 'bg-emerald-500' },
 ]
 
-function TenantBar({ ok, warning, critical, unknown, total }: Omit<TenantSummary, 'tenant_id' | 'tenant_name'>) {
+function TenantBar({ ok, warning, critical, unknown, no_data, total }: Omit<TenantSummary, 'tenant_id' | 'tenant_name'>) {
   if (total === 0) return null
   return (
     <div className="flex h-2 rounded-full overflow-hidden w-full gap-px">
-      {critical > 0 && <div className="bg-red-500"    style={{ width: `${(critical / total) * 100}%` }} />}
-      {warning  > 0 && <div className="bg-amber-400"  style={{ width: `${(warning  / total) * 100}%` }} />}
-      {unknown  > 0 && <div className="bg-gray-300"   style={{ width: `${(unknown  / total) * 100}%` }} />}
-      {ok       > 0 && <div className="bg-emerald-400" style={{ width: `${(ok      / total) * 100}%` }} />}
+      {critical > 0 && <div className="bg-red-500"     style={{ width: `${(critical / total) * 100}%` }} />}
+      {warning  > 0 && <div className="bg-amber-400"   style={{ width: `${(warning  / total) * 100}%` }} />}
+      {no_data  > 0 && <div className="bg-orange-400"  style={{ width: `${(no_data  / total) * 100}%` }} />}
+      {unknown  > 0 && <div className="bg-gray-300"    style={{ width: `${(unknown  / total) * 100}%` }} />}
+      {ok       > 0 && <div className="bg-emerald-400" style={{ width: `${(ok       / total) * 100}%` }} />}
     </div>
   )
 }
@@ -70,7 +74,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Status Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
         {statusCards.map((card) => {
           const count = summary?.[card.key] ?? 0
           return (
@@ -138,6 +142,7 @@ export default function DashboardPage() {
                 <th className="px-6 py-3 text-left">Tenant</th>
                 <th className="px-6 py-3 text-center text-red-600">Critical</th>
                 <th className="px-6 py-3 text-center text-amber-600">Warning</th>
+                <th className="px-6 py-3 text-center text-orange-600">No Data</th>
                 <th className="px-6 py-3 text-center text-gray-500">Unknown</th>
                 <th className="px-6 py-3 text-center text-emerald-600">OK</th>
                 <th className="px-6 py-3 text-right text-gray-500">Gesamt</th>
@@ -158,6 +163,11 @@ export default function DashboardPage() {
                   <td className="px-6 py-4 text-center">
                     {t.warning > 0
                       ? <span className="font-bold text-amber-600">{t.warning}</span>
+                      : <span className="text-gray-300">–</span>}
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    {t.no_data > 0
+                      ? <span className="font-semibold text-orange-600">{t.no_data}</span>
                       : <span className="text-gray-300">–</span>}
                   </td>
                   <td className="px-6 py-4 text-center">

@@ -23,7 +23,7 @@ interface HostItem {
 }
 
 interface StatusSummary {
-  [host_id: string]: 'OK' | 'WARNING' | 'CRITICAL' | 'UNKNOWN'
+  [host_id: string]: 'OK' | 'WARNING' | 'CRITICAL' | 'UNKNOWN' | 'NO_DATA'
 }
 
 
@@ -298,7 +298,7 @@ export default function HostsPage() {
     const groups: Record<string, { name: string; tenantActive: boolean; hosts: HostItem[]; statusCounts: Record<string, number>; inactiveCount: number }> = {}
     for (const h of filteredHosts) {
       const tid = h.tenant_id
-      if (!groups[tid]) groups[tid] = { name: h.tenant_name ?? tid, tenantActive: h.tenant_active, hosts: [], statusCounts: { OK: 0, WARNING: 0, CRITICAL: 0, UNKNOWN: 0 }, inactiveCount: 0 }
+      if (!groups[tid]) groups[tid] = { name: h.tenant_name ?? tid, tenantActive: h.tenant_active, hosts: [], statusCounts: { OK: 0, WARNING: 0, CRITICAL: 0, UNKNOWN: 0, NO_DATA: 0 }, inactiveCount: 0 }
       groups[tid].hosts.push(h)
       const effectiveActive = h.active && h.tenant_active
       if (!effectiveActive) {
@@ -483,7 +483,7 @@ export default function HostsPage() {
       <div className="space-y-2">
         {tenantGroups.map(([tid, { name: tenantName, tenantActive, hosts: tenantHosts, statusCounts, inactiveCount }]) => {
           const isExpanded = expandedTenants.has(tid)
-          const hasProblem = statusCounts.CRITICAL > 0 || statusCounts.WARNING > 0 || statusCounts.UNKNOWN > 0
+          const hasProblem = statusCounts.CRITICAL > 0 || statusCounts.WARNING > 0 || statusCounts.NO_DATA > 0 || statusCounts.UNKNOWN > 0
 
           return (
             <div key={tid} className={clsx('bg-white rounded-xl border overflow-hidden', tenantActive ? 'border-gray-200' : 'border-dashed border-gray-300 opacity-60')}>
@@ -514,6 +514,12 @@ export default function HostsPage() {
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
                       <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                       {statusCounts.WARNING}
+                    </span>
+                  )}
+                  {statusCounts.NO_DATA > 0 && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
+                      <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
+                      {statusCounts.NO_DATA}
                     </span>
                   )}
                   {statusCounts.UNKNOWN > 0 && (

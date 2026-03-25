@@ -18,7 +18,7 @@ router = APIRouter()
 
 
 class AlertConditions(BaseModel):
-    statuses: list[str] = ["CRITICAL", "UNKNOWN"]
+    statuses: list[str] = ["CRITICAL", "NO_DATA", "UNKNOWN"]
     min_duration_minutes: int = 5
     host_tags: list[str] = []
     service_names: list[str] = []

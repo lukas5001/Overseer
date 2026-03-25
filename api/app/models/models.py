@@ -25,7 +25,7 @@ user_tenant_access = Table(
 # ── Enums (already created by migration, so create_type=False) ──────────────
 
 CheckStatusEnum = SAEnum(
-    "OK", "WARNING", "CRITICAL", "UNKNOWN",
+    "OK", "WARNING", "CRITICAL", "UNKNOWN", "NO_DATA",
     name="check_status", create_type=False,
 )
 StateTypeEnum = SAEnum("SOFT", "HARD", name="state_type", create_type=False)
@@ -168,7 +168,7 @@ class CurrentStatus(Base):
     service_id = Column(UUID(as_uuid=True), ForeignKey("services.id", ondelete="CASCADE"), primary_key=True)
     host_id = Column(UUID(as_uuid=True), ForeignKey("hosts.id", ondelete="CASCADE"), nullable=False)
     tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
-    status = Column(CheckStatusEnum, nullable=False, default="UNKNOWN")
+    status = Column(CheckStatusEnum, nullable=False, default="NO_DATA")
     state_type = Column(StateTypeEnum, nullable=False, default="SOFT")
     current_attempt = Column(Integer, nullable=False, default=0)
     status_message = Column(Text)

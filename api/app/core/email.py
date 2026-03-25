@@ -32,7 +32,7 @@ async def send_email(to: str, subject: str, body_plain: str, body_html: str | No
 
 def render_alert_html(ctx: dict) -> str:
     status = ctx.get("status", "UNKNOWN")
-    color_map = {"OK": "#16a34a", "WARNING": "#d97706", "CRITICAL": "#dc2626", "UNKNOWN": "#6b7280"}
+    color_map = {"OK": "#16a34a", "WARNING": "#d97706", "CRITICAL": "#dc2626", "NO_DATA": "#ea580c", "UNKNOWN": "#6b7280"}
     color = color_map.get(status, "#6b7280")
     is_recovery = status == "OK"
     is_test = ctx.get("is_test", False)

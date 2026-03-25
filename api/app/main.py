@@ -223,7 +223,7 @@ async def _run_dead_collector_check():
         for row in dead_rows:
             await db.execute(text("""
                 UPDATE current_status cs
-                SET status = 'UNKNOWN',
+                SET status = 'NO_DATA',
                     state_type = 'HARD',
                     status_message = 'Collector offline – keine Daten seit mehr als 3 Minuten',
                     last_check_at = :now
@@ -231,13 +231,13 @@ async def _run_dead_collector_check():
                 JOIN hosts h ON s.host_id = h.id
                 WHERE cs.service_id = s.id
                   AND h.collector_id = :collector_id
-                  AND cs.status != 'UNKNOWN'
+                  AND cs.status != 'NO_DATA'
             """), {"collector_id": row.id, "now": datetime.now(timezone.utc)})
 
         if dead_rows:
             await db.commit()
             for row in dead_rows:
-                print(f"[DeadCollector] {row.name} ({row.id}) – services set to UNKNOWN")
+                print(f"[DeadCollector] {row.name} ({row.id}) – services set to NO_DATA")
 
 
 async def dead_collector_watcher():
@@ -276,7 +276,7 @@ async def _run_dead_agent_check():
         for row in dead_hosts:
             result = await db.execute(text("""
                 UPDATE current_status cs
-                SET status = 'UNKNOWN',
+                SET status = 'NO_DATA',
                     state_type = 'HARD',
                     status_message = 'Agent offline – keine Daten seit mehr als 3 Minuten',
                     last_check_at = :now
@@ -284,13 +284,13 @@ async def _run_dead_agent_check():
                 WHERE cs.service_id = s.id
                   AND s.host_id = :host_id
                   AND s.check_mode = 'agent'
-                  AND cs.status != 'UNKNOWN'
+                  AND cs.status != 'NO_DATA'
             """), {"host_id": row.host_id, "now": datetime.now(timezone.utc)})
             updated += result.rowcount
 
         if updated > 0:
             await db.commit()
-            print(f"[DeadAgent] {len(dead_hosts)} offline agent(s), {updated} service(s) set to UNKNOWN")
+            print(f"[DeadAgent] {len(dead_hosts)} offline agent(s), {updated} service(s) set to NO_DATA")
 
 
 async def dead_agent_watcher():

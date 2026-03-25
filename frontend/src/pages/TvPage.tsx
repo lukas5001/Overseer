@@ -8,10 +8,11 @@ import { de } from 'date-fns/locale'
 import { api } from '../api/client'
 import type { ErrorOverviewItem, StatusSummary } from '../types'
 
-const statusConfig = {
-  CRITICAL: { bg: 'bg-red-900/40', text: 'text-red-400', border: 'border-red-700', label: 'CRITICAL' },
-  WARNING:  { bg: 'bg-amber-900/40', text: 'text-amber-400', border: 'border-amber-700', label: 'WARNING' },
-  UNKNOWN:  { bg: 'bg-gray-700/40', text: 'text-gray-400', border: 'border-gray-600', label: 'UNKNOWN' },
+const statusConfig: Record<string, { bg: string; text: string; border: string; label: string }> = {
+  CRITICAL: { bg: 'bg-red-900/40',    text: 'text-red-400',    border: 'border-red-700',    label: 'CRITICAL' },
+  WARNING:  { bg: 'bg-amber-900/40',  text: 'text-amber-400',  border: 'border-amber-700',  label: 'WARNING' },
+  NO_DATA:  { bg: 'bg-orange-900/40', text: 'text-orange-400', border: 'border-orange-700', label: 'NO DATA' },
+  UNKNOWN:  { bg: 'bg-gray-700/40',   text: 'text-gray-400',   border: 'border-gray-600',   label: 'UNKNOWN' },
 }
 
 export default function TvPage() {
@@ -50,6 +51,7 @@ export default function TvPage() {
 
   const criticalCount = errors.filter(e => e.status === 'CRITICAL').length
   const warningCount = errors.filter(e => e.status === 'WARNING').length
+  const noDataCount = errors.filter(e => e.status === 'NO_DATA').length
   const unknownCount = errors.filter(e => e.status === 'UNKNOWN').length
 
   return (
@@ -69,7 +71,7 @@ export default function TvPage() {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-5 gap-4 mb-8">
         <div className="rounded-xl p-5 bg-red-900/30 border border-red-800">
           <p className="text-sm text-red-400">Critical</p>
           <p className="text-5xl font-bold text-red-400 mt-2">{criticalCount}</p>
@@ -77,6 +79,10 @@ export default function TvPage() {
         <div className="rounded-xl p-5 bg-amber-900/30 border border-amber-800">
           <p className="text-sm text-amber-400">Warning</p>
           <p className="text-5xl font-bold text-amber-400 mt-2">{warningCount}</p>
+        </div>
+        <div className="rounded-xl p-5 bg-orange-900/30 border border-orange-800">
+          <p className="text-sm text-orange-400">No Data</p>
+          <p className="text-5xl font-bold text-orange-400 mt-2">{noDataCount}</p>
         </div>
         <div className="rounded-xl p-5 bg-gray-800/50 border border-gray-700">
           <p className="text-sm text-gray-400">Unknown</p>
@@ -100,7 +106,7 @@ export default function TvPage() {
       {/* Error list */}
       <div className="space-y-2">
         {errors.map(error => {
-          const cfg = statusConfig[error.status]
+          const cfg = statusConfig[error.status] ?? statusConfig.UNKNOWN
           return (
             <div key={error.service_id}
               className={clsx('flex items-center gap-4 px-5 py-4 rounded-lg border', cfg.bg, cfg.border,

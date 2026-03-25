@@ -16,6 +16,7 @@ interface TenantStat {
   critical: number
   warning: number
   unknown: number
+  no_data: number
 }
 
 interface TenantDetail {
@@ -532,12 +533,17 @@ export default function TenantsPage() {
                           {t.warning} WARN
                         </span>
                       )}
+                      {t.no_data > 0 && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-orange-100 text-orange-800">
+                          {t.no_data} NO DATA
+                        </span>
+                      )}
                       {t.unknown > 0 && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-gray-100 text-gray-600">
                           {t.unknown} UNK
                         </span>
                       )}
-                      {t.critical === 0 && t.warning === 0 && t.unknown === 0 && (
+                      {t.critical === 0 && t.warning === 0 && t.no_data === 0 && t.unknown === 0 && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700">
                           OK
                         </span>

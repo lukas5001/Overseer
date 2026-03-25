@@ -1,6 +1,6 @@
 // ── Enums ────────────────────────────────────────────────────────────────────
 
-export type CheckStatus = 'OK' | 'WARNING' | 'CRITICAL' | 'UNKNOWN'
+export type CheckStatus = 'OK' | 'WARNING' | 'CRITICAL' | 'UNKNOWN' | 'NO_DATA'
 export type StateType = 'SOFT' | 'HARD'
 export type UserRole = 'super_admin' | 'tenant_admin' | 'tenant_operator' | 'tenant_viewer'
 export type HostType = 'server' | 'switch' | 'router' | 'printer' | 'firewall' | 'access_point' | 'other'
@@ -38,6 +38,7 @@ export interface TenantStat {
   critical: number
   warning: number
   unknown: number
+  no_data: number
 }
 
 export interface TenantDetail {
@@ -260,7 +261,7 @@ export interface ErrorOverviewItem {
   host_type: string
   service_name: string
   check_type: string
-  status: 'WARNING' | 'CRITICAL' | 'UNKNOWN'
+  status: 'WARNING' | 'CRITICAL' | 'UNKNOWN' | 'NO_DATA'
   state_type: StateType
   status_message: string | null
   value: number | null
@@ -282,6 +283,7 @@ export interface StatusSummary {
   warning: number
   critical: number
   unknown: number
+  no_data: number
   total: number
 }
 
@@ -293,6 +295,7 @@ export interface TenantStatusSummary {
   warning: number
   critical: number
   unknown: number
+  no_data: number
 }
 
 // ── History / Time Series ────────────────────────────────────────────────────
@@ -322,6 +325,7 @@ export interface HistorySummary {
   warning_count: number
   critical_count: number
   unknown_count: number
+  no_data_count: number
 }
 
 // ── SLA ──────────────────────────────────────────────────────────────────────
