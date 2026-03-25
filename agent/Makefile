@@ -9,7 +9,7 @@ LDFLAGS = -X github.com/lukas5001/overseer-agent/internal/version.Version=$(VERS
 .PHONY: build-linux build-windows build-all clean
 
 build-linux:
-	GOOS=linux GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -o bin/overseer-agent ./cmd/overseer-agent
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "$(LDFLAGS) -s -w" -o bin/overseer-agent ./cmd/overseer-agent
 
 build-windows:
 	GOOS=windows GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -o bin/overseer-agent.exe ./cmd/overseer-agent
