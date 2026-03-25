@@ -146,6 +146,7 @@ class ServiceOut(BaseModel):
     threshold_warn: float | None
     threshold_crit: float | None
     max_check_attempts: int
+    retry_interval_seconds: int = 15
     check_mode: str = "passive"
     active: bool
     created_at: datetime
@@ -244,6 +245,7 @@ class ServiceCreate(BaseModel):
     threshold_warn: float | None = None
     threshold_crit: float | None = None
     max_check_attempts: int = 3
+    retry_interval_seconds: int = 15
     check_mode: str = "passive"
 
 
@@ -255,6 +257,7 @@ class ServiceUpdate(BaseModel):
     threshold_warn: float | None = None
     threshold_crit: float | None = None
     max_check_attempts: int | None = None
+    retry_interval_seconds: int | None = None
     check_mode: str | None = None
     active: bool | None = None
 
@@ -278,6 +281,7 @@ class TemplateCheckItem(BaseModel):
     interval_seconds: int = 60
     threshold_warn: float | None = None
     threshold_crit: float | None = None
+    retry_interval_seconds: int = 15
     check_mode: str = "active"
 
 

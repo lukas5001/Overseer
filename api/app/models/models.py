@@ -166,6 +166,7 @@ class Service(Base):
     threshold_warn = Column(Float)
     threshold_crit = Column(Float)
     max_check_attempts = Column(Integer, nullable=False, default=3)
+    retry_interval_seconds = Column(Integer, nullable=False, default=15)
     check_mode = Column(String(10), nullable=False, default="passive")  # 'passive' or 'active'
     active = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))

@@ -88,6 +88,7 @@ interface ServiceItem {
   threshold_warn: number | null
   threshold_crit: number | null
   max_check_attempts: number
+  retry_interval_seconds: number
   check_mode: string
   active: boolean
 }
@@ -323,6 +324,7 @@ interface TemplateCheck {
   interval_seconds: number
   threshold_warn: number | null
   threshold_crit: number | null
+  retry_interval_seconds?: number
   check_mode?: string
 }
 
@@ -360,6 +362,7 @@ function AddCheckModal({ host, onClose, onSaved }: AddCheckModalProps) {
     threshold_warn: '',
     threshold_crit: '',
     max_check_attempts: '3',
+    retry_interval_seconds: '15',
     check_mode: 'active',
   })
   const [config, setConfig] = useState<Record<string, string>>({})
@@ -382,6 +385,7 @@ function AddCheckModal({ host, onClose, onSaved }: AddCheckModalProps) {
         threshold_warn: form.threshold_warn ? parseFloat(form.threshold_warn) : null,
         threshold_crit: form.threshold_crit ? parseFloat(form.threshold_crit) : null,
         max_check_attempts: parseInt(form.max_check_attempts) || 3,
+        retry_interval_seconds: parseInt(form.retry_interval_seconds) || 15,
         check_mode: form.check_type.startsWith('agent_') ? 'agent' : form.check_mode,
       })
     },
@@ -410,6 +414,7 @@ function AddCheckModal({ host, onClose, onSaved }: AddCheckModalProps) {
             threshold_warn: check.threshold_warn,
             threshold_crit: check.threshold_crit,
             max_check_attempts: 3,
+            retry_interval_seconds: check.retry_interval_seconds ?? 15,
             check_mode: check.check_mode ?? 'active',
           })
           created++
@@ -575,6 +580,19 @@ function AddCheckModal({ host, onClose, onSaved }: AddCheckModalProps) {
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Crit-Schwelle</label>
                   <input value={form.threshold_crit} onChange={setF('threshold_crit')} type="number" placeholder="90"
+                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Max. Versuche (SOFT→HARD)</label>
+                  <input value={form.max_check_attempts} onChange={setF('max_check_attempts')} type="number" min="1"
+                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Retry-Intervall (s)</label>
+                  <input value={form.retry_interval_seconds} onChange={setF('retry_interval_seconds')} type="number" min="5"
                     className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
                 </div>
               </div>
@@ -776,6 +794,7 @@ function EditServiceModal({ service, onClose, onSaved }: EditServiceModalProps) 
     threshold_warn: service.threshold_warn !== null ? String(service.threshold_warn) : '',
     threshold_crit: service.threshold_crit !== null ? String(service.threshold_crit) : '',
     max_check_attempts: String(service.max_check_attempts),
+    retry_interval_seconds: String(service.retry_interval_seconds ?? 15),
     check_mode: service.check_mode ?? 'passive',
   })
   const [config, setConfig] = useState<Record<string, string>>(
@@ -796,6 +815,7 @@ function EditServiceModal({ service, onClose, onSaved }: EditServiceModalProps) 
         threshold_warn: form.threshold_warn ? parseFloat(form.threshold_warn) : null,
         threshold_crit: form.threshold_crit ? parseFloat(form.threshold_crit) : null,
         max_check_attempts: parseInt(form.max_check_attempts) || 3,
+        retry_interval_seconds: parseInt(form.retry_interval_seconds) || 15,
         check_mode: form.check_mode,
       })
     },
@@ -851,10 +871,17 @@ function EditServiceModal({ service, onClose, onSaved }: EditServiceModalProps) 
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Max. Versuche (SOFT→HARD)</label>
-            <input value={form.max_check_attempts} onChange={setF('max_check_attempts')} type="number"
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Max. Versuche (SOFT→HARD)</label>
+              <input value={form.max_check_attempts} onChange={setF('max_check_attempts')} type="number"
+                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Retry-Intervall (s)</label>
+              <input value={form.retry_interval_seconds} onChange={setF('retry_interval_seconds')} type="number" min="5"
+                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+            </div>
           </div>
 
           <div>
@@ -1006,6 +1033,7 @@ function SnmpDiscoveryModal({ host, onClose, onSaved }: SnmpDiscoveryModalProps)
           },
           interval_seconds: 60,
           max_check_attempts: 3,
+          retry_interval_seconds: 15,
           check_mode: 'active',
         })
         created++
@@ -1275,8 +1303,8 @@ export default function HostDetailPage() {
     }
   }
 
-  const serviceNames: Record<string, { name: string; check_type: string; check_mode: string; active: boolean; max_check_attempts: number }> = {}
-  serviceList.forEach(s => { serviceNames[s.id] = { name: s.name, check_type: s.check_type, check_mode: s.check_mode ?? 'passive', active: s.active, max_check_attempts: s.max_check_attempts ?? 3 } })
+  const serviceNames: Record<string, { name: string; check_type: string; check_mode: string; active: boolean; max_check_attempts: number; retry_interval_seconds: number }> = {}
+  serviceList.forEach(s => { serviceNames[s.id] = { name: s.name, check_type: s.check_type, check_mode: s.check_mode ?? 'passive', active: s.active, max_check_attempts: s.max_check_attempts ?? 3, retry_interval_seconds: s.retry_interval_seconds ?? 15 } })
 
   // Merge: status data + services without status (inactive services may not have current_status)
   const statusServiceIds = new Set(services.map(s => s.service_id))

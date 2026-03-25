@@ -49,6 +49,7 @@ async def get_collector_config(
                 "type": svc.check_type,
                 "config": svc.check_config,
                 "interval_seconds": svc.interval_seconds,
+                "retry_interval_seconds": svc.retry_interval_seconds,
                 "threshold_warn": svc.threshold_warn,
                 "threshold_crit": svc.threshold_crit,
             })

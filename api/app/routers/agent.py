@@ -48,6 +48,7 @@ class AgentCheckDef(BaseModel):
     threshold_warn: float | None
     threshold_crit: float | None
     max_check_attempts: int
+    retry_interval_seconds: int = 15
 
 
 class AgentConfigResponse(BaseModel):
@@ -301,7 +302,7 @@ async def get_agent_config(
         text("""
             SELECT s.id, s.name, s.check_type, s.check_config,
                    s.interval_seconds, s.threshold_warn, s.threshold_crit,
-                   s.max_check_attempts
+                   s.max_check_attempts, s.retry_interval_seconds
             FROM services s
             WHERE s.host_id = CAST(:host_id AS uuid)
               AND s.check_mode = 'agent'
@@ -357,6 +358,7 @@ async def get_agent_config(
             threshold_warn=r.threshold_warn,
             threshold_crit=r.threshold_crit,
             max_check_attempts=r.max_check_attempts,
+            retry_interval_seconds=r.retry_interval_seconds,
         ))
 
     return AgentConfigResponse(

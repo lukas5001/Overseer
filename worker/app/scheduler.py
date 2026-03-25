@@ -31,6 +31,8 @@ class ActiveCheckScheduler:
         self.running = False
         # Track last check time per service_id to respect intervals
         self._last_run: dict[str, float] = {}
+        # Track last check status per service_id for retry interval logic
+        self._last_status: dict[str, str] = {}
 
     async def start(self):
         """Main scheduler loop."""
@@ -51,6 +53,7 @@ class ActiveCheckScheduler:
             result = await db.execute(text("""
                 SELECT s.id, s.name, s.check_type, s.check_config,
                        s.interval_seconds, s.max_check_attempts,
+                       s.retry_interval_seconds,
                        s.host_id, s.tenant_id,
                        h.ip_address, h.hostname,
                        h.snmp_community, h.snmp_version
@@ -74,6 +77,14 @@ class ActiveCheckScheduler:
         for svc in services:
             sid = str(svc.id)
             interval = svc.interval_seconds or 60
+
+            # Use shorter retry interval when last check was non-OK
+            last_status = self._last_status.get(sid)
+            if last_status and last_status != "OK":
+                retry = svc.retry_interval_seconds or 15
+                if retry < interval:
+                    interval = retry
+
             last = self._last_run.get(sid, 0)
 
             if now - last >= interval:
@@ -106,6 +117,9 @@ class ActiveCheckScheduler:
         now = datetime.now(timezone.utc)
         new_status = check_result["status"]
         max_attempts = svc.max_check_attempts or 3
+
+        # Track status for retry interval logic
+        self._last_status[str(svc.id)] = new_status
 
         async with self.session_factory() as db:
             # Get current status

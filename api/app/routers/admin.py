@@ -58,7 +58,8 @@ async def export_config(
                 "name": s.name, "check_type": s.check_type, "check_config": s.check_config,
                 "interval_seconds": s.interval_seconds,
                 "threshold_warn": s.threshold_warn, "threshold_crit": s.threshold_crit,
-                "max_check_attempts": s.max_check_attempts, "check_mode": s.check_mode,
+                "max_check_attempts": s.max_check_attempts,
+                "retry_interval_seconds": s.retry_interval_seconds, "check_mode": s.check_mode,
                 "active": s.active,
             }
             for s in services
@@ -184,10 +185,10 @@ async def import_config(
         await db.execute(text("""
             INSERT INTO services (id, host_id, tenant_id, name, check_type, check_config,
                                   interval_seconds, threshold_warn, threshold_crit,
-                                  max_check_attempts, check_mode, active, created_at, updated_at)
+                                  max_check_attempts, retry_interval_seconds, check_mode, active, created_at, updated_at)
             VALUES (:id, :host_id, :tid, :name, :check_type, :check_config,
                     :interval_seconds, :threshold_warn, :threshold_crit,
-                    :max_check_attempts, :check_mode, :active, now(), now())
+                    :max_check_attempts, :retry_interval_seconds, :check_mode, :active, now(), now())
             ON CONFLICT (id) DO UPDATE
             SET name = EXCLUDED.name, check_type = EXCLUDED.check_type,
                 check_config = EXCLUDED.check_config, active = EXCLUDED.active,
@@ -200,6 +201,7 @@ async def import_config(
             "threshold_warn": item.get("threshold_warn"),
             "threshold_crit": item.get("threshold_crit"),
             "max_check_attempts": item.get("max_check_attempts", 3),
+            "retry_interval_seconds": item.get("retry_interval_seconds", 15),
             "check_mode": item.get("check_mode", "passive"),
             "active": item.get("active", True),
         })

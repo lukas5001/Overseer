@@ -51,12 +51,13 @@ type HostConfig struct {
 }
 
 type CheckConfig struct {
-	Name            string                 `json:"name"`
-	Type            string                 `json:"type"`
-	Config          map[string]interface{} `json:"config"`
-	IntervalSeconds int                    `json:"interval_seconds"`
-	ThresholdWarn   *float64               `json:"threshold_warn"`
-	ThresholdCrit   *float64               `json:"threshold_crit"`
+	Name                 string                 `json:"name"`
+	Type                 string                 `json:"type"`
+	Config               map[string]interface{} `json:"config"`
+	IntervalSeconds      int                    `json:"interval_seconds"`
+	RetryIntervalSeconds int                    `json:"retry_interval_seconds"`
+	ThresholdWarn        *float64               `json:"threshold_warn"`
+	ThresholdCrit        *float64               `json:"threshold_crit"`
 }
 
 // ==================== Check Result ====================

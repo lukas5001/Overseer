@@ -104,6 +104,12 @@ async def create_service(
     if body.interval_seconds > 604800:
         raise HTTPException(status_code=400, detail="Maximales Intervall: 7 Tage (604800 Sekunden)")
 
+    # Retry-Intervall-Validierung
+    if body.retry_interval_seconds < 5:
+        raise HTTPException(status_code=400, detail="Minimales Retry-Intervall: 5 Sekunden")
+    if body.retry_interval_seconds > body.interval_seconds:
+        raise HTTPException(status_code=400, detail="Retry-Intervall kann nicht größer als Hauptintervall sein")
+
     # Check for duplicate (host_id + name has unique DB constraint)
     existing = await db.execute(
         select(Service).where(
@@ -123,6 +129,7 @@ async def create_service(
         old.threshold_warn = body.threshold_warn
         old.threshold_crit = body.threshold_crit
         old.max_check_attempts = body.max_check_attempts
+        old.retry_interval_seconds = body.retry_interval_seconds
         old.updated_at = datetime.now(timezone.utc)
         # Ensure current_status row exists
         cs_result = await db.execute(
@@ -152,6 +159,7 @@ async def create_service(
         threshold_warn=body.threshold_warn,
         threshold_crit=body.threshold_crit,
         max_check_attempts=body.max_check_attempts,
+        retry_interval_seconds=body.retry_interval_seconds,
         check_mode=body.check_mode,
     )
     db.add(svc)
@@ -201,6 +209,14 @@ async def update_service(
             raise HTTPException(status_code=400, detail="Minimales Intervall: 10 Sekunden")
         if body.interval_seconds > 604800:
             raise HTTPException(status_code=400, detail="Maximales Intervall: 7 Tage (604800 Sekunden)")
+
+    # Retry-Intervall-Validierung
+    if body.retry_interval_seconds is not None:
+        if body.retry_interval_seconds < 5:
+            raise HTTPException(status_code=400, detail="Minimales Retry-Intervall: 5 Sekunden")
+        effective_interval = body.interval_seconds if body.interval_seconds is not None else svc.interval_seconds
+        if body.retry_interval_seconds > effective_interval:
+            raise HTTPException(status_code=400, detail="Retry-Intervall kann nicht größer als Hauptintervall sein")
 
     for field, value in body.model_dump(exclude_none=True).items():
         setattr(svc, field, value)

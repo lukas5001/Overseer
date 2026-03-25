@@ -13,9 +13,10 @@ import (
 )
 
 type scheduledCheck struct {
-	def     types.CheckDef
-	lastRun time.Time
-	running atomic.Bool
+	def        types.CheckDef
+	lastRun    time.Time
+	lastStatus string // last check result status for retry interval logic
+	running    atomic.Bool
 }
 
 // Scheduler manages check execution with individual intervals
@@ -94,6 +95,14 @@ func (s *Scheduler) tick() {
 			interval = 60 * time.Second
 		}
 
+		// Use shorter retry interval when last check was non-OK (SOFT state retries)
+		if sc.lastStatus != "" && sc.lastStatus != "OK" && sc.def.RetryIntervalSeconds > 0 {
+			retryInterval := time.Duration(sc.def.RetryIntervalSeconds) * time.Second
+			if retryInterval < interval {
+				interval = retryInterval
+			}
+		}
+
 		if now.Sub(sc.lastRun) < interval {
 			continue
 		}
@@ -129,6 +138,11 @@ func (s *Scheduler) tick() {
 			result.Name = def.Name
 			result.CheckType = def.CheckType
 			result.CheckDurationMs = int(duration.Milliseconds())
+
+			// Track last status for retry interval logic
+			s.mu.Lock()
+			scRef.lastStatus = result.Status
+			s.mu.Unlock()
 
 			s.logger.Debug("check completed",
 				"name", def.Name,

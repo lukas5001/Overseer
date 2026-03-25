@@ -17,8 +17,9 @@ type CheckDef struct {
 	Config          map[string]any `json:"config"`
 	IntervalSeconds int            `json:"interval_seconds"`
 	ThresholdWarn   *float64       `json:"threshold_warn"`
-	ThresholdCrit   *float64       `json:"threshold_crit"`
-	MaxAttempts     int            `json:"max_check_attempts"`
+	ThresholdCrit       *float64       `json:"threshold_crit"`
+	MaxAttempts         int            `json:"max_check_attempts"`
+	RetryIntervalSeconds int          `json:"retry_interval_seconds"`
 }
 
 // ResultPayload is sent to POST /api/v1/results

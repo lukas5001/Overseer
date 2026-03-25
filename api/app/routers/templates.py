@@ -197,6 +197,7 @@ async def apply_template(
             threshold_warn=merged.get("threshold_warn"),
             threshold_crit=merged.get("threshold_crit"),
             max_check_attempts=merged.get("max_check_attempts", 3),
+            retry_interval_seconds=merged.get("retry_interval_seconds", 15),
             check_mode=merged.get("check_mode", "passive"),
         )
         db.add(svc)
