@@ -15,6 +15,24 @@ import { api } from '../api/client'
 import { formatDateTime } from '../lib/format'
 import ConfirmDialog from '../components/ConfirmDialog'
 
+// ── Copyable code block ─────────────────────────────────────────────────────
+
+function CodeBlock({ children, className }: { children: string; className?: string }) {
+  const [copied, setCopied] = useState(false)
+  return (
+    <div className={clsx('relative group', className)}>
+      <pre className="bg-gray-900 rounded px-3 py-2 text-emerald-400 text-xs font-mono whitespace-pre-wrap break-all overflow-x-auto">{children}</pre>
+      <button
+        onClick={() => { navigator.clipboard.writeText(children); setCopied(true); setTimeout(() => setCopied(false), 2000) }}
+        className="absolute top-1.5 right-1.5 p-1 rounded bg-gray-700/80 text-gray-300 hover:text-white hover:bg-gray-600 opacity-0 group-hover:opacity-100 transition-opacity"
+        title="Kopieren"
+      >
+        {copied ? <CheckCircle className="w-3.5 h-3.5 text-emerald-400" /> : <ClipboardCopy className="w-3.5 h-3.5" />}
+      </button>
+    </div>
+  )
+}
+
 interface Host {
   id: string
   tenant_id: string
@@ -1618,7 +1636,7 @@ export default function HostDetailPage() {
             </div>
 
             <div className="bg-gray-900 rounded-lg px-4 py-3 mb-4 flex items-center justify-between">
-              <code className="text-sm text-emerald-400 break-all select-all">{generatedToken}</code>
+              <code className="text-sm text-emerald-400 break-all">{generatedToken}</code>
               <button
                 onClick={() => {
                   navigator.clipboard.writeText(generatedToken)
@@ -1661,16 +1679,13 @@ export default function HostDetailPage() {
                   </a>
                   <p className="font-sans"><span className="text-gray-400 font-mono">2.</span> Setup als Administrator ausführen</p>
                   <p className="font-sans"><span className="text-gray-400 font-mono">3.</span> Server-URL und Token eingeben:</p>
-                  <div className="bg-gray-900 rounded px-3 py-2 text-gray-300 font-mono">
-                    <p><span className="text-blue-400">Server</span>: {window.location.origin}</p>
-                    <p><span className="text-blue-400">Token</span>: <span className="text-emerald-400 break-all">{generatedToken}</span></p>
-                  </div>
+                  <CodeBlock>{`Server: ${window.location.origin}\nToken: ${generatedToken}`}</CodeBlock>
                   <p className="font-sans"><span className="text-gray-400 font-mono">4.</span> Weiter klicken — der Installer erledigt den Rest</p>
                   <p className="text-gray-400 font-sans">(Service wird automatisch installiert und gestartet)</p>
                 </div>
               ) : (
-                <div className="bg-gray-50 rounded-lg px-4 py-3 font-mono text-xs space-y-2">
-                  <p><span className="text-gray-400">1.</span> Agent herunterladen:</p>
+                <div className="bg-gray-50 rounded-lg px-4 py-3 text-xs space-y-2">
+                  <p className="font-mono"><span className="text-gray-400">1.</span> Agent herunterladen:</p>
                   <a
                     href="/agent/overseer-agent-linux-amd64"
                     download
@@ -1680,39 +1695,15 @@ export default function HostDetailPage() {
                     overseer-agent (Linux, 9.3 MB)
                   </a>
                   <p className="text-gray-400 text-[11px]">Oder per Terminal:</p>
-                  <div className="bg-gray-900 rounded px-3 py-2 text-emerald-400 select-all break-all">wget {window.location.origin}/agent/overseer-agent-linux-amd64</div>
-                  <p><span className="text-gray-400">2.</span> Installieren:</p>
-                  <div className="bg-gray-900 rounded px-3 py-2 text-emerald-400 select-all space-y-0.5">
-                    <p>chmod +x overseer-agent-linux-amd64</p>
-                    <p>sudo mv overseer-agent-linux-amd64 /usr/local/bin/overseer-agent</p>
-                    <p>sudo mkdir -p /etc/overseer-agent</p>
-                  </div>
-                  <p><span className="text-gray-400">3.</span> Config erstellen:</p>
-                  <div className="bg-gray-900 rounded px-3 py-2 text-gray-300 select-all">
-                    <p>sudo tee /etc/overseer-agent/config.yaml {'<<'}EOF</p>
-                    <p><span className="text-blue-400">server</span>: {window.location.origin}</p>
-                    <p><span className="text-blue-400">token</span>: <span className="text-emerald-400">{generatedToken}</span></p>
-                    <p>EOF</p>
-                  </div>
-                  <p><span className="text-gray-400">4.</span> systemd-Service erstellen:</p>
-                  <div className="bg-gray-900 rounded px-3 py-2 text-gray-300 select-all space-y-0.5">
-                    <p>sudo tee /etc/systemd/system/overseer-agent.service {'<<'}EOF</p>
-                    <p><span className="text-blue-400">[Unit]</span></p>
-                    <p>Description=Overseer Agent</p>
-                    <p>After=network-online.target</p>
-                    <p>Wants=network-online.target</p>
-                    <p></p>
-                    <p><span className="text-blue-400">[Service]</span></p>
-                    <p>ExecStart=/usr/local/bin/overseer-agent</p>
-                    <p>Restart=always</p>
-                    <p>RestartSec=10</p>
-                    <p></p>
-                    <p><span className="text-blue-400">[Install]</span></p>
-                    <p>WantedBy=multi-user.target</p>
-                    <p>EOF</p>
-                  </div>
-                  <p><span className="text-gray-400">5.</span> Starten:</p>
-                  <div className="bg-gray-900 rounded px-3 py-2 text-emerald-400 select-all">sudo systemctl enable --now overseer-agent</div>
+                  <CodeBlock>{`wget ${window.location.origin}/agent/overseer-agent-linux-amd64`}</CodeBlock>
+                  <p className="font-mono"><span className="text-gray-400">2.</span> Installieren:</p>
+                  <CodeBlock>{`chmod +x overseer-agent-linux-amd64\nsudo mv overseer-agent-linux-amd64 /usr/local/bin/overseer-agent\nsudo mkdir -p /etc/overseer-agent`}</CodeBlock>
+                  <p className="font-mono"><span className="text-gray-400">3.</span> Config erstellen:</p>
+                  <CodeBlock>{`sudo tee /etc/overseer-agent/config.yaml <<EOF\nserver: ${window.location.origin}\ntoken: ${generatedToken}\nEOF`}</CodeBlock>
+                  <p className="font-mono"><span className="text-gray-400">4.</span> systemd-Service erstellen:</p>
+                  <CodeBlock>{`sudo tee /etc/systemd/system/overseer-agent.service <<EOF\n[Unit]\nDescription=Overseer Agent\nAfter=network-online.target\nWants=network-online.target\n\n[Service]\nExecStart=/usr/local/bin/overseer-agent\nRestart=always\nRestartSec=10\n\n[Install]\nWantedBy=multi-user.target\nEOF`}</CodeBlock>
+                  <p className="font-mono"><span className="text-gray-400">5.</span> Starten:</p>
+                  <CodeBlock>{`sudo systemctl enable --now overseer-agent`}</CodeBlock>
                 </div>
               )}
             </div>
