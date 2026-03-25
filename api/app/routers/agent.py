@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from api.app.core.database import get_db
 from api.app.core.auth import get_current_user, require_role, tenant_scope, apply_tenant_filter
 from api.app.routers.audit import write_audit
+from shared.check_policies import apply_global_policies, LOAD_POLICIES_SQL
 
 router = APIRouter()
 
@@ -310,6 +311,10 @@ async def get_agent_config(
     )
     rows = result.fetchall()
 
+    # Load global check policies
+    policy_result = await db.execute(text(LOAD_POLICIES_SQL))
+    policies = [dict(row._mapping) for row in policy_result.fetchall()]
+
     # Resolve server-managed scripts for agent_script checks
     script_ids = []
     for r in rows:
@@ -332,6 +337,10 @@ async def get_agent_config(
     checks = []
     for r in rows:
         config = dict(r.check_config or {})
+
+        # Apply global check policies
+        config = apply_global_policies(r.check_type, config, agent["tenant_id"], policies)
+
         # Inject script content for server-managed scripts
         if r.check_type == "agent_script" and config.get("script_id"):
             script_data = scripts_map.get(config["script_id"])

@@ -4,7 +4,7 @@ import {
   LayoutDashboard, AlertTriangle, Monitor, Building2, Shield, ShieldCheck,
   LogOut, Users, Clock, ScrollText, Bell, Layers, Menu, X,
   ChevronLeft, ChevronRight, Wifi, BarChart3, Mail, ShieldAlert, Settings,
-  FileCode2,
+  FileCode2, Globe,
 } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -56,6 +56,7 @@ export default function Layout() {
     ...(isAdmin ? [{ to: '/notifications', label: 'Benachrichtigungen', icon: Mail }] : []),
     ...(isAdmin ? [{ to: '/templates', label: 'Templates', icon: Layers }] : []),
     ...(isAdmin ? [{ to: '/scripts', label: 'Scripts', icon: FileCode2 }] : []),
+    ...(isSuperAdmin ? [{ to: '/global-policies', label: 'Global Policies', icon: Globe }] : []),
   ]
 
   const adminNav = isSuperAdmin ? [

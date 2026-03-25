@@ -18,6 +18,7 @@ import AdminPage from './pages/AdminPage'
 import SlaReportsPage from './pages/SlaReportsPage'
 import ServiceTemplatesPage from './pages/ServiceTemplatesPage'
 import ScriptsPage from './pages/ScriptsPage'
+import GlobalPoliciesPage from './pages/GlobalPoliciesPage'
 import TvPage from './pages/TvPage'
 import LoginPage from './pages/LoginPage'
 import AiChatWidget from './components/AiChatWidget'
@@ -56,6 +57,7 @@ export default function App() {
           <Route path="/webhooks" element={<NotificationsPage />} />
           <Route path="/templates" element={<ServiceTemplatesPage />} />
           <Route path="/scripts" element={<ScriptsPage />} />
+          <Route path="/global-policies" element={<GlobalPoliciesPage />} />
           <Route path="/sla" element={<SlaReportsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/security" element={<SecurityPage />} />

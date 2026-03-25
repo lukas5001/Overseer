@@ -15,6 +15,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from shared.checker import run_check
+from shared.check_policies import apply_global_policies, LOAD_POLICIES_SQL
 from shared.encryption import decrypt_field
 from shared.status import compute_new_state, inject_host_credentials
 
@@ -64,6 +65,10 @@ class ActiveCheckScheduler:
             """))
             services = result.fetchall()
 
+            # Load global check policies once per scan cycle
+            policy_result = await db.execute(text(LOAD_POLICIES_SQL))
+            policies = [dict(row._mapping) for row in policy_result.fetchall()]
+
         now = time.time()
         tasks = []
         for svc in services:
@@ -73,16 +78,20 @@ class ActiveCheckScheduler:
 
             if now - last >= interval:
                 self._last_run[sid] = now
-                tasks.append(self._execute_check(svc))
+                tasks.append(self._execute_check(svc, policies))
 
         if tasks:
             await asyncio.gather(*tasks, return_exceptions=True)
 
-    async def _execute_check(self, svc):
+    async def _execute_check(self, svc, policies: list[dict] | None = None):
         """Run a single active check and write results to DB."""
         ip = str(svc.ip_address)
         config = svc.check_config if isinstance(svc.check_config, dict) else json.loads(svc.check_config or "{}")
         config = dict(config)  # copy to avoid mutating cached data
+
+        # Apply global check policies
+        if policies:
+            config = apply_global_policies(svc.check_type, config, str(svc.tenant_id), policies)
 
         # Inject host-level credentials (SNMP) then decrypt
         inject_host_credentials(svc.check_type, config, svc)

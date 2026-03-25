@@ -323,3 +323,20 @@ class EscalationPolicy(Base):
     rule_id = Column(UUID(as_uuid=True), ForeignKey("alert_rules.id", ondelete="CASCADE"), nullable=False, unique=True)
     steps = Column(JSONB, nullable=False, default=list)
     created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+
+class GlobalCheckPolicy(Base):
+    __tablename__ = "global_check_policies"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String(200), nullable=False)
+    description = Column(Text, nullable=False, default="")
+    check_type = Column(String(100), nullable=False)
+    merge_config = Column(JSONB, nullable=False, default=dict)
+    merge_strategy = Column(String(20), nullable=False, default="merge")
+    scope_mode = Column(String(20), nullable=False, default="all")
+    scope_tenant_ids = Column(ARRAY(UUID(as_uuid=True)), nullable=False, default=list)
+    enabled = Column(Boolean, nullable=False, default=True)
+    priority = Column(Integer, nullable=False, default=0)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
