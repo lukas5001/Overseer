@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from 'react'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { AlertTriangle, CheckCheck, Clock, Server, Router, Printer, Shield, Wifi, BellOff, X, Search, EyeOff, MessageSquare, ArrowUpDown, Filter, Save, Trash2, Edit2, Star } from 'lucide-react'
+import { AlertTriangle, CheckCheck, Clock, Server, BellOff, X, Search, EyeOff, MessageSquare, ArrowUpDown, Filter, Save, Trash2, Edit2, Star, Tv } from 'lucide-react'
+import { HOST_TYPE_ICONS } from '../lib/constants'
 import { Link } from 'react-router-dom'
 import clsx from 'clsx'
 import { formatDistanceToNow } from 'date-fns'
@@ -69,10 +70,6 @@ const sortOptions: { key: SortKey; label: string }[] = [
   { key: 'last_check', label: 'Letzter Check' },
 ]
 
-const hostTypeIcons: Record<string, React.ElementType> = {
-  server: Server, switch: Router, router: Router,
-  printer: Printer, firewall: Shield, access_point: Wifi,
-}
 
 // ── ACK Modal ─────────────────────────────────────────────────────────────────
 
@@ -855,6 +852,16 @@ export default function ErrorOverviewPage() {
           </span>
         </div>
         <div className="flex items-center gap-2">
+          <a
+            href="/tv"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 hover:text-gray-800 transition-colors"
+            title="TV-Modus in neuem Tab öffnen"
+          >
+            <Tv className="w-4 h-4" />
+            TV
+          </a>
           {activeStatuses.has('CRITICAL') && (
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-red-100 text-red-800">
               {criticalCount} Critical
@@ -1134,7 +1141,7 @@ export default function ErrorOverviewPage() {
       <div className="space-y-2">
         {filtered.map((error) => {
           const config   = statusConfig[error.status]
-          const HostIcon = hostTypeIcons[error.host_type] ?? Server
+          const HostIcon = HOST_TYPE_ICONS[error.host_type] ?? Server
           const isUnacking = unackMutation.isPending && unackMutation.variables === error.service_id
 
           return (

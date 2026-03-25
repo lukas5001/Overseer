@@ -116,6 +116,14 @@ async def update_script(
         script.expected_output = body.expected_output
     script.updated_at = datetime.now(timezone.utc)
 
+    changes = {k: v for k, v in body.model_dump(exclude_none=True).items()}
+    await write_audit(
+        db, user=user, action="script_update",
+        target_type="monitoring_script", target_id=script_id,
+        tenant_id=script.tenant_id,
+        detail={"name": script.name, "changed_fields": list(changes.keys())},
+    )
+
     await db.commit()
     await db.refresh(script)
     return script

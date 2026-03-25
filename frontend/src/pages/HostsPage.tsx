@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Monitor, Server, Router, Printer, Shield, Wifi, HelpCircle, Plus, X, Search, ChevronDown, ChevronRight, Eye, EyeOff, Power, Copy, Trash2 } from 'lucide-react'
+import { Monitor, HelpCircle, Plus, X, Search, ChevronDown, ChevronRight, Eye, EyeOff, Power, Copy, Trash2 } from 'lucide-react'
+import { HOST_TYPE_ICONS, HOST_TYPES } from '../lib/constants'
+import { getStatusConfig } from '../components/StatusBadge'
 import { Link, useNavigate } from 'react-router-dom'
 import clsx from 'clsx'
 import { api } from '../api/client'
@@ -24,23 +26,6 @@ interface StatusSummary {
   [host_id: string]: 'OK' | 'WARNING' | 'CRITICAL' | 'UNKNOWN'
 }
 
-const hostTypeIcons: Record<string, React.ElementType> = {
-  server: Server,
-  switch: Router,
-  router: Router,
-  printer: Printer,
-  firewall: Shield,
-  access_point: Wifi,
-}
-
-const statusDot: Record<string, string> = {
-  OK:       'bg-emerald-500',
-  WARNING:  'bg-amber-400',
-  CRITICAL: 'bg-red-500',
-  UNKNOWN:  'bg-gray-300',
-}
-
-const HOST_TYPES = ['server', 'switch', 'router', 'printer', 'firewall', 'access_point', 'other']
 
 // ── Add Host Modal ─────────────────────────────────────────────────────────────
 
@@ -575,10 +560,10 @@ export default function HostsPage() {
                     </thead>
                     <tbody className="divide-y divide-gray-50">
                       {tenantHosts.map(host => {
-                        const HostIcon = hostTypeIcons[host.host_type] ?? HelpCircle
+                        const HostIcon = HOST_TYPE_ICONS[host.host_type] ?? HelpCircle
                         const effectiveActive = host.active && host.tenant_active
                         const status = effectiveActive ? (worstStatus[host.id] ?? 'OK') : 'INACTIVE'
-                        const dotClass = effectiveActive ? statusDot[status] : 'bg-gray-300'
+                        const dotClass = effectiveActive ? getStatusConfig(status).dot : 'bg-gray-300'
                         return (
                           <tr key={host.id} className={clsx('hover:bg-gray-50', !effectiveActive && 'opacity-50')}>
                             <td className="px-6 py-2.5">

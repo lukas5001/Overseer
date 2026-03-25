@@ -102,7 +102,7 @@ class ActiveCheckScheduler:
             # Get current status
             cs_result = await db.execute(text(
                 "SELECT status, state_type, current_attempt, last_state_change_at "
-                "FROM current_status WHERE service_id = :sid"
+                "FROM current_status WHERE service_id = :sid FOR UPDATE"
             ), {"sid": svc.id})
             current = cs_result.fetchone()
 

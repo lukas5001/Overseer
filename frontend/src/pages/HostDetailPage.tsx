@@ -2,10 +2,12 @@ import { useState } from 'react'
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  Server, Router, Printer, Shield, Wifi, ArrowLeft, Play, Search,
-  CheckCircle, XCircle, AlertTriangle, HelpCircle, Clock, Plus, X, Trash2, TrendingUp, Pencil, Settings2, Power, Copy,
+  Server, ArrowLeft, Play, Search,
+  CheckCircle, Clock, Plus, X, Trash2, TrendingUp, Pencil, Settings2, Power, Copy,
   Monitor, ClipboardCopy, KeyRound, Download,
 } from 'lucide-react'
+import { HOST_TYPE_ICONS, HOST_TYPES, HOST_TYPE_LABELS, NETWORK_DEVICE_TYPES } from '../lib/constants'
+import { getStatusConfig } from '../components/StatusBadge'
 import clsx from 'clsx'
 import { formatDistanceToNow } from 'date-fns'
 import { de } from 'date-fns/locale'
@@ -67,31 +69,6 @@ interface ServiceItem {
   active: boolean
 }
 
-const hostTypeIcons: Record<string, React.ElementType> = {
-  server: Server,
-  switch: Router,
-  router: Router,
-  printer: Printer,
-  firewall: Shield,
-  access_point: Wifi,
-}
-
-const hostTypeLabels: Record<string, string> = {
-  server: 'Server',
-  switch: 'Switch',
-  router: 'Router',
-  printer: 'Drucker',
-  firewall: 'Firewall',
-  access_point: 'Access Point',
-  other: 'Sonstiges',
-}
-
-const statusConfig = {
-  OK:       { icon: CheckCircle,   color: 'text-emerald-500', bg: 'bg-emerald-100', text: 'text-emerald-800', label: 'OK' },
-  WARNING:  { icon: AlertTriangle, color: 'text-amber-500',   bg: 'bg-amber-100',   text: 'text-amber-800',   label: 'WARNING' },
-  CRITICAL: { icon: XCircle,       color: 'text-red-500',     bg: 'bg-red-100',     text: 'text-red-800',     label: 'CRITICAL' },
-  UNKNOWN:  { icon: HelpCircle,    color: 'text-gray-400',    bg: 'bg-gray-100',    text: 'text-gray-700',    label: 'UNKNOWN' },
-}
 
 const statusOrder = { CRITICAL: 0, WARNING: 1, UNKNOWN: 2, OK: 3 }
 
@@ -641,8 +618,6 @@ interface EditHostModalProps {
   onSaved: () => void
 }
 
-const HOST_TYPES = ['server', 'switch', 'router', 'printer', 'firewall', 'access_point', 'other']
-
 function EditHostModal({ host, onClose, onSaved }: EditHostModalProps) {
   const [form, setForm] = useState({
     hostname: host.hostname,
@@ -706,12 +681,12 @@ function EditHostModal({ host, onClose, onSaved }: EditHostModalProps) {
               <label className="block text-xs font-medium text-gray-600 mb-1">Typ</label>
               <select value={form.host_type} onChange={setF('host_type')}
                 className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none">
-                {HOST_TYPES.map(t => <option key={t} value={t}>{hostTypeLabels[t] ?? t}</option>)}
+                {HOST_TYPES.map(t => <option key={t} value={t}>{HOST_TYPE_LABELS[t] ?? t}</option>)}
               </select>
             </div>
           </div>
           {/* SNMP-Felder nur für Netzwerkgeräte oder wenn bereits konfiguriert */}
-          {(['switch', 'router', 'printer', 'firewall', 'access_point', 'other'].includes(form.host_type) || host.snmp_community) && (
+          {((NETWORK_DEVICE_TYPES as readonly string[]).includes(form.host_type) || host.snmp_community) && (
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">SNMP Community</label>
@@ -1310,10 +1285,10 @@ export default function HostDetailPage() {
     return <div className="p-8 text-red-500">Host nicht gefunden.</div>
   }
 
-  const HostIcon = hostTypeIcons[host.host_type] ?? Server
+  const HostIcon = HOST_TYPE_ICONS[host.host_type] ?? Server
   const activeSorted = sorted.filter(s => serviceNames[s.service_id]?.active !== false)
   const worstStatus = activeSorted[0]?.status ?? 'OK'
-  const worstCfg = statusConfig[worstStatus]
+  const worstCfg = getStatusConfig(worstStatus)
   const WIcon = worstCfg.icon
 
   return (
@@ -1454,7 +1429,7 @@ export default function HostDetailPage() {
               {host.ip_address && (
                 <span className="font-mono bg-gray-100 px-2 py-0.5 rounded">{host.ip_address}</span>
               )}
-              <span>{hostTypeLabels[host.host_type] ?? host.host_type}</span>
+              <span>{HOST_TYPE_LABELS[host.host_type] ?? host.host_type}</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -1489,7 +1464,7 @@ export default function HostDetailPage() {
         {/* Mini stats */}
         <div className="grid grid-cols-4 gap-3 mt-5 pt-5 border-t border-gray-100">
           {(['CRITICAL', 'WARNING', 'UNKNOWN', 'OK'] as const).map(s => {
-            const cfg = statusConfig[s]
+            const cfg = getStatusConfig(s)
             const Icon = cfg.icon
             return (
               <div key={s} className={clsx('rounded-lg px-3 py-2 flex items-center gap-2', cfg.bg)}>
@@ -1774,7 +1749,7 @@ export default function HostDetailPage() {
               {sorted.map(svc => {
                 const meta = serviceNames[svc.service_id]
                 const isInactive = meta?.active === false
-                const cfg = statusConfig[svc.status]
+                const cfg = getStatusConfig(svc.status)
                 const Icon = cfg.icon
                 return (
                   <tr key={svc.service_id} className={clsx('hover:bg-gray-50', isInactive && 'opacity-50')}>

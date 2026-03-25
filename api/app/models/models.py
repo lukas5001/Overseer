@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from sqlalchemy import (
@@ -47,8 +47,8 @@ class Tenant(Base):
     slug = Column(String(100), nullable=False, unique=True)
     active = Column(Boolean, nullable=False, default=True)
     settings = Column(JSONB, nullable=False, default=dict)
-    created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 
     collectors = relationship("Collector", back_populates="tenant", passive_deletes=True)
     hosts = relationship("Host", back_populates="tenant", passive_deletes=True)
@@ -64,7 +64,7 @@ class ApiKey(Base):
     name = Column(String(255), nullable=False)
     active = Column(Boolean, nullable=False, default=True)
     last_used_at = Column(DateTime(timezone=True))
-    created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 
     tenant = relationship("Tenant")
 
@@ -89,8 +89,8 @@ class User(Base):
     two_fa_attempts = Column(Integer, nullable=False, default=0)
     two_fa_lockout_until = Column(DateTime(timezone=True), nullable=True)
     default_filter_id = Column(UUID(as_uuid=True), nullable=True)
-    created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 
     accessible_tenants = relationship("Tenant", secondary=user_tenant_access)
 
@@ -106,8 +106,8 @@ class Collector(Base):
     active = Column(Boolean, nullable=False, default=True)
     last_seen_at = Column(DateTime(timezone=True))
     config_version = Column(Integer, nullable=False, default=0)
-    created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 
     tenant = relationship("Tenant", back_populates="collectors")
     hosts = relationship("Host", back_populates="collector", passive_deletes=True)
@@ -128,8 +128,8 @@ class Host(Base):
     tags = Column(JSONB, nullable=False, default=list)
     agent_managed = Column(Boolean, nullable=False, default=False)
     active = Column(Boolean, nullable=False, default=True)
-    created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 
     __table_args__ = (UniqueConstraint("tenant_id", "hostname"),)
 
@@ -153,8 +153,8 @@ class Service(Base):
     max_check_attempts = Column(Integer, nullable=False, default=3)
     check_mode = Column(String(10), nullable=False, default="passive")  # 'passive' or 'active'
     active = Column(Boolean, nullable=False, default=True)
-    created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 
     __table_args__ = (UniqueConstraint("host_id", "name"),)
 
@@ -197,7 +197,7 @@ class StateHistory(Base):
     new_status = Column(CheckStatusEnum, nullable=False)
     state_type = Column(StateTypeEnum, nullable=False)
     message = Column(Text)
-    created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 
 
 class AuditLog(Base):
@@ -211,7 +211,7 @@ class AuditLog(Base):
     target_type = Column(String(50))
     target_id = Column(UUID(as_uuid=True))
     detail = Column(JSONB, nullable=False, default=dict)
-    created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 
 
 class Downtime(Base):
@@ -226,7 +226,7 @@ class Downtime(Base):
     author_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     comment = Column(Text)
     active = Column(Boolean, nullable=False, default=True)
-    created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
     recurrence = Column(Text, nullable=True)
     parent_downtime_id = Column(UUID(as_uuid=True), ForeignKey("downtimes.id", ondelete="CASCADE"), nullable=True)
 
@@ -242,8 +242,8 @@ class ServiceTemplate(Base):
     category = Column(String(100), nullable=False, default="server")
     built_in = Column(Boolean, nullable=False, default=False)
     tags = Column(ARRAY(String), nullable=False, default=list)
-    created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 
 
 class NotificationChannel(Base):
@@ -256,8 +256,8 @@ class NotificationChannel(Base):
     config = Column(JSONB, nullable=False, default=dict)
     events = Column(ARRAY(String), nullable=False)
     active = Column(Boolean, nullable=False, default=True)
-    created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 
 
 class SavedFilter(Base):
@@ -268,8 +268,8 @@ class SavedFilter(Base):
     description = Column(String(255), nullable=True)
     filter_config = Column(JSONB, nullable=False, default=dict)
     created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
-    created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 
 
 
@@ -282,8 +282,8 @@ class AlertRule(Base):
     conditions = Column(JSONB, nullable=False, default=dict)
     notification_channels = Column(ARRAY(UUID(as_uuid=True)), nullable=False, default=list)
     enabled = Column(Boolean, nullable=False, default=True)
-    created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 
 
 class ActiveAlert(Base):
@@ -293,8 +293,8 @@ class ActiveAlert(Base):
     service_id = Column(UUID(as_uuid=True), ForeignKey("services.id", ondelete="CASCADE"), nullable=False)
     rule_id = Column(UUID(as_uuid=True), ForeignKey("alert_rules.id", ondelete="CASCADE"), nullable=False)
     tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
-    fired_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
-    last_notified_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+    fired_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    last_notified_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
     resolved_at = Column(DateTime(timezone=True), nullable=True)
     escalation_step = Column(Integer, nullable=False, default=0)
 
@@ -310,8 +310,8 @@ class MonitoringScript(Base):
     script_body = Column(Text, nullable=False)
     expected_output = Column(String(20), nullable=False, default="nagios")
     created_by = Column(UUID(as_uuid=True), nullable=True)  # NO FK per convention
-    created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 
     __table_args__ = (UniqueConstraint("tenant_id", "name"),)
 
@@ -322,4 +322,4 @@ class EscalationPolicy(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     rule_id = Column(UUID(as_uuid=True), ForeignKey("alert_rules.id", ondelete="CASCADE"), nullable=False, unique=True)
     steps = Column(JSONB, nullable=False, default=list)
-    created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))

@@ -23,6 +23,7 @@ from sqlalchemy import Enum as SAEnum
 import uuid as uuid_mod
 
 from shared.schemas import SingleCheckResult
+from shared.status import compute_new_state
 
 # ==================== Config ====================
 
@@ -220,27 +221,21 @@ class Worker:
                 current = current_map.get(sid)
 
                 if current is None:
-                    state_type = "HARD" if new_status == "OK" else "SOFT"
-                    attempt = 0 if new_status == "OK" else 1
+                    sr = compute_new_state(new_status, None, None, 0, max_attempts)
                     state_change_at = now
                     prev_status = None
                     prev_state_type = None
                 else:
                     prev_status = current.status
                     prev_state_type = current.state_type
+                    sr = compute_new_state(
+                        new_status, current.status, current.state_type,
+                        current.current_attempt, max_attempts,
+                    )
+                    state_change_at = now if sr.state_changed else current.last_state_change_at
 
-                    if new_status == "OK":
-                        state_type = "HARD"
-                        attempt = 0
-                    elif current.state_type == "HARD" and current.status != "OK":
-                        attempt = current.current_attempt + 1
-                        state_type = "HARD"
-                    else:
-                        attempt = current.current_attempt + 1
-                        state_type = "HARD" if attempt >= max_attempts else "SOFT"
-
-                    changed = (new_status != prev_status) or (state_type != prev_state_type)
-                    state_change_at = now if changed else current.last_state_change_at
+                state_type = sr.state_type
+                attempt = sr.attempt
 
                 upserts.append({
                     "service_id": sid, "host_id": hid, "tenant_id": tid,

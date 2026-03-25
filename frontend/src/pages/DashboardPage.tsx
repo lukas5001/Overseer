@@ -3,6 +3,7 @@ import { Activity, AlertTriangle, XCircle, HelpCircle, CheckCircle, Building2, M
 import { Link } from 'react-router-dom'
 import clsx from 'clsx'
 import { api } from '../api/client'
+import LoadingSpinner from '../components/LoadingSpinner'
 
 interface StatusSummary {
   ok: number
@@ -129,7 +130,7 @@ export default function DashboardPage() {
         </div>
 
         {tenantsLoading ? (
-          <div className="p-8 text-center text-gray-400">Lade…</div>
+          <LoadingSpinner />
         ) : (
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
