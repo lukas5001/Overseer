@@ -12,11 +12,44 @@ import (
 	"github.com/lukas5001/overseer-agent/internal/types"
 )
 
+// isExcluded checks if a service name matches any exclude pattern.
+// Supports exact match and wildcards: "foo*", "*foo", "*foo*".
+func isExcluded(nameLower string, exactMap map[string]bool, patterns []string) bool {
+	if exactMap[nameLower] {
+		return true
+	}
+	for _, p := range patterns {
+		if strings.HasPrefix(p, "*") && strings.HasSuffix(p, "*") {
+			// *contains*
+			if strings.Contains(nameLower, p[1:len(p)-1]) {
+				return true
+			}
+		} else if strings.HasSuffix(p, "*") {
+			// prefix*
+			if strings.HasPrefix(nameLower, p[:len(p)-1]) {
+				return true
+			}
+		} else if strings.HasPrefix(p, "*") {
+			// *suffix
+			if strings.HasSuffix(nameLower, p[1:]) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func checkServicesAutoPlatform(config map[string]any, _, _ *float64) types.CheckResult {
 	exclude := getConfigStringSlice(config, "exclude")
-	excludeMap := make(map[string]bool, len(exclude))
+	exactMap := make(map[string]bool)
+	var patterns []string
 	for _, e := range exclude {
-		excludeMap[strings.ToLower(e)] = true
+		lower := strings.ToLower(e)
+		if strings.Contains(lower, "*") {
+			patterns = append(patterns, lower)
+		} else {
+			exactMap[lower] = true
+		}
 	}
 
 	m, err := mgr.Connect()
@@ -34,7 +67,7 @@ func checkServicesAutoPlatform(config map[string]any, _, _ *float64) types.Check
 	var stopped []string
 
 	for _, name := range serviceNames {
-		if excludeMap[strings.ToLower(name)] {
+		if isExcluded(strings.ToLower(name), exactMap, patterns) {
 			continue
 		}
 
