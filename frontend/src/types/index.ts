@@ -3,7 +3,6 @@
 export type CheckStatus = 'OK' | 'WARNING' | 'CRITICAL' | 'UNKNOWN' | 'NO_DATA'
 export type StateType = 'SOFT' | 'HARD'
 export type UserRole = 'super_admin' | 'tenant_admin' | 'tenant_operator' | 'tenant_viewer'
-export type HostType = 'server' | 'switch' | 'router' | 'printer' | 'firewall' | 'access_point' | 'other'
 export type ChannelType = 'email' | 'webhook'
 export type TwoFAMethod = 'none' | 'totp' | 'email'
 
@@ -133,6 +132,21 @@ export interface CollectorCreate {
 
 // ── Host ─────────────────────────────────────────────────────────────────────
 
+export interface HostTypeConfig {
+  id: string
+  name: string
+  icon: string
+  category: string
+  agent_capable: boolean
+  snmp_enabled: boolean
+  ip_required: boolean
+  os_family: string | null
+  sort_order: number
+  is_system: boolean
+  active: boolean
+  created_at: string
+}
+
 export interface Host {
   id: string
   tenant_id: string
@@ -140,7 +154,12 @@ export interface Host {
   hostname: string
   display_name: string | null
   ip_address: string | null
-  host_type: HostType
+  host_type_id: string
+  host_type_name: string | null
+  host_type_icon: string | null
+  host_type_agent_capable: boolean
+  host_type_snmp_enabled: boolean
+  host_type_ip_required: boolean
   snmp_community: string | null
   snmp_version: string | null
   tags: string[]
@@ -166,7 +185,7 @@ export interface HostCreate {
   hostname: string
   display_name?: string
   ip_address?: string
-  host_type: HostType
+  host_type_id: string
   snmp_community?: string
   snmp_version?: string
   tags?: string[]
@@ -176,7 +195,7 @@ export interface HostUpdate {
   hostname?: string
   display_name?: string
   ip_address?: string
-  host_type?: HostType
+  host_type_id?: string
   snmp_community?: string
   snmp_version?: string
   tags?: string[]
@@ -244,7 +263,8 @@ export interface CurrentStatus {
   in_downtime: boolean
   host_hostname?: string
   host_display_name?: string | null
-  host_type?: string
+  host_type_name?: string
+  host_type_icon?: string
   service_name?: string | null
   tenant_name?: string
 }
@@ -258,7 +278,8 @@ export interface ErrorOverviewItem {
   tenant_name: string
   host_hostname: string
   host_display_name: string | null
-  host_type: string
+  host_type_name: string | null
+  host_type_icon: string | null
   service_name: string
   check_type: string
   status: 'WARNING' | 'CRITICAL' | 'UNKNOWN' | 'NO_DATA'

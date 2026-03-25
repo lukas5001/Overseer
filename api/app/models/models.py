@@ -33,10 +33,6 @@ UserRoleEnum = SAEnum(
     "super_admin", "tenant_admin", "tenant_operator", "tenant_viewer",
     name="user_role", create_type=False,
 )
-HostTypeEnum = SAEnum(
-    "server", "switch", "router", "printer", "firewall", "access_point", "other",
-    name="host_type", create_type=False,
-)
 
 
 class Tenant(Base):
@@ -113,6 +109,24 @@ class Collector(Base):
     hosts = relationship("Host", back_populates="collector", passive_deletes=True)
 
 
+class HostType(Base):
+    __tablename__ = "host_types"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String(200), nullable=False, unique=True)
+    icon = Column(String(50), nullable=False, default="server")
+    category = Column(String(100), nullable=False, default="Sonstiges")
+    agent_capable = Column(Boolean, nullable=False, default=False)
+    snmp_enabled = Column(Boolean, nullable=False, default=False)
+    ip_required = Column(Boolean, nullable=False, default=False)
+    os_family = Column(String(50), nullable=True)
+    sort_order = Column(Integer, nullable=False, default=100)
+    is_system = Column(Boolean, nullable=False, default=False)
+    active = Column(Boolean, nullable=False, default=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+
 class Host(Base):
     __tablename__ = "hosts"
 
@@ -122,7 +136,7 @@ class Host(Base):
     hostname = Column(String(255), nullable=False)
     display_name = Column(String(255))
     ip_address = Column(INET)
-    host_type = Column(HostTypeEnum, nullable=False, default="server")
+    host_type_id = Column(UUID(as_uuid=True), ForeignKey("host_types.id"), nullable=False)
     snmp_community = Column(String(255))
     snmp_version = Column(String(10), default="2c")
     tags = Column(JSONB, nullable=False, default=list)
@@ -135,6 +149,7 @@ class Host(Base):
 
     tenant = relationship("Tenant", back_populates="hosts")
     collector = relationship("Collector", back_populates="hosts")
+    host_type = relationship("HostType")
     services = relationship("Service", back_populates="host", passive_deletes=True)
 
 

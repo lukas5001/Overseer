@@ -14,7 +14,7 @@ from api.app.core.auth import get_current_user, require_role, tenant_scope, appl
 from api.app.core.encryption import encrypt_field, decrypt_field
 from api.app.core.quotas import check_quota
 from api.app.routers.audit import write_audit
-from api.app.models.models import Host, Tenant, Collector, Service, CurrentStatus
+from api.app.models.models import Host, HostType, Tenant, Collector, Service, CurrentStatus
 from shared.schemas import HostOut, HostCreate, HostUpdate
 
 router = APIRouter()
@@ -30,6 +30,17 @@ def _is_offline(last_seen_at) -> bool:
     return datetime.now(timezone.utc) - last_seen_at > OFFLINE_THRESHOLD
 
 
+def _enrich_host_out(data: HostOut, host_type_row) -> HostOut:
+    """Populate host type fields on HostOut from a joined HostType."""
+    if host_type_row:
+        data.host_type_name = host_type_row.name
+        data.host_type_icon = host_type_row.icon
+        data.host_type_agent_capable = host_type_row.agent_capable
+        data.host_type_snmp_enabled = host_type_row.snmp_enabled
+        data.host_type_ip_required = host_type_row.ip_required
+    return data
+
+
 @router.get("/", response_model=list[HostOut])
 async def list_hosts(
     response: Response,
@@ -42,8 +53,10 @@ async def list_hosts(
     _scope = Depends(tenant_scope),
 ):
     base = (
-        select(Host, Tenant.name.label("tenant_name"), Tenant.active.label("tenant_active"), Collector.last_seen_at.label("collector_last_seen"))
+        select(Host, Tenant.name.label("tenant_name"), Tenant.active.label("tenant_active"),
+               Collector.last_seen_at.label("collector_last_seen"), HostType)
         .join(Tenant, Host.tenant_id == Tenant.id)
+        .join(HostType, Host.host_type_id == HostType.id)
         .outerjoin(Collector, Host.collector_id == Collector.id)
         .order_by(Tenant.name, Host.hostname)
     )
@@ -78,6 +91,7 @@ async def list_hosts(
         data = HostOut.model_validate(row.Host)
         data.tenant_name = row.tenant_name
         data.tenant_active = row.tenant_active
+        _enrich_host_out(data, row.HostType)
         # Only show collector offline if host has passive checks
         data.collector_offline = _is_offline(row.collector_last_seen) if row.Host.id in hosts_with_passive else False
         out.append(data)
@@ -91,8 +105,9 @@ async def get_host(
     _user: dict = Depends(get_current_user),
 ):
     result = await db.execute(
-        select(Host, Tenant.name.label("tenant_name"), Collector.last_seen_at.label("collector_last_seen"))
+        select(Host, Tenant.name.label("tenant_name"), Collector.last_seen_at.label("collector_last_seen"), HostType)
         .join(Tenant, Host.tenant_id == Tenant.id)
+        .join(HostType, Host.host_type_id == HostType.id)
         .outerjoin(Collector, Host.collector_id == Collector.id)
         .where(Host.id == host_id)
     )
@@ -101,6 +116,7 @@ async def get_host(
         raise HTTPException(status_code=404, detail="Host not found")
     data = HostOut.model_validate(row.Host)
     data.tenant_name = row.tenant_name
+    _enrich_host_out(data, row.HostType)
     # Only show collector offline if host has passive checks
     passive_count = await db.execute(
         select(func.count()).select_from(Service)
@@ -118,13 +134,20 @@ async def create_host(
     _user: dict = Depends(require_role("super_admin", "tenant_admin")),
 ):
     await check_quota(db, body.tenant_id, "hosts")
+
+    # Validate host_type_id exists
+    ht_result = await db.execute(select(HostType).where(HostType.id == body.host_type_id))
+    ht = ht_result.scalars().first()
+    if not ht:
+        raise HTTPException(400, "Ungültiger Host-Typ.")
+
     host = Host(
         tenant_id=body.tenant_id,
         collector_id=body.collector_id,
         hostname=body.hostname,
         display_name=body.display_name,
         ip_address=body.ip_address,
-        host_type=body.host_type.value,
+        host_type_id=body.host_type_id,
         snmp_community=encrypt_field(body.snmp_community) if body.snmp_community else body.snmp_community,
         snmp_version=body.snmp_version,
         tags=body.tags,
@@ -134,10 +157,11 @@ async def create_host(
     await write_audit(db, user=_user, action="host_create",
                       target_type="host", target_id=host.id,
                       tenant_id=host.tenant_id,
-                      detail={"hostname": host.hostname, "host_type": body.host_type.value})
+                      detail={"hostname": host.hostname, "host_type": ht.name})
     await db.commit()
     await db.refresh(host)
     data = HostOut.model_validate(host)
+    _enrich_host_out(data, ht)
     data.collector_offline = False
     return data
 
@@ -154,9 +178,7 @@ async def update_host(
     if not host:
         raise HTTPException(status_code=404, detail="Host not found")
     for field, value in body.model_dump(exclude_none=True).items():
-        if field == "host_type":
-            setattr(host, field, value.value if hasattr(value, "value") else value)
-        elif field == "snmp_community" and value:
+        if field == "snmp_community" and value:
             setattr(host, field, encrypt_field(value))
         else:
             setattr(host, field, value)
@@ -168,7 +190,11 @@ async def update_host(
                       detail={"changed_fields": list(changes.keys())})
     await db.commit()
     await db.refresh(host)
+    # Load host type for response
+    ht_result = await db.execute(select(HostType).where(HostType.id == host.host_type_id))
+    ht = ht_result.scalars().first()
     data = HostOut.model_validate(host)
+    _enrich_host_out(data, ht)
     data.collector_offline = False
     return data
 
@@ -242,11 +268,11 @@ async def copy_host(
         hostname=new_hostname,
         display_name=src.display_name,
         ip_address=src.ip_address,
-        host_type=src.host_type,
+        host_type_id=src.host_type_id,
         snmp_community=src.snmp_community,
         snmp_version=src.snmp_version,
         tags=list(src.tags or []),
-        agent_managed=False,  # 3.3 Agent-Status wird nicht kopiert — Token muss separat generiert werden
+        agent_managed=False,  # Agent-Status wird nicht kopiert — Token muss separat generiert werden
     )
     db.add(new_host)
     await db.flush()

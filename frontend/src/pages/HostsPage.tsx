@@ -1,19 +1,22 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Monitor, HelpCircle, Plus, X, Search, ChevronDown, ChevronRight, Eye, EyeOff, Power, Copy, Trash2 } from 'lucide-react'
-import { HOST_TYPE_ICONS, HOST_TYPES } from '../lib/constants'
+import { Monitor, Plus, X, Search, ChevronDown, ChevronRight, Eye, EyeOff, Power, Copy, Trash2 } from 'lucide-react'
+import { getHostTypeIcon } from '../lib/constants'
 import { getStatusConfig } from '../components/StatusBadge'
 import { Link, useNavigate } from 'react-router-dom'
 import clsx from 'clsx'
 import { api } from '../api/client'
 import ConfirmDialog from '../components/ConfirmDialog'
+import type { HostTypeConfig } from '../types'
 
 interface HostItem {
   id: string
   hostname: string
   display_name: string | null
   ip_address: string | null
-  host_type: string
+  host_type_id: string
+  host_type_name: string | null
+  host_type_icon: string | null
   tenant_id: string
   tenant_name: string | null
   active: boolean
@@ -39,7 +42,7 @@ function AddHostModal({ onClose, onSaved }: AddHostModalProps) {
     hostname: '',
     display_name: '',
     ip_address: '',
-    host_type: 'server',
+    host_type_id: '',
     snmp_community: '',
     snmp_version: '2c',
     tenant_id: '',
@@ -58,6 +61,20 @@ function AddHostModal({ onClose, onSaved }: AddHostModalProps) {
     enabled: tenants.length > 0,
   })
 
+  const { data: hostTypes = [] } = useQuery<HostTypeConfig[]>({
+    queryKey: ['host-types'],
+    queryFn: () => api.get('/api/v1/host-types/').then(r => r.data),
+  })
+
+  // Auto-select first type if none selected
+  useEffect(() => {
+    if (hostTypes.length > 0 && !form.host_type_id) {
+      setForm(f => ({ ...f, host_type_id: hostTypes[0].id }))
+    }
+  }, [hostTypes, form.host_type_id])
+
+  const selectedType = hostTypes.find(t => t.id === form.host_type_id)
+
   const filteredCollectors = form.tenant_id
     ? collectors.filter(c => c.tenant_id === form.tenant_id)
     : collectors
@@ -67,7 +84,7 @@ function AddHostModal({ onClose, onSaved }: AddHostModalProps) {
       hostname: form.hostname,
       display_name: form.display_name || null,
       ip_address: form.ip_address || null,
-      host_type: form.host_type,
+      host_type_id: form.host_type_id,
       snmp_community: form.snmp_community || null,
       snmp_version: form.snmp_version,
       tenant_id: form.tenant_id,
@@ -80,15 +97,58 @@ function AddHostModal({ onClose, onSaved }: AddHostModalProps) {
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm(prev => ({ ...prev, [k]: e.target.value }))
 
+  // Group host types by category
+  const grouped = hostTypes.reduce<Record<string, HostTypeConfig[]>>((acc, ht) => {
+    const cat = ht.category || 'Sonstiges'
+    if (!acc[cat]) acc[cat] = []
+    acc[cat].push(ht)
+    return acc
+  }, {})
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 p-6">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-xl mx-4 p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-semibold text-gray-900">Host anlegen</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-4">
+          {/* Host Type Selector — Visual Cards */}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-2">Typ *</label>
+            <div className="space-y-2">
+              {Object.entries(grouped).map(([category, types]) => (
+                <div key={category}>
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-1">{category}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {types.map(ht => {
+                      const Icon = getHostTypeIcon(ht.icon)
+                      const isSelected = form.host_type_id === ht.id
+                      return (
+                        <button
+                          key={ht.id}
+                          type="button"
+                          onClick={() => setForm(f => ({ ...f, host_type_id: ht.id }))}
+                          className={clsx(
+                            'flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all',
+                            isSelected
+                              ? 'border-overseer-500 bg-overseer-50 text-overseer-700 ring-1 ring-overseer-500'
+                              : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                          )}
+                        >
+                          <Icon className="w-4 h-4 flex-shrink-0" />
+                          <span className="font-medium">{ht.name}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Tenant + Collector */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Tenant *</label>
@@ -108,44 +168,39 @@ function AddHostModal({ onClose, onSaved }: AddHostModalProps) {
             </div>
           </div>
 
+          {/* Hostname + Display Name */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Hostname *</label>
-              <input value={form.hostname} onChange={set('hostname')} placeholder="switch-01.example.com"
+              <input value={form.hostname} onChange={set('hostname')} placeholder="srv-01.example.com"
                 className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Anzeigename</label>
-              <input value={form.display_name} onChange={set('display_name')} placeholder="Switch EG"
+              <input value={form.display_name} onChange={set('display_name')} placeholder="Server EG"
                 className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
-                IP-Adresse
-                {form.host_type !== 'server' && <span className="text-red-400 ml-0.5">*</span>}
-              </label>
-              <input value={form.ip_address} onChange={set('ip_address')} placeholder="192.168.1.1"
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
-              <p className="text-[11px] text-gray-400 mt-0.5">
-                {form.host_type === 'server'
-                  ? 'Optional bei Agent-Hosts, nötig für aktive Checks (Ping, SSH, Port)'
-                  : 'Erforderlich für Netzwerk-Checks (Ping, SNMP, Port)'}
-              </p>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Typ</label>
-              <select value={form.host_type} onChange={set('host_type')}
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none">
-                {HOST_TYPES.map(t => <option key={t} value={t}>{t.replace('_', ' ')}</option>)}
-              </select>
-            </div>
+          {/* IP Address — conditional based on type */}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              IP-Adresse
+              {selectedType?.ip_required && <span className="text-red-400 ml-0.5">*</span>}
+            </label>
+            <input value={form.ip_address} onChange={set('ip_address')} placeholder="192.168.1.1"
+              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+            <p className="text-[11px] text-gray-400 mt-0.5">
+              {selectedType?.agent_capable
+                ? 'Optional bei Agent-Hosts, nötig für aktive Checks (Ping, SSH, Port)'
+                : selectedType?.ip_required
+                  ? 'Erforderlich für Netzwerk-Checks (Ping, SNMP, Port)'
+                  : 'Optional'}
+            </p>
           </div>
 
-          {/* SNMP-Felder nur für Netzwerkgeräte */}
-          {['switch', 'router', 'printer', 'firewall', 'access_point', 'other'].includes(form.host_type) && (
+          {/* SNMP fields — only if type has snmp_enabled */}
+          {selectedType?.snmp_enabled && (
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">SNMP Community</label>
@@ -164,6 +219,13 @@ function AddHostModal({ onClose, onSaved }: AddHostModalProps) {
             </div>
           )}
 
+          {/* Agent hint */}
+          {selectedType?.agent_capable && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-xs text-blue-700">
+              Agent kann nach dem Erstellen des Hosts eingerichtet werden.
+            </div>
+          )}
+
           {error && (
             <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>
           )}
@@ -176,7 +238,7 @@ function AddHostModal({ onClose, onSaved }: AddHostModalProps) {
           </button>
           <button
             onClick={() => mutation.mutate()}
-            disabled={mutation.isPending || !form.hostname || !form.tenant_id}
+            disabled={mutation.isPending || !form.hostname || !form.tenant_id || !form.host_type_id}
             className="flex-1 py-2 rounded-lg bg-overseer-600 text-white text-sm font-medium hover:bg-overseer-700 disabled:opacity-50">
             {mutation.isPending ? 'Speichern…' : 'Host anlegen'}
           </button>
@@ -289,7 +351,8 @@ export default function HostsPage() {
       h.hostname.toLowerCase().includes(q) ||
       (h.display_name?.toLowerCase().includes(q) ?? false) ||
       (h.ip_address?.toLowerCase().includes(q) ?? false) ||
-      (h.tenant_name?.toLowerCase().includes(q) ?? false)
+      (h.tenant_name?.toLowerCase().includes(q) ?? false) ||
+      (h.host_type_name?.toLowerCase().includes(q) ?? false)
     )
   }, [hosts, search, filterAgent])
 
@@ -557,7 +620,7 @@ export default function HostsPage() {
                     </thead>
                     <tbody className="divide-y divide-gray-50">
                       {tenantHosts.map(host => {
-                        const HostIcon = HOST_TYPE_ICONS[host.host_type] ?? HelpCircle
+                        const HostIcon = getHostTypeIcon(host.host_type_icon)
                         const effectiveActive = host.active && host.tenant_active
                         const status = effectiveActive ? (worstStatus[host.id] ?? null) : null
                         const dotClass = status ? getStatusConfig(status).dot : 'bg-gray-300'
@@ -589,11 +652,10 @@ export default function HostsPage() {
                             <td className="px-6 py-2.5 text-gray-500 font-mono text-xs">
                               {host.ip_address ?? '–'}
                             </td>
-                            <td className="px-6 py-2.5 text-gray-500 capitalize">
-                              {host.host_type.replace('_', ' ')}
+                            <td className="px-6 py-2.5 text-gray-500">
+                              {host.host_type_name ?? '–'}
                             </td>
                             <td className="px-6 py-2.5">
-                              {/* 3.2 Host-Bereitschaft */}
                               {host.agent_managed ? (
                                 <span className="inline-flex items-center gap-1 text-[10px] font-medium text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded">
                                   Agent

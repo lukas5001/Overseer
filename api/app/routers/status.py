@@ -14,7 +14,7 @@ from uuid import UUID
 from api.app.core.database import get_db
 from api.app.core.auth import get_current_user, tenant_scope, apply_tenant_filter
 from api.app.routers.audit import write_audit
-from api.app.models.models import CurrentStatus, Service, Host, Tenant, User
+from api.app.models.models import CurrentStatus, Service, Host, HostType, Tenant, User
 from shared.schemas import ErrorOverviewItem, CurrentStatusOut, CheckStatus
 
 router = APIRouter()
@@ -46,12 +46,14 @@ async def get_error_overview(
             Service.check_type.label("check_type"),
             Host.hostname.label("host_hostname"),
             Host.display_name.label("host_display_name"),
-            Host.host_type.label("host_type"),
+            HostType.name.label("host_type_name"),
+            HostType.icon.label("host_type_icon"),
             Tenant.name.label("tenant_name"),
             User.email.label("ack_email"),
         )
         .join(Service, CurrentStatus.service_id == Service.id)
         .join(Host, CurrentStatus.host_id == Host.id)
+        .join(HostType, Host.host_type_id == HostType.id)
         .join(Tenant, CurrentStatus.tenant_id == Tenant.id)
         .outerjoin(User, CurrentStatus.acknowledged_by == User.id)
         .where(CurrentStatus.state_type == "HARD")
@@ -111,7 +113,8 @@ async def get_error_overview(
             tenant_name=row.tenant_name,
             host_hostname=row.host_hostname,
             host_display_name=row.host_display_name,
-            host_type=row.host_type,
+            host_type_name=row.host_type_name,
+            host_type_icon=row.host_type_icon,
             service_name=row.service_name,
             check_type=row.check_type,
             status=cs.status,

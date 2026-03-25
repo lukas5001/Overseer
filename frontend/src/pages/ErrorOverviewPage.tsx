@@ -1,8 +1,8 @@
 import { useState, useMemo, useEffect } from 'react'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { AlertTriangle, CheckCheck, Clock, Server, BellOff, X, Search, EyeOff, MessageSquare, ArrowUpDown, Filter, Save, Trash2, Edit2, Star, Tv } from 'lucide-react'
-import { HOST_TYPE_ICONS } from '../lib/constants'
+import { AlertTriangle, CheckCheck, Clock, BellOff, X, Search, EyeOff, MessageSquare, ArrowUpDown, Filter, Save, Trash2, Edit2, Star, Tv } from 'lucide-react'
+import { getHostTypeIcon } from '../lib/constants'
 import { Link } from 'react-router-dom'
 import clsx from 'clsx'
 import { formatDistanceToNow } from 'date-fns'
@@ -16,7 +16,8 @@ interface ErrorItem {
   tenant_name: string
   host_hostname: string
   host_display_name: string | null
-  host_type: string
+  host_type_name: string | null
+  host_type_icon: string | null
   service_name: string
   check_type: string
   status: 'WARNING' | 'CRITICAL' | 'UNKNOWN' | 'NO_DATA' | 'OK'
@@ -1144,7 +1145,7 @@ export default function ErrorOverviewPage() {
       <div className="space-y-2">
         {filtered.map((error) => {
           const config   = statusConfig[error.status]
-          const HostIcon = HOST_TYPE_ICONS[error.host_type] ?? Server
+          const HostIcon = getHostTypeIcon(error.host_type_icon)
           const isUnacking = unackMutation.isPending && unackMutation.variables === error.service_id
 
           return (

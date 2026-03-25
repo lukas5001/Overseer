@@ -30,14 +30,6 @@ class UserRole(str, enum.Enum):
     TENANT_VIEWER = "tenant_viewer"
 
 
-class HostType(str, enum.Enum):
-    SERVER = "server"
-    SWITCH = "switch"
-    ROUTER = "router"
-    PRINTER = "printer"
-    FIREWALL = "firewall"
-    ACCESS_POINT = "access_point"
-    OTHER = "other"
 
 
 # ==================== Check Result (from Collector) ====================
@@ -95,6 +87,23 @@ class CollectorOut(BaseModel):
         return str(v) if v is not None else None
 
 
+class HostTypeOut(BaseModel):
+    id: UUID
+    name: str
+    icon: str
+    category: str
+    agent_capable: bool
+    snmp_enabled: bool
+    ip_required: bool
+    os_family: str | None = None
+    sort_order: int
+    is_system: bool
+    active: bool
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
 class HostOut(BaseModel):
     id: UUID
     tenant_id: UUID
@@ -102,7 +111,12 @@ class HostOut(BaseModel):
     hostname: str
     display_name: str | None
     ip_address: str | None
-    host_type: HostType
+    host_type_id: UUID
+    host_type_name: str | None = None
+    host_type_icon: str | None = None
+    host_type_agent_capable: bool = False
+    host_type_snmp_enabled: bool = False
+    host_type_ip_required: bool = False
     snmp_community: str | None = None
     snmp_version: str | None = None
     tags: list
@@ -111,7 +125,7 @@ class HostOut(BaseModel):
     created_at: datetime
     tenant_name: str | None = None
     tenant_active: bool = True
-    collector_offline: bool = False  # True if collector hasn't sent heartbeat recently
+    collector_offline: bool = False
 
     model_config = {"from_attributes": True}
 
@@ -157,7 +171,8 @@ class CurrentStatusOut(BaseModel):
     # Joined fields for convenience
     host_hostname: str | None = None
     host_display_name: str | None = None
-    host_type: HostType | None = None
+    host_type_name: str | None = None
+    host_type_icon: str | None = None
     service_name: str | None = None
     tenant_name: str | None = None
 
@@ -172,7 +187,8 @@ class ErrorOverviewItem(BaseModel):
     tenant_name: str
     host_hostname: str
     host_display_name: str | None
-    host_type: HostType
+    host_type_name: str | None = None
+    host_type_icon: str | None = None
     service_name: str
     check_type: str
     status: CheckStatus
@@ -198,7 +214,7 @@ class HostCreate(BaseModel):
     hostname: str
     display_name: str | None = None
     ip_address: str | None = None
-    host_type: HostType = HostType.SERVER
+    host_type_id: UUID
     snmp_community: str | None = None
     snmp_version: str = "2c"
     tags: list = []
@@ -208,7 +224,7 @@ class HostUpdate(BaseModel):
     hostname: str | None = None
     display_name: str | None = None
     ip_address: str | None = None
-    host_type: HostType | None = None
+    host_type_id: UUID | None = None
     snmp_community: str | None = None
     snmp_version: str | None = None
     tags: list | None = None

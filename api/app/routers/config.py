@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.app.core.database import get_db
 from api.app.core.auth import get_collector_auth
-from api.app.models.models import Collector, Host, Service
+from api.app.models.models import Collector, Host, HostType, Service
 
 router = APIRouter()
 
@@ -25,11 +25,15 @@ async def get_collector_config(
     if not collector:
         raise HTTPException(status_code=404, detail="Collector not found")
 
-    # Load all active hosts for this collector
+    # Load all active hosts for this collector (with host type name)
     hosts_result = await db.execute(
-        select(Host).where(Host.collector_id == collector_id, Host.active == True)
+        select(Host, HostType.name.label("ht_name"))
+        .join(HostType, Host.host_type_id == HostType.id)
+        .where(Host.collector_id == collector_id, Host.active == True)
     )
-    hosts = hosts_result.scalars().all()
+    host_rows = hosts_result.all()
+    hosts = [row.Host for row in host_rows]
+    host_type_names = {row.Host.id: row.ht_name for row in host_rows}
 
     # Load all active services for those hosts in one query
     host_ids = [h.id for h in hosts]
@@ -58,7 +62,7 @@ async def get_collector_config(
                 "hostname": h.hostname,
                 "display_name": h.display_name,
                 "ip_address": str(h.ip_address) if h.ip_address else None,
-                "host_type": h.host_type,
+                "host_type": host_type_names.get(h.id, ""),
                 "snmp_community": h.snmp_community or "public",
                 "snmp_version": h.snmp_version or "2c",
                 "checks": services_by_host[h.id],

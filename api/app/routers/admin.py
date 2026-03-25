@@ -46,7 +46,7 @@ async def export_config(
                 "collector_id": str(h.collector_id) if h.collector_id else None,
                 "hostname": h.hostname, "display_name": h.display_name,
                 "ip_address": str(h.ip_address) if h.ip_address else None,
-                "host_type": h.host_type, "snmp_version": h.snmp_version,
+                "host_type_id": str(h.host_type_id), "snmp_version": h.snmp_version,
                 "tags": h.tags, "active": h.active,
                 # snmp_community intentionally excluded
             }
@@ -151,10 +151,18 @@ async def import_config(
     # Hosts
     imported_hosts = 0
     for item in data.get("hosts", []):
+        # Resolve host_type_id: use provided UUID or fall back to "Linux Server"
+        ht_id = item.get("host_type_id")
+        if not ht_id:
+            ht_fallback = await db.execute(text(
+                "SELECT id FROM host_types WHERE name = 'Linux Server' LIMIT 1"
+            ))
+            ht_row = ht_fallback.fetchone()
+            ht_id = str(ht_row.id) if ht_row else None
         await db.execute(text("""
             INSERT INTO hosts (id, tenant_id, collector_id, hostname, display_name, ip_address,
-                               host_type, snmp_version, tags, active, created_at, updated_at)
-            VALUES (:id, :tid, :cid, :hostname, :display_name, :ip, :host_type, :snmp_version,
+                               host_type_id, snmp_version, tags, active, created_at, updated_at)
+            VALUES (:id, :tid, :cid, :hostname, :display_name, :ip, :host_type_id, :snmp_version,
                     :tags, :active, now(), now())
             ON CONFLICT (id) DO UPDATE
             SET hostname = EXCLUDED.hostname, display_name = EXCLUDED.display_name,
@@ -163,7 +171,7 @@ async def import_config(
             "id": item["id"], "tid": item["tenant_id"],
             "cid": item.get("collector_id"),
             "hostname": item["hostname"], "display_name": item.get("display_name"),
-            "ip": item.get("ip_address"), "host_type": item.get("host_type", "server"),
+            "ip": item.get("ip_address"), "host_type_id": ht_id,
             "snmp_version": item.get("snmp_version", "2c"),
             "tags": str(item.get("tags", "[]")), "active": item.get("active", True),
         })

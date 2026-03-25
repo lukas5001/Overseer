@@ -140,7 +140,7 @@ async def copy_tenant(
             hostname=src_host.hostname,
             display_name=src_host.display_name,
             ip_address=src_host.ip_address,
-            host_type=src_host.host_type,
+            host_type_id=src_host.host_type_id,
             snmp_community=src_host.snmp_community,
             snmp_version=src_host.snmp_version,
             tags=list(src_host.tags or []),

@@ -2,11 +2,11 @@ import { useState } from 'react'
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  Server, ArrowLeft, Play, Search,
+  ArrowLeft, Play, Search,
   CheckCircle, Clock, Plus, X, Trash2, TrendingUp, Pencil, Settings2, Power, Copy,
   Monitor, ClipboardCopy, KeyRound, Download,
 } from 'lucide-react'
-import { HOST_TYPE_ICONS, HOST_TYPES, HOST_TYPE_LABELS, NETWORK_DEVICE_TYPES } from '../lib/constants'
+import { getHostTypeIcon } from '../lib/constants'
 import { getStatusConfig } from '../components/StatusBadge'
 import clsx from 'clsx'
 import { formatDistanceToNow } from 'date-fns'
@@ -22,7 +22,12 @@ interface Host {
   hostname: string
   display_name: string | null
   ip_address: string | null
-  host_type: string
+  host_type_id: string
+  host_type_name: string | null
+  host_type_icon: string | null
+  host_type_agent_capable: boolean
+  host_type_snmp_enabled: boolean
+  host_type_ip_required: boolean
   snmp_community: string | null
   snmp_version: string | null
   tags: string[]
@@ -620,22 +625,29 @@ interface EditHostModalProps {
 }
 
 function EditHostModal({ host, onClose, onSaved }: EditHostModalProps) {
+  const { data: hostTypes = [] } = useQuery<{ id: string; name: string; icon: string; category: string; agent_capable: boolean; snmp_enabled: boolean; ip_required: boolean }[]>({
+    queryKey: ['host-types'],
+    queryFn: () => api.get('/api/v1/host-types/').then(r => r.data),
+  })
+
   const [form, setForm] = useState({
     hostname: host.hostname,
     display_name: host.display_name ?? '',
     ip_address: host.ip_address ?? '',
-    host_type: host.host_type,
+    host_type_id: host.host_type_id,
     snmp_community: host.snmp_community ?? '',
     snmp_version: host.snmp_version ?? '2c',
   })
   const [error, setError] = useState<string | null>(null)
+
+  const selectedType = hostTypes.find(t => t.id === form.host_type_id)
 
   const mutation = useMutation({
     mutationFn: () => api.patch(`/api/v1/hosts/${host.id}`, {
       hostname: form.hostname,
       display_name: form.display_name || null,
       ip_address: form.ip_address || null,
-      host_type: form.host_type,
+      host_type_id: form.host_type_id,
       snmp_community: form.snmp_community || null,
       snmp_version: form.snmp_version || '2c',
     }),
@@ -680,14 +692,14 @@ function EditHostModal({ host, onClose, onSaved }: EditHostModalProps) {
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Typ</label>
-              <select value={form.host_type} onChange={setF('host_type')}
+              <select value={form.host_type_id} onChange={setF('host_type_id')}
                 className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none">
-                {HOST_TYPES.map(t => <option key={t} value={t}>{HOST_TYPE_LABELS[t] ?? t}</option>)}
+                {hostTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
               </select>
             </div>
           </div>
-          {/* SNMP-Felder nur für Netzwerkgeräte oder wenn bereits konfiguriert */}
-          {((NETWORK_DEVICE_TYPES as readonly string[]).includes(form.host_type) || host.snmp_community) && (
+          {/* SNMP-Felder nur wenn Typ SNMP unterstützt oder bereits konfiguriert */}
+          {(selectedType?.snmp_enabled || host.snmp_community) && (
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">SNMP Community</label>
@@ -1286,7 +1298,7 @@ export default function HostDetailPage() {
     return <div className="p-8 text-red-500">Host nicht gefunden.</div>
   }
 
-  const HostIcon = HOST_TYPE_ICONS[host.host_type] ?? Server
+  const HostIcon = getHostTypeIcon(host.host_type_icon)
   const activeSorted = sorted.filter(s => serviceNames[s.service_id]?.active !== false)
   const worstStatus = activeSorted[0]?.status ?? 'OK'
   const worstCfg = getStatusConfig(worstStatus)
@@ -1430,7 +1442,7 @@ export default function HostDetailPage() {
               {host.ip_address && (
                 <span className="font-mono bg-gray-100 px-2 py-0.5 rounded">{host.ip_address}</span>
               )}
-              <span>{HOST_TYPE_LABELS[host.host_type] ?? host.host_type}</span>
+              <span>{host.host_type_name ?? 'Unbekannt'}</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -1482,7 +1494,7 @@ export default function HostDetailPage() {
         <div className="bg-blue-50 border border-blue-200 rounded-xl px-5 py-4 mb-6">
           <p className="text-sm font-medium text-blue-800 mb-2">Host erstellt! Nächste Schritte:</p>
           <div className="flex flex-wrap gap-2">
-            {host.host_type === 'server' && !host.agent_managed && (
+            {host.host_type_agent_capable && !host.agent_managed && (
               <button onClick={() => generateTokenMutation.mutate()}
                 disabled={generateTokenMutation.isPending}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors">
@@ -1532,7 +1544,7 @@ export default function HostDetailPage() {
         {!host.agent_managed ? (
           <div className="mt-3 flex items-center justify-between bg-gray-50 rounded-lg px-4 py-3">
             <p className="text-sm text-gray-500">Kein Agent eingerichtet</p>
-            {host.host_type === 'server' ? (
+            {host.host_type_agent_capable ? (
               <button
                 onClick={() => generateTokenMutation.mutate()}
                 disabled={generateTokenMutation.isPending}
@@ -1542,7 +1554,7 @@ export default function HostDetailPage() {
                 {generateTokenMutation.isPending ? 'Generiere…' : 'Agent einrichten'}
               </button>
             ) : (
-              <span className="text-xs text-gray-400">Agent nur für Server verfügbar</span>
+              <span className="text-xs text-gray-400">Agent für diesen Host-Typ nicht verfügbar</span>
             )}
           </div>
         ) : agentTokenInfo ? (

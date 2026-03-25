@@ -53,7 +53,7 @@ class ActiveCheckScheduler:
                        s.interval_seconds, s.max_check_attempts,
                        s.host_id, s.tenant_id,
                        h.ip_address, h.hostname,
-                       h.snmp_community, h.snmp_version,
+                       h.snmp_community, h.snmp_version
                 FROM services s
                 JOIN hosts h ON h.id = s.host_id
                 JOIN tenants t ON t.id = s.tenant_id

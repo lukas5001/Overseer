@@ -1,25 +1,33 @@
-import { Server, Router, Printer, Shield, Wifi } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+import {
+  Server, Monitor, Router, Printer, Shield, Wifi, Box,
+  Network, HardDrive, Camera, Cloud, Database, Globe, Cpu, Laptop, Smartphone,
+  type LucideIcon,
+} from 'lucide-react'
 
-export const HOST_TYPES = ['server', 'switch', 'router', 'printer', 'firewall', 'access_point', 'other'] as const
-
-export const HOST_TYPE_LABELS: Record<string, string> = {
-  server: 'Server',
-  switch: 'Switch',
-  router: 'Router',
-  printer: 'Drucker',
-  firewall: 'Firewall',
-  access_point: 'Access Point',
-  other: 'Sonstiges',
-}
-
-export const HOST_TYPE_ICONS: Record<string, LucideIcon> = {
+/** Map icon name (from DB) to Lucide component */
+const ICON_MAP: Record<string, LucideIcon> = {
   server: Server,
-  switch: Router,
+  monitor: Monitor,
   router: Router,
   printer: Printer,
-  firewall: Shield,
-  access_point: Wifi,
+  shield: Shield,
+  wifi: Wifi,
+  box: Box,
+  network: Network,
+  'hard-drive': HardDrive,
+  camera: Camera,
+  cloud: Cloud,
+  database: Database,
+  globe: Globe,
+  cpu: Cpu,
+  laptop: Laptop,
+  smartphone: Smartphone,
 }
 
-export const NETWORK_DEVICE_TYPES = ['switch', 'router', 'printer', 'firewall', 'access_point', 'other'] as const
+/** Available icon names for the icon picker */
+export const AVAILABLE_ICONS = Object.keys(ICON_MAP)
+
+/** Resolve a host type icon name to a Lucide component */
+export function getHostTypeIcon(iconName: string | null | undefined): LucideIcon {
+  return (iconName && ICON_MAP[iconName]) || Server
+}

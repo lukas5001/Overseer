@@ -692,12 +692,22 @@ def seed(db_url: str, clean: bool = False):
 
         for hostname, display, ip, host_type, dev_type, checks in generate_hosts(profile_name, idx):
             hid = str(uuid.uuid4())
+            _ht_map = {
+                "server": "a0000000-0000-0000-0000-000000000001",
+                "switch": "a0000000-0000-0000-0000-000000000003",
+                "router": "a0000000-0000-0000-0000-000000000004",
+                "firewall": "a0000000-0000-0000-0000-000000000005",
+                "access_point": "a0000000-0000-0000-0000-000000000006",
+                "printer": "a0000000-0000-0000-0000-000000000007",
+                "other": "a0000000-0000-0000-0000-000000000008",
+            }
+            ht_id = _ht_map.get(host_type, "a0000000-0000-0000-0000-000000000001")
             cur.execute(
                 """INSERT INTO hosts (id, tenant_id, collector_id, hostname, display_name,
-                   ip_address, host_type)
+                   ip_address, host_type_id)
                    VALUES (%s, %s, %s, %s, %s, %s, %s)
                    ON CONFLICT (tenant_id, hostname) DO NOTHING""",
-                (hid, tid, cid, hostname, display, ip, host_type),
+                (hid, tid, cid, hostname, display, ip, ht_id),
             )
             cur.execute(
                 "SELECT id FROM hosts WHERE tenant_id = %s AND hostname = %s",
