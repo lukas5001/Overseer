@@ -120,7 +120,7 @@ Jeder Service hat seinen eigenen Docker-Build-Context (siehe Dockerfiles):
 - Receiver akzeptiert sowohl `X-API-Key` (Collector) als auch `X-Agent-Token` (Agent)
 - Check-Typen mit Agent: `agent_cpu`, `agent_memory`, `agent_disk`, `agent_service`, `agent_process`, `agent_eventlog`, `agent_custom`, `agent_script`, `agent_services_auto`
 - Check-Mode für Agent-Checks: `agent` (statt `passive` oder `active`)
-- Agent-Tokens können nur für `host_type='server'` generiert werden
+- Agent-Tokens können nur für Host-Typen mit `agent_capable=true` generiert werden
 
 ### Rate Limiting (slowapi)
 - Login-Endpoint `/api/v1/auth/login`: 10 req/min pro IP
@@ -154,6 +154,7 @@ CRITICAL > WARNING > NO_DATA > UNKNOWN > OK
 - Check schlägt fehl → Soft State (Zähler hochzählen)
 - Nach X aufeinanderfolgenden Fehlschlägen → Hard State
 - Nur Hard States erscheinen in der Fehlerübersicht
+- **Retry-Intervall** (seit Migration 026): Feld `retry_interval_seconds` auf `services`. Bei SOFT State (Check fehlgeschlagen, noch nicht HARD) wird mit kürzerem Intervall nachgeprüft statt das volle Intervall abzuwarten. Default 15s. Beispiel: 60s Intervall + 15s Retry + 3 Attempts → 90s Fehlererkennung statt 180s. Nur fehlschlagende Checks werden öfter geprüft — kein Mehraufwand bei Scale.
 
 ## Bekannte Fallstricke
 
@@ -167,7 +168,7 @@ Ebenso: API-Endpoints die `user["sub"]` nutzen um User in der DB zu suchen (z.B.
 ### datetime-local Inputs im Frontend
 `datetime-local` HTML-Inputs erwarten **lokale Zeit**. Niemals `toISOString().slice(0,16)` verwenden (gibt UTC!). Stattdessen immer `getFullYear()/getMonth()/getDate()/getHours()/getMinutes()` benutzen.
 
-## Check-Erstellungs-Validierung (Production Audit, 2026-03-24)
+## Check-Erstellungs-Validierung
 
 Beim Erstellen von Checks (`POST /api/v1/services/`) gelten folgende Backend-Validierungen:
 - **Agent-Checks** (`check_type.startswith('agent_')` oder `check_mode='agent'`) → Host muss `agent_managed=true` haben
@@ -175,9 +176,10 @@ Beim Erstellen von Checks (`POST /api/v1/services/`) gelten folgende Backend-Val
 - **Netzwerk-Checks** (`ping`, `port`, `snmp*`, `ssh_*`) → Host muss `ip_address` haben
 - **check_type** ist nach Erstellung unveränderlich (PATCH lehnt Änderungen ab)
 - **Intervall** muss zwischen 10 Sekunden und 7 Tagen liegen (POST und PATCH)
+- **Retry-Intervall** muss ≥ 5s und ≤ Hauptintervall sein
 
-Das Frontend filtert Check-Typen und Templates kontextabhängig nach Host-Eigenschaften.
-SNMP-Felder werden nur für Netzwerkgeräte angezeigt (switch, router, printer, firewall, access_point).
+Das Frontend filtert Check-Typen und Templates kontextabhängig nach Host-Capabilities (`agent_capable`, `snmp_enabled`, `ip_required`).
+Templates werden OS-aware gefiltert: Linux-Hosts sehen keine Windows-Templates und umgekehrt. Ein Template wird angezeigt wenn mindestens ein Check kompatibel ist.
 
 ## Monitoring Scripts
 
@@ -188,10 +190,39 @@ SNMP-Felder werden nur für Netzwerkgeräte angezeigt (switch, router, printer, 
 - Tenant-isoliert mit `UNIQUE(tenant_id, name)`
 - Agent holt Script-Inhalt über Config-Endpoint: `script_id` → `script_content` + `script_interpreter` + `expected_output`
 
+## Konfigurierbare Host-Typen
+
+Seit Migration 025 werden Host-Typen nicht mehr als Enum sondern als konfigurierbare Datensätze in der `host_types` Tabelle verwaltet.
+
+- **Tabelle**: `host_types` mit Capabilities: `agent_capable`, `snmp_enabled`, `ip_required`, `os_family`
+- **API**: `/api/v1/host-types/` (CRUD, super_admin)
+- **Frontend**: `/host-types` Seite mit Icon-Picker, Capability-Toggles, Kategorien
+- **Host-Formular**: Visueller Typ-Selector statt Dropdown, dynamische Felder je nach Typ-Capabilities
+- **System-Typen** (is_system=true): Linux Server, Windows Server, Switch, Router, Firewall, Access Point, Drucker, Sonstiges — können nicht gelöscht werden
+- **Admins** können eigene Typen erstellen (z.B. "IP Kamera", "NAS", "Cloud VM")
+- `hosts.host_type_id` ist FK auf `host_types.id` (alte `host_type` Enum wurde entfernt)
+- Icons kommen aus Lucide, gemappt über `getHostTypeIcon()` in `frontend/src/lib/constants.ts`
+
+## Agent-Installation (Linux)
+
+One-Command-Installer: `wget -qO- SERVER/agent/install.sh | bash -s -- TOKEN SERVER_URL`
+
+- Script: `agent/deploy/install-remote.sh`, deployed nach `/opt/overseer/agent-binaries/install.sh`
+- Unterstützt wget und curl (Auto-Detect), keine sudo-Abhängigkeit (muss als root laufen)
+- Installiert Binary, Config, systemd-Unit, startet Agent
+- Re-run safe: stoppt bestehenden Agent, überschreibt Binary + Config
+- Binary: statisch gelinkt (`CGO_ENABLED=0`), ~6.5 MB
+- Frontend zeigt distro-spezifische Tabs (Debian, RHEL, Generic) mit Prerequisite-Commands
+- **Achtung Loopback**: Wenn Agent auf dem gleichen Server wie Overseer läuft, muss die Config-URL die interne Adresse oder den richtigen Domainnamen nutzen (nicht `overseer.2li.ch` wenn das Cert für `overseer.dailycrust.it` ausgestellt ist)
+
 ## Produktionsserver
 
-- Server: `212.227.88.119`
-- Services: `overseer-api`, `overseer-receiver`, `overseer-worker@{0,1,2}` (systemd)
-- DB: PostgreSQL 17 nativ (kein Docker)
+- Server: `212.227.88.119` (IONOS VPS, hostet sowohl Overseer als auch DailyCrust)
+- Domain: `overseer.dailycrust.it` (Let's Encrypt SSL)
+- Services: `overseer-api`, `overseer-receiver`, `overseer-worker@{0,1,2}`, `overseer-agent` (systemd)
+- DB: PostgreSQL 17 nativ (kein Docker), User `overseer`, Passwort in `/opt/overseer/.env`
 - Frontend: Vite-Build nach `/opt/overseer/frontend/dist`, nginx reverse proxy
 - Deploy: `git pull` → `npm run build` → `systemctl restart overseer-*`
+- Migration: `DATABASE_URL_SYNC="postgresql://overseer:overseer_prod_2026@localhost/overseer" python3 scripts/migrate.py`
+- Aktuelle Migration: 026 (retry_interval)
+- Agent überwacht den eigenen Server (DailyCrust VPS) mit CPU, RAM, Disk, Services, Ping, Ports
