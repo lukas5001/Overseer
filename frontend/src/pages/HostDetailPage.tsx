@@ -323,12 +323,12 @@ function AddCheckModal({ host, onClose, onSaved }: AddCheckModalProps) {
 
   // 2.6 Check-Typen nach Host-Kontext filtern
   const availableCheckTypes = CHECK_TYPES.filter(ct => {
-    // Agent-Checks nur für agent-managed Hosts
-    if (ct.startsWith('agent_') && !host.agent_managed) return false
+    // Agent-Checks nur für agent-fähige Host-Typen
+    if (ct.startsWith('agent_') && !host.host_type_agent_capable) return false
     // SSH-Checks nur wenn IP vorhanden
     if (ct.startsWith('ssh_') && !host.ip_address) return false
-    // SNMP-Checks nur wenn SNMP community gesetzt
-    if (ct.startsWith('snmp') && !host.snmp_community) return false
+    // SNMP-Checks nur wenn SNMP-Typ oder community gesetzt
+    if (ct.startsWith('snmp') && !host.host_type_snmp_enabled && !host.snmp_community) return false
     // Ping/Port/HTTP nur wenn IP vorhanden
     if ((ct === 'ping' || ct === 'port') && !host.ip_address) return false
     return true
@@ -461,10 +461,10 @@ function AddCheckModal({ host, onClose, onSaved }: AddCheckModalProps) {
             const hasSnmp = types.some(t => t.startsWith('snmp'))
             const hasSsh = types.some(t => t.startsWith('ssh_'))
             const hasNetwork = types.some(t => ['ping', 'port'].includes(t))
-            // Agent-Templates nur für agent-managed Hosts
-            if (hasAgent && !host.agent_managed) return false
-            // SNMP-Templates nur wenn SNMP konfiguriert
-            if (hasSnmp && !host.snmp_community) return false
+            // Agent-Templates: Host muss agent-fähig sein (Agent muss nicht bereits eingerichtet sein)
+            if (hasAgent && !host.host_type_agent_capable) return false
+            // SNMP-Templates nur wenn SNMP-Typ oder bereits konfiguriert
+            if (hasSnmp && !host.host_type_snmp_enabled && !host.snmp_community) return false
             // SSH-Templates nur wenn IP vorhanden
             if (hasSsh && !host.ip_address) return false
             // Netzwerk-Templates nur wenn IP vorhanden
@@ -1179,6 +1179,7 @@ export default function HostDetailPage() {
     mutationFn: () => api.post(`/api/v1/hosts/${hostId}/agent-token`),
     onSuccess: (resp) => {
       setGeneratedToken(resp.data.token)
+      setSetupTab(host?.host_type_name?.toLowerCase().includes('windows') ? 'windows' : 'linux')
       setShowAgentSetup(true)
       queryClient.invalidateQueries({ queryKey: ['host', hostId] })
       queryClient.invalidateQueries({ queryKey: ['agent-token', hostId] })
