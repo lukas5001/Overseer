@@ -12,8 +12,7 @@ import (
 	"github.com/lukas5001/overseer-agent/internal/types"
 )
 
-func checkDiskPlatform(config map[string]any, warn, crit *float64) types.CheckResult {
-	path := getConfigString(config, "path", "C:")
+func checkSingleDisk(path string, warn, crit *float64) types.CheckResult {
 	// Ensure trailing backslash for Windows API
 	if len(path) > 0 && path[len(path)-1] != '\\' {
 		path += "\\"

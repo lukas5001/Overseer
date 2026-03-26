@@ -10,9 +10,7 @@ import (
 	"github.com/lukas5001/overseer-agent/internal/types"
 )
 
-func checkDiskPlatform(config map[string]any, warn, crit *float64) types.CheckResult {
-	path := getConfigString(config, "path", "/")
-
+func checkSingleDisk(path string, warn, crit *float64) types.CheckResult {
 	var stat syscall.Statfs_t
 	if err := syscall.Statfs(path, &stat); err != nil {
 		return types.CheckResult{Status: "UNKNOWN", Message: fmt.Sprintf("statfs %s: %v", path, err)}

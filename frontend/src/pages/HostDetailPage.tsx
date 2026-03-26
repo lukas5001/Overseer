@@ -296,7 +296,7 @@ function ConfigFields({ checkType, config, onChange }: {
     case 'ssh_custom':  return <>{field('Kommando', 'command', 'echo OK')}{field('SSH-User', 'username', 'root')}{field('SSH-Passwort', 'password', '')}</>
     case 'agent_cpu':     return null
     case 'agent_memory':  return null
-    case 'agent_disk':    return <>{field('Pfad', 'path', 'C: oder /')}</>
+    case 'agent_disk':    return null  // handled by DiskConfigEditor
     case 'agent_service': return <>{field('Servicename', 'service', 'MSSQLSERVER')}</>
     case 'agent_process': return <>{field('Prozessname', 'process', 'nginx')}</>
     case 'agent_eventlog': return <>{field('Log', 'log', 'System')}{field('Level', 'level', 'Error')}{field('Minuten', 'minutes', '30')}</>
@@ -305,6 +305,60 @@ function ConfigFields({ checkType, config, onChange }: {
     case 'agent_services_auto': return <>{field('Exclude-Liste (kommagetrennt)', 'exclude', 'gupdate,gupdatem,sppsvc,RemoteRegistry')}</>
     default: return null
   }
+}
+
+// ── Disk Config Editor ──────────────────────────────────────────────────────
+
+interface DiskEntry {
+  path: string
+  warn: string
+  crit: string
+}
+
+function DiskConfigEditor({ disks, onChange }: {
+  disks: DiskEntry[]
+  onChange: (disks: DiskEntry[]) => void
+}) {
+  const update = (i: number, key: keyof DiskEntry, value: string) => {
+    const next = [...disks]
+    next[i] = { ...next[i], [key]: value }
+    onChange(next)
+  }
+
+  return (
+    <div className="space-y-2">
+      <label className="block text-xs font-medium text-gray-600">Festplatten & Schwellwerte</label>
+      {disks.map((d, i) => (
+        <div key={i} className="flex gap-2 items-center">
+          <input value={d.path} onChange={e => update(i, 'path', e.target.value)}
+            placeholder="/ oder C:"
+            className="flex-1 text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+          <div className="relative">
+            <input value={d.warn} onChange={e => update(i, 'warn', e.target.value)}
+              placeholder="80" type="number" min="0" max="100"
+              className="w-20 text-sm border border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-400 outline-none bg-amber-50/50" />
+            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-amber-400 pointer-events-none">%</span>
+          </div>
+          <div className="relative">
+            <input value={d.crit} onChange={e => update(i, 'crit', e.target.value)}
+              placeholder="90" type="number" min="0" max="100"
+              className="w-20 text-sm border border-red-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-400 outline-none bg-red-50/50" />
+            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-red-400 pointer-events-none">%</span>
+          </div>
+          {disks.length > 1 && (
+            <button onClick={() => onChange(disks.filter((_, j) => j !== i))}
+              className="text-gray-400 hover:text-red-500 p-1" title="Entfernen">
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      ))}
+      <button onClick={() => onChange([...disks, { path: '', warn: '80', crit: '90' }])}
+        className="text-xs text-overseer-600 hover:text-overseer-700 font-medium flex items-center gap-1 mt-1">
+        <Plus className="w-3.5 h-3.5" /> Platte hinzufügen
+      </button>
+    </div>
+  )
 }
 
 // ── Add Check Modal ────────────────────────────────────────────────────────────
@@ -366,7 +420,10 @@ function AddCheckModal({ host, onClose, onSaved }: AddCheckModalProps) {
     check_mode: 'active',
   })
   const [config, setConfig] = useState<Record<string, string>>({})
+  const [disks, setDisks] = useState<DiskEntry[]>([{ path: '', warn: '80', crit: '90' }])
   const [error, setError] = useState<string | null>(null)
+
+  const isDisk = form.check_type === 'agent_disk'
 
   const mutation = useMutation({
     mutationFn: () => {
@@ -375,6 +432,14 @@ function AddCheckModal({ host, onClose, onSaved }: AddCheckModalProps) {
       if (form.check_type === 'agent_services_auto' && typeof finalConfig.exclude === 'string') {
         finalConfig.exclude = (finalConfig.exclude as string).split(',').map(s => s.trim()).filter(Boolean)
       }
+      // agent_disk: embed per-disk thresholds in config
+      if (isDisk) {
+        finalConfig.disks = disks.map(d => ({
+          path: d.path || '/',
+          warn: parseFloat(d.warn) || 80,
+          crit: parseFloat(d.crit) || 90,
+        }))
+      }
       return api.post('/api/v1/services/', {
         host_id: host.id,
         tenant_id: host.tenant_id,
@@ -382,8 +447,8 @@ function AddCheckModal({ host, onClose, onSaved }: AddCheckModalProps) {
         check_type: form.check_type,
         check_config: finalConfig,
         interval_seconds: parseInt(form.interval_seconds) || 60,
-        threshold_warn: form.threshold_warn ? parseFloat(form.threshold_warn) : null,
-        threshold_crit: form.threshold_crit ? parseFloat(form.threshold_crit) : null,
+        threshold_warn: !isDisk && form.threshold_warn ? parseFloat(form.threshold_warn) : null,
+        threshold_crit: !isDisk && form.threshold_crit ? parseFloat(form.threshold_crit) : null,
         max_check_attempts: parseInt(form.max_check_attempts) || 3,
         retry_interval_seconds: parseInt(form.retry_interval_seconds) || 15,
         check_mode: form.check_type.startsWith('agent_') ? 'agent' : form.check_mode,
@@ -560,28 +625,36 @@ function AddCheckModal({ host, onClose, onSaved }: AddCheckModalProps) {
               </div>
 
               {/* Dynamic config fields */}
-              <ConfigFields
-                checkType={form.check_type}
-                config={config}
-                onChange={(k, v) => setConfig(prev => ({ ...prev, [k]: v }))}
-              />
+              {isDisk ? (
+                <DiskConfigEditor disks={disks} onChange={setDisks} />
+              ) : (
+                <ConfigFields
+                  checkType={form.check_type}
+                  config={config}
+                  onChange={(k, v) => setConfig(prev => ({ ...prev, [k]: v }))}
+                />
+              )}
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className={clsx('grid gap-3', isDisk ? 'grid-cols-1' : 'grid-cols-3')}>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Intervall (s)</label>
                   <input value={form.interval_seconds} onChange={setF('interval_seconds')} type="number"
                     className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Warn-Schwelle</label>
-                  <input value={form.threshold_warn} onChange={setF('threshold_warn')} type="number" placeholder="80"
-                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Crit-Schwelle</label>
-                  <input value={form.threshold_crit} onChange={setF('threshold_crit')} type="number" placeholder="90"
-                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
-                </div>
+                {!isDisk && (
+                  <>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Warn-Schwelle</label>
+                      <input value={form.threshold_warn} onChange={setF('threshold_warn')} type="number" placeholder="80"
+                        className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Crit-Schwelle</label>
+                      <input value={form.threshold_crit} onChange={setF('threshold_crit')} type="number" placeholder="90"
+                        className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -788,6 +861,8 @@ interface EditServiceModalProps {
 }
 
 function EditServiceModal({ service, onClose, onSaved }: EditServiceModalProps) {
+  const isDisk = service.check_type === 'agent_disk'
+
   const [form, setForm] = useState({
     name: service.name,
     interval_seconds: String(service.interval_seconds),
@@ -797,9 +872,31 @@ function EditServiceModal({ service, onClose, onSaved }: EditServiceModalProps) 
     retry_interval_seconds: String(service.retry_interval_seconds ?? 15),
     check_mode: service.check_mode ?? 'passive',
   })
-  const [config, setConfig] = useState<Record<string, string>>(
-    Object.fromEntries(Object.entries(service.check_config).map(([k, v]) => [k, Array.isArray(v) ? v.join(', ') : String(v)]))
-  )
+  const [config, setConfig] = useState<Record<string, string>>(() => {
+    // Skip 'disks' key from flat config — handled by disks state
+    const entries = Object.entries(service.check_config)
+      .filter(([k]) => k !== 'disks')
+      .map(([k, v]) => [k, Array.isArray(v) ? v.join(', ') : String(v)])
+    return Object.fromEntries(entries)
+  })
+  const [disks, setDisks] = useState<DiskEntry[]>(() => {
+    if (isDisk && Array.isArray(service.check_config.disks)) {
+      return (service.check_config.disks as any[]).map((d: any) => ({
+        path: d.path ?? '/',
+        warn: d.warn != null ? String(d.warn) : '80',
+        crit: d.crit != null ? String(d.crit) : '90',
+      }))
+    }
+    // Legacy: single path → convert to disk entry
+    if (isDisk) {
+      return [{
+        path: String(service.check_config.path ?? '/'),
+        warn: service.threshold_warn != null ? String(service.threshold_warn) : '80',
+        crit: service.threshold_crit != null ? String(service.threshold_crit) : '90',
+      }]
+    }
+    return []
+  })
   const [error, setError] = useState<string | null>(null)
 
   const mutation = useMutation({
@@ -808,12 +905,21 @@ function EditServiceModal({ service, onClose, onSaved }: EditServiceModalProps) 
       if (service.check_type === 'agent_services_auto' && typeof finalConfig.exclude === 'string') {
         finalConfig.exclude = (finalConfig.exclude as string).split(',').map(s => s.trim()).filter(Boolean)
       }
+      if (isDisk) {
+        // Remove legacy 'path' key, use 'disks' array
+        delete finalConfig.path
+        finalConfig.disks = disks.map(d => ({
+          path: d.path || '/',
+          warn: parseFloat(d.warn) || 80,
+          crit: parseFloat(d.crit) || 90,
+        }))
+      }
       return api.patch(`/api/v1/services/${service.id}`, {
         name: form.name,
         check_config: finalConfig,
         interval_seconds: parseInt(form.interval_seconds) || 60,
-        threshold_warn: form.threshold_warn ? parseFloat(form.threshold_warn) : null,
-        threshold_crit: form.threshold_crit ? parseFloat(form.threshold_crit) : null,
+        threshold_warn: !isDisk && form.threshold_warn ? parseFloat(form.threshold_warn) : null,
+        threshold_crit: !isDisk && form.threshold_crit ? parseFloat(form.threshold_crit) : null,
         max_check_attempts: parseInt(form.max_check_attempts) || 3,
         retry_interval_seconds: parseInt(form.retry_interval_seconds) || 15,
         check_mode: form.check_mode,
@@ -847,28 +953,36 @@ function EditServiceModal({ service, onClose, onSaved }: EditServiceModalProps) 
           </div>
 
           {/* Dynamic config fields */}
-          <ConfigFields
-            checkType={service.check_type}
-            config={config}
-            onChange={(k, v) => setConfig(prev => ({ ...prev, [k]: v }))}
-          />
+          {isDisk ? (
+            <DiskConfigEditor disks={disks} onChange={setDisks} />
+          ) : (
+            <ConfigFields
+              checkType={service.check_type}
+              config={config}
+              onChange={(k, v) => setConfig(prev => ({ ...prev, [k]: v }))}
+            />
+          )}
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className={clsx('grid gap-3', isDisk ? 'grid-cols-1' : 'grid-cols-3')}>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Intervall (s)</label>
               <input value={form.interval_seconds} onChange={setF('interval_seconds')} type="number"
                 className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
             </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Warn-Schwelle</label>
-              <input value={form.threshold_warn} onChange={setF('threshold_warn')} type="number" placeholder="80"
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Crit-Schwelle</label>
-              <input value={form.threshold_crit} onChange={setF('threshold_crit')} type="number" placeholder="90"
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
-            </div>
+            {!isDisk && (
+              <>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Warn-Schwelle</label>
+                  <input value={form.threshold_warn} onChange={setF('threshold_warn')} type="number" placeholder="80"
+                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Crit-Schwelle</label>
+                  <input value={form.threshold_crit} onChange={setF('threshold_crit')} type="number" placeholder="90"
+                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+                </div>
+              </>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
