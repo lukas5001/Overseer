@@ -173,6 +173,7 @@ async def create_service(
         status="NO_DATA",
         state_type="SOFT",
         current_attempt=0,
+        last_state_change_at=datetime.now(timezone.utc),
     )
     db.add(cs)
     await write_audit(db, user=_user, action="service_create",

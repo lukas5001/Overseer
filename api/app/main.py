@@ -212,7 +212,8 @@ async def downtime_expiry_watcher():
 async def _run_dead_collector_check():
     """Core logic for dead collector detection – runs under distributed lock."""
     async with AsyncSessionLocal() as db:
-        cutoff = datetime.now(timezone.utc) - timedelta(minutes=3)
+        now = datetime.now(timezone.utc)
+        cutoff = now - timedelta(minutes=3)
         dead = await db.execute(text("""
             SELECT id, tenant_id, name
             FROM collectors
@@ -222,7 +223,22 @@ async def _run_dead_collector_check():
         """), {"cutoff": cutoff})
         dead_rows = dead.fetchall()
 
+        total_updated = 0
         for row in dead_rows:
+            # Find services about to transition
+            transitioning = await db.execute(text("""
+                SELECT cs.service_id, cs.tenant_id, cs.status AS prev_status
+                FROM current_status cs
+                JOIN services s ON cs.service_id = s.id
+                JOIN hosts h ON s.host_id = h.id
+                WHERE h.collector_id = :collector_id
+                  AND cs.status != 'NO_DATA'
+            """), {"collector_id": row.id})
+            to_transition = transitioning.fetchall()
+
+            if not to_transition:
+                continue
+
             await db.execute(text("""
                 UPDATE current_status cs
                 SET status = 'NO_DATA',
@@ -235,7 +251,16 @@ async def _run_dead_collector_check():
                 WHERE cs.service_id = s.id
                   AND h.collector_id = :collector_id
                   AND cs.status != 'NO_DATA'
-            """), {"collector_id": row.id, "now": datetime.now(timezone.utc)})
+            """), {"collector_id": row.id, "now": now})
+
+            for svc in to_transition:
+                await db.execute(text("""
+                    INSERT INTO state_history
+                        (id, service_id, tenant_id, previous_status, new_status, state_type, message, created_at)
+                    VALUES (gen_random_uuid(), :sid, :tid, :prev, 'NO_DATA', 'HARD', 'Collector offline', :now)
+                """), {"sid": svc.service_id, "tid": svc.tenant_id, "prev": svc.prev_status, "now": now})
+
+            total_updated += len(to_transition)
 
         if dead_rows:
             await db.commit()
@@ -261,7 +286,8 @@ async def dead_collector_watcher():
 async def _run_dead_agent_check():
     """Core logic for dead agent detection – runs under distributed lock."""
     async with AsyncSessionLocal() as db:
-        cutoff = datetime.now(timezone.utc) - timedelta(minutes=3)
+        now = datetime.now(timezone.utc)
+        cutoff = now - timedelta(minutes=3)
         # Find hosts whose agent token hasn't reported in >3 minutes
         dead = await db.execute(text("""
             SELECT DISTINCT at.host_id
@@ -277,7 +303,22 @@ async def _run_dead_agent_check():
 
         updated = 0
         for row in dead_hosts:
-            result = await db.execute(text("""
+            # Find services about to transition (need previous status for history)
+            transitioning = await db.execute(text("""
+                SELECT cs.service_id, cs.tenant_id, cs.status AS prev_status
+                FROM current_status cs
+                JOIN services s ON cs.service_id = s.id
+                WHERE s.host_id = :host_id
+                  AND s.check_mode = 'agent'
+                  AND cs.status != 'NO_DATA'
+            """), {"host_id": row.host_id})
+            to_transition = transitioning.fetchall()
+
+            if not to_transition:
+                continue
+
+            # Update current_status
+            await db.execute(text("""
                 UPDATE current_status cs
                 SET status = 'NO_DATA',
                     state_type = 'HARD',
@@ -289,8 +330,17 @@ async def _run_dead_agent_check():
                   AND s.host_id = :host_id
                   AND s.check_mode = 'agent'
                   AND cs.status != 'NO_DATA'
-            """), {"host_id": row.host_id, "now": datetime.now(timezone.utc)})
-            updated += result.rowcount
+            """), {"host_id": row.host_id, "now": now})
+
+            # Record state transitions in history
+            for svc in to_transition:
+                await db.execute(text("""
+                    INSERT INTO state_history
+                        (id, service_id, tenant_id, previous_status, new_status, state_type, message, created_at)
+                    VALUES (gen_random_uuid(), :sid, :tid, :prev, 'NO_DATA', 'HARD', 'Agent offline', :now)
+                """), {"sid": svc.service_id, "tid": svc.tenant_id, "prev": svc.prev_status, "now": now})
+
+            updated += len(to_transition)
 
         if updated > 0:
             await db.commit()

@@ -91,29 +91,28 @@ async def get_history_summary(
 @router.get("/{service_id}/transitions")
 async def get_status_transitions(
     service_id: UUID,
-    hours: int = Query(default=168, ge=1, le=720),
     limit: int = Query(default=10, ge=1, le=50),
     db: AsyncSession = Depends(get_db),
     _user: dict = Depends(get_current_user),
 ):
-    """Return recent status transitions (status changes) for a service."""
-    since = datetime.now(timezone.utc) - timedelta(hours=hours)
-
+    """Return recent status transitions from state_history."""
     result = await db.execute(
         text("""
-            SELECT time, status, message FROM (
-                SELECT time, status, message,
-                       LAG(status) OVER (ORDER BY time) AS prev_status
-                FROM check_results
-                WHERE service_id = :sid AND time >= :since
-            ) sub
-            WHERE prev_status IS NULL OR status != prev_status
-            ORDER BY time DESC
+            SELECT created_at, previous_status, new_status, state_type, message
+            FROM state_history
+            WHERE service_id = :sid
+            ORDER BY created_at DESC
             LIMIT :lim
         """),
-        {"sid": service_id, "since": since, "lim": limit},
+        {"sid": service_id, "lim": limit},
     )
     return [
-        {"time": row.time.isoformat(), "status": row.status, "message": row.message}
+        {
+            "time": row.created_at.isoformat(),
+            "status": row.new_status,
+            "previous_status": row.previous_status,
+            "state_type": row.state_type,
+            "message": row.message,
+        }
         for row in result.fetchall()
     ]
