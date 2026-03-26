@@ -5,6 +5,7 @@ package checks
 import (
 	"fmt"
 	"math"
+	"strings"
 	"unsafe"
 
 	"golang.org/x/sys/windows"
@@ -12,16 +13,47 @@ import (
 	"github.com/lukas5001/overseer-agent/internal/types"
 )
 
+// discoverDisks returns all logical drive letters (e.g. "C:", "D:").
+func discoverDisks() []string {
+	kernel32 := windows.NewLazyDLL("kernel32.dll")
+	proc := kernel32.NewProc("GetLogicalDriveStringsW")
+
+	buf := make([]uint16, 256)
+	ret, _, _ := proc.Call(uintptr(len(buf)), uintptr(unsafe.Pointer(&buf[0])))
+	if ret == 0 {
+		return []string{"C:"}
+	}
+
+	var drives []string
+	start := 0
+	for i := 0; i < int(ret); i++ {
+		if buf[i] == 0 {
+			if i > start {
+				drive := windows.UTF16ToString(buf[start:i])
+				drive = strings.TrimRight(drive, "\\")
+				drives = append(drives, drive)
+			}
+			start = i + 1
+		}
+	}
+
+	if len(drives) == 0 {
+		return []string{"C:"}
+	}
+	return drives
+}
+
 func checkSingleDisk(path string, warn, crit *float64) types.CheckResult {
 	// Ensure trailing backslash for Windows API
-	if len(path) > 0 && path[len(path)-1] != '\\' {
-		path += "\\"
+	winPath := path
+	if len(winPath) > 0 && winPath[len(winPath)-1] != '\\' {
+		winPath += "\\"
 	}
 
 	kernel32 := windows.NewLazyDLL("kernel32.dll")
 	proc := kernel32.NewProc("GetDiskFreeSpaceExW")
 
-	pathPtr, err := windows.UTF16PtrFromString(path)
+	pathPtr, err := windows.UTF16PtrFromString(winPath)
 	if err != nil {
 		return types.CheckResult{Status: "UNKNOWN", Message: fmt.Sprintf("invalid path %s: %v", path, err)}
 	}

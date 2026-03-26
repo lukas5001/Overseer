@@ -307,56 +307,96 @@ function ConfigFields({ checkType, config, onChange }: {
   }
 }
 
-// ── Disk Config Editor ──────────────────────────────────────────────────────
+// ── Disk Config Editor (Auto-Discover) ──────────────────────────────────────
 
-interface DiskEntry {
+interface DiskOverride {
   path: string
   warn: string
   crit: string
 }
 
-function DiskConfigEditor({ disks, onChange }: {
-  disks: DiskEntry[]
-  onChange: (disks: DiskEntry[]) => void
+interface DiskConfig {
+  warn: string
+  crit: string
+  overrides: DiskOverride[]
+  exclude: string
+}
+
+function DiskConfigEditor({ config, onChange }: {
+  config: DiskConfig
+  onChange: (config: DiskConfig) => void
 }) {
-  const update = (i: number, key: keyof DiskEntry, value: string) => {
-    const next = [...disks]
+  const updateOverride = (i: number, key: keyof DiskOverride, value: string) => {
+    const next = [...config.overrides]
     next[i] = { ...next[i], [key]: value }
-    onChange(next)
+    onChange({ ...config, overrides: next })
   }
 
   return (
-    <div className="space-y-2">
-      <label className="block text-xs font-medium text-gray-600">Festplatten & Schwellwerte</label>
-      {disks.map((d, i) => (
-        <div key={i} className="flex gap-2 items-center">
-          <input value={d.path} onChange={e => update(i, 'path', e.target.value)}
-            placeholder="/ oder C:"
-            className="flex-1 text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
-          <div className="relative">
-            <input value={d.warn} onChange={e => update(i, 'warn', e.target.value)}
+    <div className="space-y-3">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-xs text-blue-700">
+        Alle Partitionen werden automatisch erkannt und überwacht.
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-gray-600 mb-1">Standard-Schwellwerte (alle Platten)</label>
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <input value={config.warn} onChange={e => onChange({ ...config, warn: e.target.value })}
               placeholder="80" type="number" min="0" max="100"
-              className="w-20 text-sm border border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-400 outline-none bg-amber-50/50" />
-            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-amber-400 pointer-events-none">%</span>
+              className="w-full text-sm border border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-400 outline-none bg-amber-50/50" />
+            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-amber-400 pointer-events-none">% Warn</span>
           </div>
-          <div className="relative">
-            <input value={d.crit} onChange={e => update(i, 'crit', e.target.value)}
+          <div className="relative flex-1">
+            <input value={config.crit} onChange={e => onChange({ ...config, crit: e.target.value })}
               placeholder="90" type="number" min="0" max="100"
-              className="w-20 text-sm border border-red-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-400 outline-none bg-red-50/50" />
-            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-red-400 pointer-events-none">%</span>
+              className="w-full text-sm border border-red-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-400 outline-none bg-red-50/50" />
+            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-red-400 pointer-events-none">% Crit</span>
           </div>
-          {disks.length > 1 && (
-            <button onClick={() => onChange(disks.filter((_, j) => j !== i))}
-              className="text-gray-400 hover:text-red-500 p-1" title="Entfernen">
-              <X className="w-4 h-4" />
-            </button>
-          )}
         </div>
-      ))}
-      <button onClick={() => onChange([...disks, { path: '', warn: '80', crit: '90' }])}
-        className="text-xs text-overseer-600 hover:text-overseer-700 font-medium flex items-center gap-1 mt-1">
-        <Plus className="w-3.5 h-3.5" /> Platte hinzufügen
+      </div>
+
+      {config.overrides.length > 0 && (
+        <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Ausnahmen</label>
+          <div className="space-y-2">
+            {config.overrides.map((o, i) => (
+              <div key={i} className="flex gap-2 items-center">
+                <input value={o.path} onChange={e => updateOverride(i, 'path', e.target.value)}
+                  placeholder="/ oder C:"
+                  className="flex-1 text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+                <div className="relative">
+                  <input value={o.warn} onChange={e => updateOverride(i, 'warn', e.target.value)}
+                    placeholder="80" type="number" min="0" max="100"
+                    className="w-20 text-sm border border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-400 outline-none bg-amber-50/50" />
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-amber-400 pointer-events-none">%</span>
+                </div>
+                <div className="relative">
+                  <input value={o.crit} onChange={e => updateOverride(i, 'crit', e.target.value)}
+                    placeholder="90" type="number" min="0" max="100"
+                    className="w-20 text-sm border border-red-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-400 outline-none bg-red-50/50" />
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-red-400 pointer-events-none">%</span>
+                </div>
+                <button onClick={() => onChange({ ...config, overrides: config.overrides.filter((_, j) => j !== i) })}
+                  className="text-gray-400 hover:text-red-500 p-1" title="Entfernen">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      <button onClick={() => onChange({ ...config, overrides: [...config.overrides, { path: '', warn: '', crit: '' }] })}
+        className="text-xs text-overseer-600 hover:text-overseer-700 font-medium flex items-center gap-1">
+        <Plus className="w-3.5 h-3.5" /> Ausnahme hinzufügen
       </button>
+
+      <div>
+        <label className="block text-xs font-medium text-gray-600 mb-1">Ausschließen (kommagetrennt, optional)</label>
+        <input value={config.exclude} onChange={e => onChange({ ...config, exclude: e.target.value })}
+          placeholder="/boot/efi, /snap/..."
+          className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+      </div>
     </div>
   )
 }
@@ -420,7 +460,7 @@ function AddCheckModal({ host, onClose, onSaved }: AddCheckModalProps) {
     check_mode: 'active',
   })
   const [config, setConfig] = useState<Record<string, string>>({})
-  const [disks, setDisks] = useState<DiskEntry[]>([{ path: '', warn: '80', crit: '90' }])
+  const [diskConfig, setDiskConfig] = useState<DiskConfig>({ warn: '80', crit: '90', overrides: [], exclude: '' })
   const [error, setError] = useState<string | null>(null)
 
   const isDisk = form.check_type === 'agent_disk'
@@ -432,13 +472,18 @@ function AddCheckModal({ host, onClose, onSaved }: AddCheckModalProps) {
       if (form.check_type === 'agent_services_auto' && typeof finalConfig.exclude === 'string') {
         finalConfig.exclude = (finalConfig.exclude as string).split(',').map(s => s.trim()).filter(Boolean)
       }
-      // agent_disk: embed per-disk thresholds in config
+      // agent_disk: auto-discover config with defaults + overrides
       if (isDisk) {
-        finalConfig.disks = disks.map(d => ({
-          path: d.path || '/',
-          warn: parseFloat(d.warn) || 80,
-          crit: parseFloat(d.crit) || 90,
-        }))
+        finalConfig.warn = parseFloat(diskConfig.warn) || 80
+        finalConfig.crit = parseFloat(diskConfig.crit) || 90
+        if (diskConfig.overrides.length > 0) {
+          finalConfig.overrides = diskConfig.overrides
+            .filter(o => o.path.trim())
+            .map(o => ({ path: o.path.trim(), warn: parseFloat(o.warn) || null, crit: parseFloat(o.crit) || null }))
+        }
+        if (diskConfig.exclude.trim()) {
+          finalConfig.exclude = diskConfig.exclude.split(',').map(s => s.trim()).filter(Boolean)
+        }
       }
       return api.post('/api/v1/services/', {
         host_id: host.id,
@@ -626,7 +671,7 @@ function AddCheckModal({ host, onClose, onSaved }: AddCheckModalProps) {
 
               {/* Dynamic config fields */}
               {isDisk ? (
-                <DiskConfigEditor disks={disks} onChange={setDisks} />
+                <DiskConfigEditor config={diskConfig} onChange={setDiskConfig} />
               ) : (
                 <ConfigFields
                   checkType={form.check_type}
@@ -873,29 +918,48 @@ function EditServiceModal({ service, onClose, onSaved }: EditServiceModalProps) 
     check_mode: service.check_mode ?? 'passive',
   })
   const [config, setConfig] = useState<Record<string, string>>(() => {
-    // Skip 'disks' key from flat config — handled by disks state
+    // Skip disk-specific keys from flat config
+    const skipKeys = new Set(['disks', 'warn', 'crit', 'overrides', 'exclude', 'path'])
     const entries = Object.entries(service.check_config)
-      .filter(([k]) => k !== 'disks')
+      .filter(([k]) => !skipKeys.has(k))
       .map(([k, v]) => [k, Array.isArray(v) ? v.join(', ') : String(v)])
     return Object.fromEntries(entries)
   })
-  const [disks, setDisks] = useState<DiskEntry[]>(() => {
-    if (isDisk && Array.isArray(service.check_config.disks)) {
-      return (service.check_config.disks as any[]).map((d: any) => ({
-        path: d.path ?? '/',
-        warn: d.warn != null ? String(d.warn) : '80',
-        crit: d.crit != null ? String(d.crit) : '90',
-      }))
-    }
-    // Legacy: single path → convert to disk entry
+  const [diskConfig, setDiskConfig] = useState<DiskConfig>(() => {
+    const cc = service.check_config as any
     if (isDisk) {
-      return [{
-        path: String(service.check_config.path ?? '/'),
+      // New auto-discover format
+      if (cc.warn != null || cc.overrides) {
+        return {
+          warn: cc.warn != null ? String(cc.warn) : '80',
+          crit: cc.crit != null ? String(cc.crit) : '90',
+          overrides: Array.isArray(cc.overrides)
+            ? cc.overrides.map((o: any) => ({ path: o.path ?? '', warn: o.warn != null ? String(o.warn) : '', crit: o.crit != null ? String(o.crit) : '' }))
+            : [],
+          exclude: Array.isArray(cc.exclude) ? cc.exclude.join(', ') : '',
+        }
+      }
+      // Legacy: disks array → convert to auto-discover with overrides
+      if (Array.isArray(cc.disks) && cc.disks.length > 0) {
+        const first = cc.disks[0]
+        return {
+          warn: first.warn != null ? String(first.warn) : '80',
+          crit: first.crit != null ? String(first.crit) : '90',
+          overrides: cc.disks.slice(1).map((d: any) => ({
+            path: d.path ?? '', warn: d.warn != null ? String(d.warn) : '', crit: d.crit != null ? String(d.crit) : '',
+          })),
+          exclude: '',
+        }
+      }
+      // Legacy: single path → auto-discover defaults
+      return {
         warn: service.threshold_warn != null ? String(service.threshold_warn) : '80',
         crit: service.threshold_crit != null ? String(service.threshold_crit) : '90',
-      }]
+        overrides: [],
+        exclude: '',
+      }
     }
-    return []
+    return { warn: '80', crit: '90', overrides: [], exclude: '' }
   })
   const [error, setError] = useState<string | null>(null)
 
@@ -906,13 +970,17 @@ function EditServiceModal({ service, onClose, onSaved }: EditServiceModalProps) 
         finalConfig.exclude = (finalConfig.exclude as string).split(',').map(s => s.trim()).filter(Boolean)
       }
       if (isDisk) {
-        // Remove legacy 'path' key, use 'disks' array
-        delete finalConfig.path
-        finalConfig.disks = disks.map(d => ({
-          path: d.path || '/',
-          warn: parseFloat(d.warn) || 80,
-          crit: parseFloat(d.crit) || 90,
-        }))
+        // Auto-discover format
+        finalConfig.warn = parseFloat(diskConfig.warn) || 80
+        finalConfig.crit = parseFloat(diskConfig.crit) || 90
+        if (diskConfig.overrides.length > 0) {
+          finalConfig.overrides = diskConfig.overrides
+            .filter(o => o.path.trim())
+            .map(o => ({ path: o.path.trim(), warn: parseFloat(o.warn) || null, crit: parseFloat(o.crit) || null }))
+        }
+        if (diskConfig.exclude.trim()) {
+          finalConfig.exclude = diskConfig.exclude.split(',').map(s => s.trim()).filter(Boolean)
+        }
       }
       return api.patch(`/api/v1/services/${service.id}`, {
         name: form.name,
@@ -954,7 +1022,7 @@ function EditServiceModal({ service, onClose, onSaved }: EditServiceModalProps) 
 
           {/* Dynamic config fields */}
           {isDisk ? (
-            <DiskConfigEditor disks={disks} onChange={setDisks} />
+            <DiskConfigEditor config={diskConfig} onChange={setDiskConfig} />
           ) : (
             <ConfigFields
               checkType={service.check_type}

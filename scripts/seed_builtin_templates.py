@@ -56,7 +56,7 @@ BUILTIN_TEMPLATES = [
         "checks": [
             {"name": "agent_cpu", "check_type": "agent_cpu", "check_config": {}, "threshold_warn": 80, "threshold_crit": 95, "interval_seconds": 60, "check_mode": "agent"},
             {"name": "agent_memory", "check_type": "agent_memory", "check_config": {}, "threshold_warn": 85, "threshold_crit": 95, "interval_seconds": 60, "check_mode": "agent"},
-            {"name": "agent_disk_c", "check_type": "agent_disk", "check_config": {"disks": [{"path": "C:", "warn": 80, "crit": 90}]}, "interval_seconds": 300, "check_mode": "agent"},
+            {"name": "agent_disk", "check_type": "agent_disk", "check_config": {"warn": 80, "crit": 90}, "interval_seconds": 300, "check_mode": "agent"},
             {"name": "agent_services_auto", "check_type": "agent_services_auto", "check_config": {"exclude": ["gupdate", "gupdatem", "sppsvc", "RemoteRegistry"]}, "interval_seconds": 120, "check_mode": "agent"},
         ],
     },
@@ -542,7 +542,7 @@ BUILTIN_TEMPLATES = [
             {"name": "ssh_port", "check_type": "port", "check_config": {"port": 22}, "interval_seconds": 60},
             {"name": "agent_cpu", "check_type": "agent_cpu", "check_config": {}, "threshold_warn": 80, "threshold_crit": 95, "interval_seconds": 60, "check_mode": "agent"},
             {"name": "agent_memory", "check_type": "agent_memory", "check_config": {}, "threshold_warn": 85, "threshold_crit": 95, "interval_seconds": 60, "check_mode": "agent"},
-            {"name": "agent_disk_root", "check_type": "agent_disk", "check_config": {"disks": [{"path": "/", "warn": 80, "crit": 90}]}, "interval_seconds": 300, "check_mode": "agent"},
+            {"name": "agent_disk", "check_type": "agent_disk", "check_config": {"warn": 80, "crit": 90}, "interval_seconds": 300, "check_mode": "agent"},
             {"name": "agent_sshd", "check_type": "agent_service", "check_config": {"service": "sshd"}, "interval_seconds": 120, "check_mode": "agent"},
         ],
     },
