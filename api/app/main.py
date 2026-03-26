@@ -108,7 +108,7 @@ app.include_router(templates.router, prefix="/api/v1/service-templates", tags=["
 app.include_router(two_factor.router, prefix="/api/v1/2fa", tags=["2fa"])
 app.include_router(saved_filters.router, prefix="/api/v1/saved-filters", tags=["saved-filters"])
 app.include_router(alert_rules.router, prefix="/api/v1/alert-rules", tags=["alert-rules"])
-app.include_router(sla.router, prefix="/api/v1", tags=["sla"])
+app.include_router(sla.router, prefix="/api/v1/sla", tags=["sla"])
 app.include_router(admin.router, prefix="/api/v1/admin", tags=["admin"])
 app.include_router(agent.router, prefix="/api/v1", tags=["agent"])
 app.include_router(scripts.router, prefix="/api/v1/scripts", tags=["scripts"])
