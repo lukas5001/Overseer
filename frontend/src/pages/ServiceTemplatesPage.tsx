@@ -1,9 +1,151 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { FileCode2, Plus, X, Trash2, Play } from 'lucide-react'
+import { FileCode2, Plus, X, Trash2, Play, ChevronDown, ChevronRight } from 'lucide-react'
 import { api } from '../api/client'
 import type { ServiceTemplate, ServiceTemplateCreate, TemplateCheckItem, Host } from '../types'
 import ConfirmDialog from '../components/ConfirmDialog'
+import RegistryConfigFields from '../components/RegistryConfigFields'
+import { CHECK_TYPE_REGISTRY, getCheckTypeDef, getCheckTypeLabel, groupCheckTypesByCategory } from '../lib/constants'
+import type { DiskConfig } from '../components/DiskConfigEditor'
+
+// ── Template Check Card ─────────────────────────────────────────────────────
+
+function TemplateCheckCard({ check, index, onUpdate, onRemove }: {
+  check: TemplateCheckItem
+  index: number
+  onUpdate: (i: number, field: string, val: unknown) => void
+  onRemove: (i: number) => void
+}) {
+  const [expanded, setExpanded] = useState(true)
+  const def = getCheckTypeDef(check.check_type)
+  const grouped = groupCheckTypesByCategory(CHECK_TYPE_REGISTRY)
+  const isDisk = def?.managesOwnThresholds === true
+
+  // Config state for RegistryConfigFields
+  const configRecord = Object.fromEntries(
+    Object.entries(check.check_config ?? {}).map(([k, v]) => [k, String(v)])
+  )
+  const updateConfig = (key: string, value: string) => {
+    const newConfig = { ...(check.check_config ?? {}), [key]: value }
+    onUpdate(index, 'check_config', newConfig)
+  }
+
+  // Disk config state
+  const cc = (check.check_config ?? {}) as any
+  const diskConfig: DiskConfig = {
+    warn: cc.warn != null ? String(cc.warn) : '80',
+    crit: cc.crit != null ? String(cc.crit) : '90',
+    overrides: Array.isArray(cc.overrides)
+      ? cc.overrides.map((o: any) => ({ path: o.path ?? '', warn: o.warn != null ? String(o.warn) : '', crit: o.crit != null ? String(o.crit) : '' }))
+      : [],
+    exclude: Array.isArray(cc.exclude) ? cc.exclude.join(', ') : (cc.exclude ?? ''),
+  }
+
+  const handleTypeChange = (newType: string) => {
+    const newDef = getCheckTypeDef(newType)
+    onUpdate(index, 'check_type', newType)
+    onUpdate(index, 'check_mode', newDef?.mode ?? 'active')
+    onUpdate(index, 'check_config', {})
+    if (newDef?.defaults?.interval) onUpdate(index, 'interval_seconds', newDef.defaults.interval)
+    if (!newDef?.managesOwnThresholds) {
+      onUpdate(index, 'threshold_warn', newDef?.defaults?.warn ?? null)
+      onUpdate(index, 'threshold_crit', newDef?.defaults?.crit ?? null)
+    }
+    // Auto-suggest name from label
+    if (!check.name) {
+      onUpdate(index, 'name', newDef?.label ?? newType)
+    }
+  }
+
+  return (
+    <div className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-100" onClick={() => setExpanded(!expanded)}>
+        {expanded ? <ChevronDown className="w-3.5 h-3.5 text-gray-400" /> : <ChevronRight className="w-3.5 h-3.5 text-gray-400" />}
+        <span className="text-sm font-medium text-gray-700 flex-1">
+          {check.name || <span className="text-gray-400 italic">Unbenannt</span>}
+          <span className="text-xs text-gray-400 ml-2">{def?.label ?? check.check_type}</span>
+        </span>
+        <button onClick={e => { e.stopPropagation(); onRemove(index) }} className="text-gray-400 hover:text-red-500 p-0.5">
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      {expanded && (
+        <div className="px-3 pb-3 space-y-3 border-t border-gray-200 pt-3">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-xs text-gray-500">Name</label>
+              <input type="text" value={check.name} onChange={e => onUpdate(index, 'name', e.target.value)}
+                placeholder={def?.label ?? 'Check-Name'}
+                className="w-full text-sm border border-gray-300 rounded px-2 py-1.5 outline-none focus:ring-2 focus:ring-overseer-500" />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500">Typ</label>
+              <select value={check.check_type} onChange={e => handleTypeChange(e.target.value)}
+                className="w-full text-sm border border-gray-300 rounded px-2 py-1.5 outline-none focus:ring-2 focus:ring-overseer-500">
+                {grouped.map(g => (
+                  <optgroup key={g.category} label={g.label}>
+                    {g.types.map(t => <option key={t.key} value={t.key}>{t.label}</option>)}
+                  </optgroup>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Config fields from registry */}
+          <RegistryConfigFields
+            checkType={check.check_type}
+            config={configRecord}
+            onChange={updateConfig}
+            diskConfig={diskConfig}
+            onDiskConfigChange={dc => {
+              const newConfig: Record<string, unknown> = {}
+              newConfig.warn = parseFloat(dc.warn) || 80
+              newConfig.crit = parseFloat(dc.crit) || 90
+              if (dc.overrides.length > 0) {
+                newConfig.overrides = dc.overrides.filter(o => o.path.trim()).map(o => ({
+                  path: o.path.trim(),
+                  warn: parseFloat(o.warn) || null,
+                  crit: parseFloat(o.crit) || null,
+                }))
+              }
+              if (dc.exclude.trim()) {
+                newConfig.exclude = dc.exclude.split(',').map(s => s.trim()).filter(Boolean)
+              }
+              onUpdate(index, 'check_config', newConfig)
+            }}
+          />
+
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <label className="text-xs text-gray-500">Intervall (s)</label>
+              <input type="number" min={10} value={check.interval_seconds ?? 60}
+                onChange={e => onUpdate(index, 'interval_seconds', parseInt(e.target.value) || 60)}
+                className="w-full text-sm border border-gray-300 rounded px-2 py-1.5 outline-none" />
+            </div>
+            {!isDisk && (
+              <>
+                <div>
+                  <label className="text-xs text-gray-500">Warn</label>
+                  <input type="number" value={check.threshold_warn ?? ''}
+                    onChange={e => onUpdate(index, 'threshold_warn', e.target.value ? parseFloat(e.target.value) : null)}
+                    className="w-full text-sm border border-gray-300 rounded px-2 py-1.5 outline-none" />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500">Crit</label>
+                  <input type="number" value={check.threshold_crit ?? ''}
+                    onChange={e => onUpdate(index, 'threshold_crit', e.target.value ? parseFloat(e.target.value) : null)}
+                    className="w-full text-sm border border-gray-300 rounded px-2 py-1.5 outline-none" />
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 // ── New Template Modal ───────────────────────────────────────────────────────
 
@@ -16,7 +158,14 @@ function TemplateModal({ onClose, existing }: { onClose: () => void; existing?: 
 
   const mutation = useMutation({
     mutationFn: () => {
-      const body: ServiceTemplateCreate = { name, description, checks }
+      // Clean up _mode from check configs before saving
+      const cleanedChecks = checks.map(c => ({
+        ...c,
+        check_config: c.check_config
+          ? Object.fromEntries(Object.entries(c.check_config).filter(([k]) => !k.startsWith('_')))
+          : {},
+      }))
+      const body: ServiceTemplateCreate = { name, description, checks: cleanedChecks }
       if (existing) return api.put(`/api/v1/service-templates/${existing.id}`, body).then(r => r.data)
       return api.post('/api/v1/service-templates/', body).then(r => r.data)
     },
@@ -24,10 +173,17 @@ function TemplateModal({ onClose, existing }: { onClose: () => void; existing?: 
     onError: (e: any) => setError(e.response?.data?.detail ?? 'Fehler'),
   })
 
-  const addCheck = () => setChecks(prev => [...prev, {
-    name: '', check_type: 'ping', interval_seconds: 60,
-    threshold_warn: null, threshold_crit: null,
-  }])
+  const addCheck = () => {
+    const def = getCheckTypeDef('ping')
+    setChecks(prev => [...prev, {
+      name: '', check_type: 'ping',
+      check_config: {},
+      interval_seconds: def?.defaults?.interval ?? 60,
+      threshold_warn: def?.defaults?.warn ?? null,
+      threshold_crit: def?.defaults?.crit ?? null,
+      check_mode: def?.mode ?? 'active',
+    }])
+  }
 
   const updateCheck = (i: number, field: string, val: unknown) => {
     setChecks(prev => prev.map((c, idx) => idx === i ? { ...c, [field]: val } : c))
@@ -67,50 +223,13 @@ function TemplateModal({ onClose, existing }: { onClose: () => void; existing?: 
             </div>
             <div className="space-y-2">
               {checks.map((check, i) => (
-                <div key={i} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                  <div className="grid grid-cols-6 gap-2">
-                    <div className="col-span-2">
-                      <label className="text-xs text-gray-500">Name</label>
-                      <input type="text" value={check.name} onChange={e => updateCheck(i, 'name', e.target.value)}
-                        placeholder="cpu_usage"
-                        className="w-full text-sm border border-gray-300 rounded px-2 py-1 outline-none" />
-                    </div>
-                    <div>
-                      <label className="text-xs text-gray-500">Typ</label>
-                      <select value={check.check_type} onChange={e => updateCheck(i, 'check_type', e.target.value)}
-                        className="w-full text-sm border border-gray-300 rounded px-2 py-1 outline-none">
-                        <option value="ping">Ping</option>
-                        <option value="http">HTTP</option>
-                        <option value="snmp">SNMP</option>
-                        <option value="ssh">SSH</option>
-                        <option value="tcp">TCP Port</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-xs text-gray-500">Intervall (s)</label>
-                      <input type="number" min={30} value={check.interval_seconds ?? 60}
-                        onChange={e => updateCheck(i, 'interval_seconds', parseInt(e.target.value) || 60)}
-                        className="w-full text-sm border border-gray-300 rounded px-2 py-1 outline-none" />
-                    </div>
-                    <div>
-                      <label className="text-xs text-gray-500">Warn</label>
-                      <input type="number" value={check.threshold_warn ?? ''}
-                        onChange={e => updateCheck(i, 'threshold_warn', e.target.value ? parseFloat(e.target.value) : null)}
-                        className="w-full text-sm border border-gray-300 rounded px-2 py-1 outline-none" />
-                    </div>
-                    <div className="flex gap-1">
-                      <div className="flex-1">
-                        <label className="text-xs text-gray-500">Crit</label>
-                        <input type="number" value={check.threshold_crit ?? ''}
-                          onChange={e => updateCheck(i, 'threshold_crit', e.target.value ? parseFloat(e.target.value) : null)}
-                          className="w-full text-sm border border-gray-300 rounded px-2 py-1 outline-none" />
-                      </div>
-                      <button onClick={() => removeCheck(i)} className="self-end pb-1 text-gray-400 hover:text-red-500">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                <TemplateCheckCard
+                  key={i}
+                  check={check}
+                  index={i}
+                  onUpdate={updateCheck}
+                  onRemove={removeCheck}
+                />
               ))}
             </div>
           </div>
@@ -246,7 +365,7 @@ export default function ServiceTemplatesPage() {
             <tr>
               <th className="px-6 py-3 text-left">Name</th>
               <th className="px-6 py-3 text-left">Beschreibung</th>
-              <th className="px-6 py-3 text-center">Checks</th>
+              <th className="px-6 py-3 text-left">Checks</th>
               <th className="px-6 py-3 text-right">Aktionen</th>
             </tr>
           </thead>
@@ -255,7 +374,15 @@ export default function ServiceTemplatesPage() {
               <tr key={t.id} className="hover:bg-gray-50">
                 <td className="px-6 py-3 font-medium text-gray-900">{t.name}</td>
                 <td className="px-6 py-3 text-gray-500 text-xs max-w-xs truncate">{t.description || '–'}</td>
-                <td className="px-6 py-3 text-center text-gray-600">{t.checks.length}</td>
+                <td className="px-6 py-3 text-gray-600">
+                  <div className="flex flex-wrap gap-1">
+                    {t.checks.map((c, i) => (
+                      <span key={i} className="inline-flex items-center text-[11px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                        {getCheckTypeLabel(c.check_type)}
+                      </span>
+                    ))}
+                  </div>
+                </td>
                 <td className="px-6 py-3 text-right">
                   <div className="flex items-center gap-2 justify-end">
                     <button onClick={() => setApplyTemplateId(t.id)}

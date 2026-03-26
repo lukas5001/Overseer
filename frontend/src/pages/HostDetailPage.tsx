@@ -6,7 +6,9 @@ import {
   CheckCircle, Clock, Plus, X, Trash2, TrendingUp, Pencil, Settings2, Power, Copy,
   Monitor, ClipboardCopy, KeyRound, Download,
 } from 'lucide-react'
-import { getHostTypeIcon } from '../lib/constants'
+import { getHostTypeIcon, getCheckTypeDef, getCheckTypeLabel, getAvailableCheckTypes, groupCheckTypesByCategory } from '../lib/constants'
+import RegistryConfigFields from '../components/RegistryConfigFields'
+import type { DiskConfig } from '../components/DiskConfigEditor'
 import { getStatusConfig } from '../components/StatusBadge'
 import clsx from 'clsx'
 import { formatDistanceToNow } from 'date-fns'
@@ -525,254 +527,7 @@ function SparklineCell({ serviceId, onClick }: { serviceId: string; onClick: () 
   )
 }
 
-// ── Check type config fields ───────────────────────────────────────────────────
-
-const CHECK_TYPES = [
-  'ping', 'port', 'http',
-  'snmp', 'snmp_interface',
-  'ssh_disk', 'ssh_cpu', 'ssh_mem', 'ssh_process', 'ssh_service', 'ssh_custom',
-  'agent_cpu', 'agent_memory', 'agent_disk', 'agent_service', 'agent_process', 'agent_eventlog', 'agent_custom',
-  'agent_script', 'agent_services_auto',
-]
-
-interface MonitoringScript {
-  id: string
-  name: string
-  description: string
-  interpreter: string
-  expected_output: string
-}
-
-function ScriptSelector({ host, config, onChange }: {
-  host: Host
-  config: Record<string, string>
-  onChange: (k: string, v: string) => void
-}) {
-  const osFamily = host.host_type_os_family
-  const { data: scripts = [] } = useQuery<MonitoringScript[]>({
-    queryKey: ['monitoring-scripts', host.tenant_id],
-    queryFn: () => api.get('/api/v1/scripts/', { params: { tenant_id: host.tenant_id } }).then(r => r.data),
-  })
-
-  // Filter scripts by OS compatibility
-  const filtered = scripts.filter(s => {
-    if (osFamily === 'windows') return s.interpreter === 'powershell' || s.interpreter === 'python'
-    if (osFamily === 'linux') return s.interpreter === 'bash' || s.interpreter === 'python'
-    return true
-  })
-
-  const selectedScript = filtered.find(s => s.id === config.script_id)
-  const useLocal = config._mode === 'local'
-
-  return (
-    <div className="space-y-3">
-      {!useLocal ? (
-        <>
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Script</label>
-            <select
-              value={config.script_id ?? ''}
-              onChange={e => {
-                const script = filtered.find(s => s.id === e.target.value)
-                onChange('script_id', e.target.value)
-                if (script) {
-                  onChange('expected_output', script.expected_output)
-                  onChange('script_interpreter', script.interpreter)
-                }
-              }}
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none"
-            >
-              <option value="">Script auswählen…</option>
-              {filtered.map(s => (
-                <option key={s.id} value={s.id}>
-                  {s.name} ({s.interpreter}, {s.expected_output})
-                </option>
-              ))}
-            </select>
-            {selectedScript?.description && (
-              <p className="text-xs text-gray-500 mt-1">{selectedScript.description}</p>
-            )}
-            {filtered.length === 0 && scripts.length > 0 && (
-              <p className="text-xs text-amber-600 mt-1">Keine kompatiblen Scripts für diesen Host-Typ ({osFamily})</p>
-            )}
-          </div>
-          <button type="button" onClick={() => { onChange('_mode', 'local'); onChange('script_id', '') }}
-            className="text-xs text-gray-500 hover:text-gray-700 underline">
-            Stattdessen lokales Script verwenden
-          </button>
-        </>
-      ) : (
-        <>
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Lokaler Script-Pfad</label>
-            <input value={config.script_path ?? ''} onChange={e => onChange('script_path', e.target.value)}
-              placeholder={osFamily === 'windows' ? 'C:\\Scripts\\check.ps1' : '/opt/scripts/check.sh'}
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Interpreter</label>
-              <select value={config.script_interpreter ?? (osFamily === 'windows' ? 'powershell' : 'bash')}
-                onChange={e => onChange('script_interpreter', e.target.value)}
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none">
-                <option value="powershell">PowerShell</option>
-                <option value="bash">Bash</option>
-                <option value="python">Python</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Output-Format</label>
-              <select value={config.expected_output ?? 'nagios'}
-                onChange={e => onChange('expected_output', e.target.value)}
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none">
-                <option value="nagios">Nagios</option>
-                <option value="text">Text</option>
-                <option value="json">JSON</option>
-              </select>
-            </div>
-          </div>
-          <button type="button" onClick={() => { onChange('_mode', ''); onChange('script_path', '') }}
-            className="text-xs text-gray-500 hover:text-gray-700 underline">
-            Stattdessen Server-Script verwenden
-          </button>
-        </>
-      )}
-    </div>
-  )
-}
-
-function ConfigFields({ checkType, config, onChange, host }: {
-  checkType: string
-  config: Record<string, string>
-  onChange: (k: string, v: string) => void
-  host?: Host
-}) {
-  const field = (label: string, key: string, placeholder = '') => (
-    <div key={key}>
-      <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
-      <input value={config[key] ?? ''} onChange={e => onChange(key, e.target.value)}
-        placeholder={placeholder}
-        className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
-    </div>
-  )
-
-  switch (checkType) {
-    case 'port':    return <>{field('Port', 'port', '443')}</>
-    case 'http':    return <>{field('URL', 'url', 'https://example.com/')}</>
-    case 'snmp':    return <>{field('OID', 'oid', '1.3.6.1.2.1.1.3.0')}{field('Community', 'community', 'public')}{field('Scale', 'scale', '1')}{field('Einheit', 'unit', '')}</>
-    case 'snmp_interface': return <>{field('Interface-Index', 'interface_index', '1')}{field('Community', 'community', 'public')}</>
-    case 'ssh_disk':    return <>{field('Mountpoint', 'mount', '/')}{field('SSH-User', 'username', 'root')}{field('SSH-Passwort', 'password', '')}</>
-    case 'ssh_cpu':     return <>{field('SSH-User', 'username', 'root')}{field('SSH-Passwort', 'password', '')}</>
-    case 'ssh_mem':     return <>{field('SSH-User', 'username', 'root')}{field('SSH-Passwort', 'password', '')}</>
-    case 'ssh_process': return <>{field('Prozessname', 'process', 'nginx')}{field('SSH-User', 'username', 'root')}{field('SSH-Passwort', 'password', '')}</>
-    case 'ssh_service': return <>{field('Servicename', 'service', 'nginx')}{field('SSH-User', 'username', 'root')}{field('SSH-Passwort', 'password', '')}</>
-    case 'ssh_custom':  return <>{field('Kommando', 'command', 'echo OK')}{field('SSH-User', 'username', 'root')}{field('SSH-Passwort', 'password', '')}</>
-    case 'agent_cpu':     return null
-    case 'agent_memory':  return null
-    case 'agent_disk':    return null  // handled by DiskConfigEditor
-    case 'agent_service': return <>{field('Servicename', 'service', 'MSSQLSERVER')}</>
-    case 'agent_process': return <>{field('Prozessname', 'process', 'nginx')}</>
-    case 'agent_eventlog': return <>{field('Log', 'log', 'System')}{field('Level', 'level', 'Error')}{field('Minuten', 'minutes', '30')}</>
-    case 'agent_custom':  return <>{field('Kommando', 'command', 'Get-Process | Measure')}{field('OK Pattern', 'ok_pattern', '.')}{field('Critical Pattern', 'crit_pattern', '')}</>
-    case 'agent_script':  return host ? <ScriptSelector host={host} config={config} onChange={onChange} /> : null
-    case 'agent_services_auto': return <>{field('Exclude-Liste (kommagetrennt)', 'exclude', 'gupdate,gupdatem,sppsvc,RemoteRegistry')}</>
-    default: return null
-  }
-}
-
-// ── Disk Config Editor (Auto-Discover) ──────────────────────────────────────
-
-interface DiskOverride {
-  path: string
-  warn: string
-  crit: string
-}
-
-interface DiskConfig {
-  warn: string
-  crit: string
-  overrides: DiskOverride[]
-  exclude: string
-}
-
-function DiskConfigEditor({ config, onChange }: {
-  config: DiskConfig
-  onChange: (config: DiskConfig) => void
-}) {
-  const updateOverride = (i: number, key: keyof DiskOverride, value: string) => {
-    const next = [...config.overrides]
-    next[i] = { ...next[i], [key]: value }
-    onChange({ ...config, overrides: next })
-  }
-
-  return (
-    <div className="space-y-3">
-      <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-xs text-blue-700">
-        Alle Partitionen werden automatisch erkannt und überwacht.
-      </div>
-
-      <div>
-        <label className="block text-xs font-medium text-gray-600 mb-1">Standard-Schwellwerte (alle Platten)</label>
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <input value={config.warn} onChange={e => onChange({ ...config, warn: e.target.value })}
-              placeholder="80" type="number" min="0" max="100"
-              className="w-full text-sm border border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-400 outline-none bg-amber-50/50" />
-            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-amber-400 pointer-events-none">% Warn</span>
-          </div>
-          <div className="relative flex-1">
-            <input value={config.crit} onChange={e => onChange({ ...config, crit: e.target.value })}
-              placeholder="90" type="number" min="0" max="100"
-              className="w-full text-sm border border-red-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-400 outline-none bg-red-50/50" />
-            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-red-400 pointer-events-none">% Crit</span>
-          </div>
-        </div>
-      </div>
-
-      {config.overrides.length > 0 && (
-        <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Ausnahmen</label>
-          <div className="space-y-2">
-            {config.overrides.map((o, i) => (
-              <div key={i} className="flex gap-2 items-center">
-                <input value={o.path} onChange={e => updateOverride(i, 'path', e.target.value)}
-                  placeholder="/ oder C:"
-                  className="flex-1 text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
-                <div className="relative">
-                  <input value={o.warn} onChange={e => updateOverride(i, 'warn', e.target.value)}
-                    placeholder="80" type="number" min="0" max="100"
-                    className="w-20 text-sm border border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-400 outline-none bg-amber-50/50" />
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-amber-400 pointer-events-none">%</span>
-                </div>
-                <div className="relative">
-                  <input value={o.crit} onChange={e => updateOverride(i, 'crit', e.target.value)}
-                    placeholder="90" type="number" min="0" max="100"
-                    className="w-20 text-sm border border-red-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-400 outline-none bg-red-50/50" />
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-red-400 pointer-events-none">%</span>
-                </div>
-                <button onClick={() => onChange({ ...config, overrides: config.overrides.filter((_, j) => j !== i) })}
-                  className="text-gray-400 hover:text-red-500 p-1" title="Entfernen">
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-      <button onClick={() => onChange({ ...config, overrides: [...config.overrides, { path: '', warn: '', crit: '' }] })}
-        className="text-xs text-overseer-600 hover:text-overseer-700 font-medium flex items-center gap-1">
-        <Plus className="w-3.5 h-3.5" /> Ausnahme hinzufügen
-      </button>
-
-      <div>
-        <label className="block text-xs font-medium text-gray-600 mb-1">Ausschließen (kommagetrennt, optional)</label>
-        <input value={config.exclude} onChange={e => onChange({ ...config, exclude: e.target.value })}
-          placeholder="/boot/efi, /snap/..."
-          className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
-      </div>
-    </div>
-  )
-}
+// ── Check type helpers (registry-driven) ─────────────────────────────────────
 
 // ── Add Check Modal ────────────────────────────────────────────────────────────
 
@@ -808,45 +563,52 @@ function AddCheckModal({ host, onClose, onSaved }: AddCheckModalProps) {
     queryFn: () => api.get('/api/v1/service-templates/').then(r => r.data),
   })
 
-  // 2.6 Check-Typen nach Host-Kontext filtern
-  const availableCheckTypes = CHECK_TYPES.filter(ct => {
-    // Agent-Checks nur für agent-fähige Host-Typen
-    if (ct.startsWith('agent_') && !host.host_type_agent_capable) return false
-    // SSH-Checks nur wenn IP vorhanden
-    if (ct.startsWith('ssh_') && !host.ip_address) return false
-    // SNMP-Checks nur wenn SNMP-Typ oder community gesetzt
-    if (ct.startsWith('snmp') && !host.host_type_snmp_enabled && !host.snmp_community) return false
-    // Ping/Port/HTTP nur wenn IP vorhanden
-    if ((ct === 'ping' || ct === 'port') && !host.ip_address) return false
-    return true
-  })
+  // Registry-driven check type filtering
+  const available = getAvailableCheckTypes(host)
+  const grouped = groupCheckTypesByCategory(available)
   const [mode, setMode] = useState<'choose' | 'manual' | 'template'>('choose')
   const [applyingTemplate, setApplyingTemplate] = useState<string | null>(null)
+
+  const firstDef = available[0]
   const [form, setForm] = useState({
     name: '',
-    check_type: availableCheckTypes[0] ?? 'ping',
-    interval_seconds: '60',
-    threshold_warn: '',
-    threshold_crit: '',
+    check_type: firstDef?.key ?? 'ping',
+    interval_seconds: String(firstDef?.defaults?.interval ?? 60),
+    threshold_warn: firstDef?.defaults?.warn != null ? String(firstDef.defaults.warn) : '',
+    threshold_crit: firstDef?.defaults?.crit != null ? String(firstDef.defaults.crit) : '',
     max_check_attempts: '3',
     retry_interval_seconds: '15',
-    check_mode: 'active',
+    check_mode: firstDef?.mode ?? 'active',
   })
   const [config, setConfig] = useState<Record<string, string>>({})
   const [diskConfig, setDiskConfig] = useState<DiskConfig>({ warn: '80', crit: '90', overrides: [], exclude: '' })
   const [error, setError] = useState<string | null>(null)
 
-  const isDisk = form.check_type === 'agent_disk'
+  const typeDef = getCheckTypeDef(form.check_type)
+  const isDisk = typeDef?.managesOwnThresholds === true
+
+  // When check type changes, update defaults
+  const handleTypeChange = (newType: string) => {
+    const def = getCheckTypeDef(newType)
+    setForm(prev => ({
+      ...prev,
+      check_type: newType,
+      check_mode: def?.mode ?? 'active',
+      interval_seconds: def?.defaults?.interval != null ? String(def.defaults.interval) : prev.interval_seconds,
+      threshold_warn: def?.managesOwnThresholds ? '' : (def?.defaults?.warn != null ? String(def.defaults.warn) : ''),
+      threshold_crit: def?.managesOwnThresholds ? '' : (def?.defaults?.crit != null ? String(def.defaults.crit) : ''),
+    }))
+    setConfig({})
+    setDiskConfig({ warn: '80', crit: '90', overrides: [], exclude: '' })
+  }
 
   const mutation = useMutation({
     mutationFn: () => {
-      // Transform comma-separated fields to arrays where needed
       const { _mode, ...cleanConfig } = config
       const finalConfig: Record<string, unknown> = { ...cleanConfig }
       if (form.check_type === 'agent_services_auto' && typeof finalConfig.exclude === 'string') {
         finalConfig.exclude = (finalConfig.exclude as string).split(',').map(s => s.trim()).filter(Boolean)
       }
-      // agent_disk: auto-discover config with defaults + overrides
       if (isDisk) {
         finalConfig.warn = parseFloat(diskConfig.warn) || 80
         finalConfig.crit = parseFloat(diskConfig.crit) || 90
@@ -870,7 +632,7 @@ function AddCheckModal({ host, onClose, onSaved }: AddCheckModalProps) {
         threshold_crit: !isDisk && form.threshold_crit ? parseFloat(form.threshold_crit) : null,
         max_check_attempts: parseInt(form.max_check_attempts) || 3,
         retry_interval_seconds: parseInt(form.retry_interval_seconds) || 15,
-        check_mode: form.check_type.startsWith('agent_') ? 'agent' : form.check_mode,
+        check_mode: typeDef?.mode ?? form.check_mode,
       })
     },
     onSuccess: () => { onSaved(); onClose() },
@@ -1036,24 +798,30 @@ function AddCheckModal({ host, onClose, onSaved }: AddCheckModalProps) {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Check-Typ *</label>
-                  <select value={form.check_type} onChange={setF('check_type')}
+                  <select value={form.check_type} onChange={e => handleTypeChange(e.target.value)}
                     className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none">
-                    {availableCheckTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                    {grouped.map(g => (
+                      <optgroup key={g.category} label={g.label}>
+                        {g.types.map(t => <option key={t.key} value={t.key}>{t.label}</option>)}
+                      </optgroup>
+                    ))}
                   </select>
+                  {typeDef?.description && (
+                    <p className="text-[11px] text-gray-400 mt-0.5">{typeDef.description}</p>
+                  )}
                 </div>
               </div>
 
-              {/* Dynamic config fields */}
-              {isDisk ? (
-                <DiskConfigEditor config={diskConfig} onChange={setDiskConfig} />
-              ) : (
-                <ConfigFields
-                  checkType={form.check_type}
-                  config={config}
-                  onChange={(k, v) => setConfig(prev => ({ ...prev, [k]: v }))}
-                  host={host}
-                />
-              )}
+              {/* Dynamic config fields from registry */}
+              <RegistryConfigFields
+                checkType={form.check_type}
+                config={config}
+                onChange={(k, v) => setConfig(prev => ({ ...prev, [k]: v }))}
+                tenantId={host.tenant_id}
+                osFamily={host.host_type_os_family}
+                diskConfig={diskConfig}
+                onDiskConfigChange={setDiskConfig}
+              />
 
               <div className={clsx('grid gap-3', isDisk ? 'grid-cols-1' : 'grid-cols-3')}>
                 <div>
@@ -1092,7 +860,7 @@ function AddCheckModal({ host, onClose, onSaved }: AddCheckModalProps) {
 
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Check-Modus</label>
-                {form.check_type.startsWith('agent_') ? (
+                {typeDef?.mode === 'agent' ? (
                   <div className="text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-lg">
                     Agent <span className="text-xs text-gray-400">(wird automatisch gesetzt)</span>
                   </div>
@@ -1118,8 +886,7 @@ function AddCheckModal({ host, onClose, onSaved }: AddCheckModalProps) {
                 )}
               </div>
 
-              {/* Hinweis wenn keine Check-Typen verfügbar */}
-              {availableCheckTypes.length === 0 && (
+              {available.length === 0 && (
                 <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
                   Keine Check-Typen für diesen Host verfügbar. Bitte zuerst IP-Adresse, Agent oder SNMP-Community konfigurieren.
                 </p>
@@ -1282,7 +1049,8 @@ interface EditServiceModalProps {
 }
 
 function EditServiceModal({ service, host, onClose, onSaved }: EditServiceModalProps) {
-  const isDisk = service.check_type === 'agent_disk'
+  const editTypeDef = getCheckTypeDef(service.check_type)
+  const isDisk = editTypeDef?.managesOwnThresholds === true
 
   const [form, setForm] = useState({
     name: service.name,
@@ -1392,7 +1160,7 @@ function EditServiceModal({ service, host, onClose, onSaved }: EditServiceModalP
 
         <div className="bg-gray-50 rounded-lg px-4 py-3 mb-4 text-sm flex items-center justify-between">
           <span className="font-medium text-gray-800">{service.name}</span>
-          <span className="text-gray-500 font-mono text-xs">{service.check_type}</span>
+          <span className="text-gray-500 text-xs">{editTypeDef ? `${editTypeDef.label}` : service.check_type}</span>
         </div>
 
         <div className="space-y-3">
@@ -1402,17 +1170,16 @@ function EditServiceModal({ service, host, onClose, onSaved }: EditServiceModalP
               className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
           </div>
 
-          {/* Dynamic config fields */}
-          {isDisk ? (
-            <DiskConfigEditor config={diskConfig} onChange={setDiskConfig} />
-          ) : (
-            <ConfigFields
-              checkType={service.check_type}
-              config={config}
-              onChange={(k, v) => setConfig(prev => ({ ...prev, [k]: v }))}
-              host={host}
-            />
-          )}
+          {/* Dynamic config fields from registry */}
+          <RegistryConfigFields
+            checkType={service.check_type}
+            config={config}
+            onChange={(k, v) => setConfig(prev => ({ ...prev, [k]: v }))}
+            tenantId={host.tenant_id}
+            osFamily={host.host_type_os_family}
+            diskConfig={diskConfig}
+            onDiskConfigChange={setDiskConfig}
+          />
 
           <div className={clsx('grid gap-3', isDisk ? 'grid-cols-1' : 'grid-cols-3')}>
             <div>
@@ -1451,7 +1218,7 @@ function EditServiceModal({ service, host, onClose, onSaved }: EditServiceModalP
 
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Check-Modus</label>
-            {service.check_type.startsWith('agent_') ? (
+            {editTypeDef?.mode === 'agent' ? (
               <div className="text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-lg">
                 Agent <span className="text-xs text-gray-400">(wird automatisch gesetzt)</span>
               </div>
@@ -2410,9 +2177,9 @@ export default function HostDetailPage() {
                     <td className={clsx('px-6 py-3 font-medium whitespace-nowrap', isInactive ? 'text-gray-400 line-through' : 'text-gray-800')}>
                       {meta?.name ?? '–'}
                     </td>
-                    <td className="px-6 py-3 text-gray-500 font-mono text-xs whitespace-nowrap">
+                    <td className="px-6 py-3 text-gray-500 text-xs whitespace-nowrap">
                       <span className="flex items-center gap-1.5">
-                        {meta?.check_type ?? '–'}
+                        {meta?.check_type ? getCheckTypeLabel(meta.check_type) : '–'}
                         {meta?.check_mode === 'active' && (
                           <span className="text-[10px] font-sans font-medium bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded">aktiv</span>
                         )}

@@ -5,6 +5,7 @@ import clsx from 'clsx'
 import { api } from '../api/client'
 import type { Tenant } from '../types'
 import ConfirmDialog from '../components/ConfirmDialog'
+import { CHECK_TYPE_REGISTRY, groupCheckTypesByCategory } from '../lib/constants'
 
 interface GlobalPolicy {
   id: string
@@ -34,25 +35,7 @@ interface PolicyForm {
   priority: number
 }
 
-const CHECK_TYPES = [
-  '*',
-  'ping', 'port', 'http',
-  'snmp', 'snmp_interface', 'snmp_string',
-  'ssh_disk', 'ssh_cpu', 'ssh_mem', 'ssh_command',
-  'agent_cpu', 'agent_memory', 'agent_disk', 'agent_service', 'agent_process',
-  'agent_eventlog', 'agent_custom', 'agent_script', 'agent_services_auto',
-]
-
-const CHECK_TYPE_LABELS: Record<string, string> = {
-  '*': 'Alle Check-Typen',
-  ping: 'Ping', port: 'Port', http: 'HTTP',
-  snmp: 'SNMP', snmp_interface: 'SNMP Interface', snmp_string: 'SNMP String',
-  ssh_disk: 'SSH Disk', ssh_cpu: 'SSH CPU', ssh_mem: 'SSH Memory', ssh_command: 'SSH Command',
-  agent_cpu: 'Agent CPU', agent_memory: 'Agent Memory', agent_disk: 'Agent Disk',
-  agent_service: 'Agent Service', agent_process: 'Agent Process',
-  agent_eventlog: 'Agent EventLog', agent_custom: 'Agent Custom',
-  agent_script: 'Agent Script', agent_services_auto: 'Agent Services Auto',
-}
+const POLICY_GROUPED = groupCheckTypesByCategory(CHECK_TYPE_REGISTRY)
 
 function emptyForm(): PolicyForm {
   return {
@@ -167,7 +150,12 @@ function PolicyModal({ onClose, tenants, existing }: ModalProps) {
             <label className="block text-xs font-medium text-gray-600 mb-1">Check-Typ</label>
             <select value={form.check_type} onChange={e => set('check_type', e.target.value)}
               className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500">
-              {CHECK_TYPES.map(t => <option key={t} value={t}>{CHECK_TYPE_LABELS[t] ?? t}</option>)}
+              <option value="*">Alle Check-Typen</option>
+              {POLICY_GROUPED.map(g => (
+                <optgroup key={g.category} label={g.label}>
+                  {g.types.map(t => <option key={t.key} value={t.key}>{t.label}</option>)}
+                </optgroup>
+              ))}
             </select>
           </div>
 
@@ -344,8 +332,8 @@ export default function GlobalPoliciesPage() {
                   {p.description && <p className="text-xs text-gray-400 mt-0.5">{p.description}</p>}
                 </td>
                 <td className="px-6 py-3">
-                  <span className="px-2 py-0.5 rounded bg-gray-100 text-xs font-mono text-gray-700">
-                    {p.check_type === '*' ? 'Alle' : p.check_type}
+                  <span className="px-2 py-0.5 rounded bg-gray-100 text-xs text-gray-700">
+                    {p.check_type === '*' ? 'Alle' : (CHECK_TYPE_REGISTRY.find(ct => ct.key === p.check_type)?.label ?? p.check_type)}
                   </span>
                 </td>
                 <td className="px-6 py-3">
