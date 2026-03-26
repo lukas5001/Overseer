@@ -86,3 +86,34 @@ async def get_history_summary(
         "unknown_count": row.unknown_count,
         "no_data_count": row.no_data_count,
     }
+
+
+@router.get("/{service_id}/transitions")
+async def get_status_transitions(
+    service_id: UUID,
+    hours: int = Query(default=168, ge=1, le=720),
+    limit: int = Query(default=10, ge=1, le=50),
+    db: AsyncSession = Depends(get_db),
+    _user: dict = Depends(get_current_user),
+):
+    """Return recent status transitions (status changes) for a service."""
+    since = datetime.now(timezone.utc) - timedelta(hours=hours)
+
+    result = await db.execute(
+        text("""
+            SELECT time, status, message FROM (
+                SELECT time, status, message,
+                       LAG(status) OVER (ORDER BY time) AS prev_status
+                FROM check_results
+                WHERE service_id = :sid AND time >= :since
+            ) sub
+            WHERE prev_status IS NULL OR status != prev_status
+            ORDER BY time DESC
+            LIMIT :lim
+        """),
+        {"sid": service_id, "since": since, "lim": limit},
+    )
+    return [
+        {"time": row.time.isoformat(), "status": row.status, "message": row.message}
+        for row in result.fetchall()
+    ]

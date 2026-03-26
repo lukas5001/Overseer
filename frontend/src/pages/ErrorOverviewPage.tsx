@@ -1,11 +1,11 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, CheckCheck, Clock, BellOff, X, Search, EyeOff, MessageSquare, ArrowUpDown, Filter, Save, Trash2, Edit2, Star, Tv } from 'lucide-react'
 import { getHostTypeIcon } from '../lib/constants'
 import { Link } from 'react-router-dom'
 import clsx from 'clsx'
-import { formatDistanceToNow } from 'date-fns'
+import { format, formatDistanceToNow } from 'date-fns'
 import { de } from 'date-fns/locale'
 import { api } from '../api/client'
 
@@ -553,6 +553,82 @@ function sortErrors(items: ErrorItem[], sortKey: SortKey, sortAsc: boolean): Err
         return 0
     }
   })
+}
+
+// ── Status History Popover ────────────────────────────────────────────────────
+
+interface StatusTransition {
+  time: string
+  status: string
+  message: string | null
+}
+
+function statusDotColor(status: string): string {
+  switch (status) {
+    case 'CRITICAL': return 'bg-red-500'
+    case 'WARNING': return 'bg-amber-500'
+    case 'NO_DATA': return 'bg-orange-500'
+    case 'UNKNOWN': return 'bg-gray-400'
+    case 'OK': return 'bg-emerald-500'
+    default: return 'bg-gray-400'
+  }
+}
+
+function StatusHistoryPopover({ serviceId, children }: { serviceId: string; children: React.ReactNode }) {
+  const [show, setShow] = useState(false)
+  const [enabled, setEnabled] = useState(false)
+  const timerRef = useRef<ReturnType<typeof setTimeout>>()
+
+  const { data: transitions } = useQuery<StatusTransition[]>({
+    queryKey: ['status-transitions', serviceId],
+    queryFn: () => api.get(`/api/v1/history/${serviceId}/transitions`, { params: { limit: 8 } }).then(r => r.data),
+    enabled,
+    staleTime: 30000,
+  })
+
+  const handleEnter = () => {
+    timerRef.current = setTimeout(() => {
+      setShow(true)
+      setEnabled(true)
+    }, 300)
+  }
+
+  const handleLeave = () => {
+    clearTimeout(timerRef.current)
+    setShow(false)
+  }
+
+  return (
+    <div
+      className="relative"
+      onMouseEnter={handleEnter}
+      onMouseLeave={handleLeave}
+    >
+      {children}
+      {show && (
+        <div className="absolute z-30 bottom-full mb-2 right-0 bg-gray-900 text-white rounded-lg shadow-xl p-3 min-w-[250px] text-xs pointer-events-none">
+          <p className="font-semibold mb-2 text-gray-300">Status-Verlauf (7 Tage)</p>
+          {transitions && transitions.length > 0 ? (
+            <div className="space-y-1.5">
+              {transitions.map((t, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <span className={clsx('w-2 h-2 rounded-full flex-shrink-0', statusDotColor(t.status))} />
+                  <span className="font-medium w-[70px]">{t.status === 'NO_DATA' ? 'NO DATA' : t.status}</span>
+                  <span className="text-gray-400 ml-auto whitespace-nowrap">
+                    {format(new Date(t.time), 'dd.MM. HH:mm')}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : transitions ? (
+            <p className="text-gray-500">Keine Historie verfügbar</p>
+          ) : (
+            <p className="text-gray-500">Laden…</p>
+          )}
+        </div>
+      )}
+    </div>
+  )
 }
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
@@ -1208,13 +1284,22 @@ export default function ErrorOverviewPage() {
                   </div>
                 )}
 
-                {/* Duration */}
-                <div className="flex items-center gap-1 text-xs text-gray-400 min-w-[110px]">
-                  <Clock className="w-3.5 h-3.5 flex-shrink-0" />
-                  {error.last_state_change_at
-                    ? formatDistanceToNow(new Date(error.last_state_change_at), { locale: de, addSuffix: true })
-                    : '–'}
-                </div>
+                {/* Duration + Status History */}
+                <StatusHistoryPopover serviceId={error.service_id}>
+                  <div className="flex flex-col text-xs text-gray-400 min-w-[140px] cursor-default">
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5 flex-shrink-0" />
+                      {error.last_state_change_at
+                        ? formatDistanceToNow(new Date(error.last_state_change_at), { locale: de, addSuffix: true })
+                        : '–'}
+                    </div>
+                    {error.last_state_change_at && (
+                      <span className="text-[10px] text-gray-300 ml-[18px]">
+                        seit {format(new Date(error.last_state_change_at), 'dd.MM.yyyy, HH:mm')}
+                      </span>
+                    )}
+                  </div>
+                </StatusHistoryPopover>
 
                 {/* Downtime button */}
                 <button

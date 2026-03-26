@@ -227,8 +227,9 @@ async def _run_dead_collector_check():
                 UPDATE current_status cs
                 SET status = 'NO_DATA',
                     state_type = 'HARD',
-                    status_message = 'Collector offline – keine Daten seit mehr als 3 Minuten',
-                    last_check_at = :now
+                    status_message = 'Collector offline',
+                    last_check_at = :now,
+                    last_state_change_at = :now
                 FROM services s
                 JOIN hosts h ON s.host_id = h.id
                 WHERE cs.service_id = s.id
@@ -280,8 +281,9 @@ async def _run_dead_agent_check():
                 UPDATE current_status cs
                 SET status = 'NO_DATA',
                     state_type = 'HARD',
-                    status_message = 'Agent offline – keine Daten seit mehr als 3 Minuten',
-                    last_check_at = :now
+                    status_message = 'Agent offline',
+                    last_check_at = :now,
+                    last_state_change_at = :now
                 FROM services s
                 WHERE cs.service_id = s.id
                   AND s.host_id = :host_id
