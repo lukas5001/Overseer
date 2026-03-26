@@ -17,16 +17,16 @@ async def _calculate_sla(db, service_id: UUID, tenant_id: UUID, start: datetime,
     """Compute SLA% for a service, excluding downtime periods."""
     row = (await db.execute(text("""
         WITH downtime_excluded AS (
-            SELECT cr.checked_at
+            SELECT cr.time
             FROM check_results cr
             WHERE cr.service_id = :service_id
               AND cr.tenant_id = :tenant_id
-              AND cr.checked_at BETWEEN :start AND :end
+              AND cr.time BETWEEN :start AND :end
               AND NOT EXISTS (
                   SELECT 1 FROM downtimes d
                   WHERE (d.service_id = cr.service_id
                          OR d.host_id = (SELECT host_id FROM services WHERE id = cr.service_id))
-                    AND cr.checked_at BETWEEN d.start_at AND d.end_at
+                    AND cr.time BETWEEN d.start_at AND d.end_at
                     AND d.active = TRUE
               )
         )
@@ -37,8 +37,8 @@ async def _calculate_sla(db, service_id: UUID, tenant_id: UUID, start: datetime,
         FROM check_results cr
         WHERE cr.service_id = :service_id
           AND cr.tenant_id = :tenant_id
-          AND cr.checked_at BETWEEN :start AND :end
-          AND cr.checked_at IN (SELECT checked_at FROM downtime_excluded)
+          AND cr.time BETWEEN :start AND :end
+          AND cr.time IN (SELECT time FROM downtime_excluded)
     """), {"service_id": service_id, "tenant_id": tenant_id, "start": start, "end": end})).fetchone()
 
     total = row.total_checks or 0
