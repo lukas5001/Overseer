@@ -1283,9 +1283,15 @@ export default function ErrorOverviewPage() {
                 {/* Value */}
                 {error.value !== null && (
                   <div className="text-right min-w-[80px]">
-                    <p className={clsx('text-sm font-bold', config.text)}>
-                      {error.value}{error.unit}
-                    </p>
+                    {error.status === 'NO_DATA' ? (
+                      <p className="text-xs text-gray-400">
+                        <span className="text-gray-300">zuletzt</span> {error.value}{error.unit}
+                      </p>
+                    ) : (
+                      <p className={clsx('text-sm font-bold', config.text)}>
+                        {error.value}{error.unit}
+                      </p>
+                    )}
                   </div>
                 )}
 
