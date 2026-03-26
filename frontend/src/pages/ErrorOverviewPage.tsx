@@ -574,7 +574,7 @@ function statusDotColor(status: string): string {
   }
 }
 
-function StatusHistoryPopover({ serviceId, children }: { serviceId: string; children: React.ReactNode }) {
+function StatusHistoryPopover({ serviceId, stateChangedAt, children }: { serviceId: string; stateChangedAt: string | null; children: React.ReactNode }) {
   const [show, setShow] = useState(false)
   const [enabled, setEnabled] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout>>()
@@ -607,7 +607,12 @@ function StatusHistoryPopover({ serviceId, children }: { serviceId: string; chil
       {children}
       {show && (
         <div className="absolute z-30 bottom-full mb-2 right-0 bg-gray-900 text-white rounded-lg shadow-xl p-3 min-w-[250px] text-xs pointer-events-none">
-          <p className="font-semibold mb-2 text-gray-300">Status-Verlauf (7 Tage)</p>
+          {stateChangedAt && (
+            <p className="text-gray-300 mb-2">
+              In diesem Status seit <span className="font-semibold text-white">{format(new Date(stateChangedAt), 'dd.MM.yyyy, HH:mm')}</span>
+            </p>
+          )}
+          <p className="font-semibold mb-2 text-gray-400">Status-Verlauf</p>
           {transitions && transitions.length > 0 ? (
             <div className="space-y-1.5">
               {transitions.map((t, i) => (
@@ -1285,19 +1290,12 @@ export default function ErrorOverviewPage() {
                 )}
 
                 {/* Duration + Status History */}
-                <StatusHistoryPopover serviceId={error.service_id}>
-                  <div className="flex flex-col text-xs text-gray-400 min-w-[140px] cursor-default">
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5 flex-shrink-0" />
-                      {error.last_state_change_at
-                        ? formatDistanceToNow(new Date(error.last_state_change_at), { locale: de, addSuffix: true })
-                        : '–'}
-                    </div>
-                    {error.last_state_change_at && (
-                      <span className="text-[10px] text-gray-300 ml-[18px]">
-                        seit {format(new Date(error.last_state_change_at), 'dd.MM.yyyy, HH:mm')}
-                      </span>
-                    )}
+                <StatusHistoryPopover serviceId={error.service_id} stateChangedAt={error.last_state_change_at}>
+                  <div className="flex items-center gap-1 text-xs text-gray-400 min-w-[110px] cursor-default">
+                    <Clock className="w-3.5 h-3.5 flex-shrink-0" />
+                    {error.last_state_change_at
+                      ? 'seit ' + formatDistanceToNow(new Date(error.last_state_change_at), { locale: de })
+                      : '–'}
                   </div>
                 </StatusHistoryPopover>
 
