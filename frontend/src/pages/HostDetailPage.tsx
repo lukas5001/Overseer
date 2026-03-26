@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
@@ -12,7 +12,6 @@ import clsx from 'clsx'
 import { formatDistanceToNow } from 'date-fns'
 import { de } from 'date-fns/locale'
 import { api } from '../api/client'
-import { formatDateTime } from '../lib/format'
 import ConfirmDialog from '../components/ConfirmDialog'
 
 // ── Copyable code block ─────────────────────────────────────────────────────
@@ -124,11 +123,223 @@ interface HistoryPoint { time: string; status: string; value: number | null; uni
 interface HistoryModalProps {
   serviceId: string
   serviceName: string
+  thresholdWarn: number | null
+  thresholdCrit: number | null
   onClose: () => void
 }
 
-function HistoryModal({ serviceId, serviceName, onClose }: HistoryModalProps) {
+const STATUS_COLORS: Record<string, string> = {
+  OK: '#10b981', WARNING: '#f59e0b', CRITICAL: '#ef4444', NO_DATA: '#f97316', UNKNOWN: '#9ca3af',
+}
+
+function formatTimeLabel(date: Date, hours: number): string {
+  if (hours <= 24) return date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
+  if (hours <= 168) return date.toLocaleDateString('de-DE', { weekday: 'short', hour: '2-digit', minute: '2-digit' })
+  return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })
+}
+
+function formatTooltipTime(date: Date): string {
+  return date.toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })
+}
+
+function InteractiveChart({ history, unit, hours, thresholdWarn, thresholdCrit }: {
+  history: HistoryPoint[]
+  unit: string
+  hours: number
+  thresholdWarn: number | null
+  thresholdCrit: number | null
+}) {
+  const [hover, setHover] = useState<{ x: number; y: number; point: HistoryPoint; chartY: number } | null>(null)
+  const svgRef = React.useRef<SVGSVGElement>(null)
+
+  const withValues = history.filter(p => p.value !== null)
+  if (withValues.length === 0) return null
+
+  const values = withValues.map(p => p.value as number)
+  const times = withValues.map(p => new Date(p.time).getTime())
+
+  // Chart dimensions
+  const W = 720, H = 200
+  const PAD = { top: 12, right: 16, bottom: 32, left: 52 }
+  const cw = W - PAD.left - PAD.right
+  const ch = H - PAD.top - PAD.bottom
+
+  // Y range — include thresholds so they're always visible
+  const allVals = [...values]
+  if (thresholdWarn !== null) allVals.push(thresholdWarn)
+  if (thresholdCrit !== null) allVals.push(thresholdCrit)
+  let yMin = Math.min(...allVals)
+  let yMax = Math.max(...allVals)
+  const yPad = (yMax - yMin) * 0.1 || 1
+  yMin = Math.max(0, yMin - yPad)
+  yMax = yMax + yPad
+
+  const tMin = Math.min(...times)
+  const tMax = Math.max(...times)
+  const tRange = tMax - tMin || 1
+
+  const toX = (t: number) => PAD.left + ((t - tMin) / tRange) * cw
+  const toY = (v: number) => PAD.top + ch - ((v - yMin) / (yMax - yMin)) * ch
+
+  // Generate Y-axis ticks (5 ticks)
+  const yTicks: number[] = []
+  for (let i = 0; i <= 4; i++) {
+    yTicks.push(yMin + (i / 4) * (yMax - yMin))
+  }
+
+  // Generate X-axis ticks (6-8 ticks)
+  const xTickCount = hours <= 6 ? 6 : 8
+  const xTicks: number[] = []
+  for (let i = 0; i <= xTickCount; i++) {
+    xTicks.push(tMin + (i / xTickCount) * tRange)
+  }
+
+  // Line path
+  const linePath = withValues.map((p, i) => {
+    const x = toX(times[i])
+    const y = toY(p.value as number)
+    return `${i === 0 ? 'M' : 'L'}${x},${y}`
+  }).join(' ')
+
+  // Area fill (gradient)
+  const areaPath = linePath + ` L${toX(times[times.length - 1])},${PAD.top + ch} L${toX(times[0])},${PAD.top + ch} Z`
+
+  // Status bar segments at the bottom
+  const statusSegments: { x1: number; x2: number; color: string }[] = []
+  for (let i = 0; i < history.length; i++) {
+    const t1 = new Date(history[i].time).getTime()
+    const t2 = i < history.length - 1 ? new Date(history[i + 1].time).getTime() : tMax
+    if (t1 < tMin) continue
+    statusSegments.push({ x1: toX(t1), x2: toX(t2), color: STATUS_COLORS[history[i].status] ?? '#9ca3af' })
+  }
+
+  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    const svg = svgRef.current
+    if (!svg) return
+    const rect = svg.getBoundingClientRect()
+    const scaleX = W / rect.width
+    const mouseX = (e.clientX - rect.left) * scaleX
+
+    if (mouseX < PAD.left || mouseX > W - PAD.right) { setHover(null); return }
+
+    // Find nearest point
+    const mouseT = tMin + ((mouseX - PAD.left) / cw) * tRange
+    let nearest = 0
+    let minDist = Infinity
+    for (let i = 0; i < withValues.length; i++) {
+      const d = Math.abs(times[i] - mouseT)
+      if (d < minDist) { minDist = d; nearest = i }
+    }
+    const pt = withValues[nearest]
+    setHover({
+      x: toX(times[nearest]),
+      y: (e.clientY - rect.top) * (H / rect.height),
+      point: pt,
+      chartY: toY(pt.value as number),
+    })
+  }
+
+  const fmtVal = (v: number) => {
+    if (Number.isInteger(v)) return v.toString()
+    return v.toFixed(v < 10 ? 2 : 1)
+  }
+
+  return (
+    <div className="relative">
+      <svg
+        ref={svgRef}
+        viewBox={`0 0 ${W} ${H}`}
+        className="w-full"
+        onMouseMove={handleMouseMove}
+        onMouseLeave={() => setHover(null)}
+        style={{ cursor: 'crosshair' }}
+      >
+        <defs>
+          <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.15" />
+            <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.02" />
+          </linearGradient>
+        </defs>
+
+        {/* Grid lines */}
+        {yTicks.map((v, i) => (
+          <g key={`y${i}`}>
+            <line x1={PAD.left} x2={W - PAD.right} y1={toY(v)} y2={toY(v)} stroke="#e5e7eb" strokeWidth="0.5" />
+            <text x={PAD.left - 6} y={toY(v) + 3} textAnchor="end" fontSize="9" fill="#9ca3af" fontFamily="monospace">{fmtVal(v)}{unit}</text>
+          </g>
+        ))}
+        {xTicks.map((t, i) => (
+          <g key={`x${i}`}>
+            <line x1={toX(t)} x2={toX(t)} y1={PAD.top} y2={PAD.top + ch} stroke="#f3f4f6" strokeWidth="0.5" />
+            <text x={toX(t)} y={H - 4} textAnchor="middle" fontSize="9" fill="#9ca3af">{formatTimeLabel(new Date(t), hours)}</text>
+          </g>
+        ))}
+
+        {/* Threshold lines */}
+        {thresholdWarn !== null && thresholdWarn >= yMin && thresholdWarn <= yMax && (
+          <g>
+            <line x1={PAD.left} x2={W - PAD.right} y1={toY(thresholdWarn)} y2={toY(thresholdWarn)} stroke="#f59e0b" strokeWidth="1" strokeDasharray="6,3" />
+            <text x={W - PAD.right + 4} y={toY(thresholdWarn) + 3} fontSize="8" fill="#f59e0b" fontWeight="bold">W</text>
+          </g>
+        )}
+        {thresholdCrit !== null && thresholdCrit >= yMin && thresholdCrit <= yMax && (
+          <g>
+            <line x1={PAD.left} x2={W - PAD.right} y1={toY(thresholdCrit)} y2={toY(thresholdCrit)} stroke="#ef4444" strokeWidth="1" strokeDasharray="6,3" />
+            <text x={W - PAD.right + 4} y={toY(thresholdCrit) + 3} fontSize="8" fill="#ef4444" fontWeight="bold">C</text>
+          </g>
+        )}
+
+        {/* Area fill */}
+        <path d={areaPath} fill="url(#areaGrad)" />
+
+        {/* Data line */}
+        <path d={linePath} fill="none" stroke="#3b82f6" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
+
+        {/* Data points (only if few enough) */}
+        {withValues.length <= 100 && withValues.map((p, i) => (
+          <circle key={i} cx={toX(times[i])} cy={toY(p.value as number)} r="2" fill={STATUS_COLORS[p.status] ?? '#3b82f6'} />
+        ))}
+
+        {/* Status bar at bottom */}
+        {statusSegments.map((seg, i) => (
+          <rect key={i} x={seg.x1} y={PAD.top + ch + 2} width={Math.max(1, seg.x2 - seg.x1)} height="4" rx="1" fill={seg.color} />
+        ))}
+
+        {/* Hover crosshair */}
+        {hover && (
+          <g>
+            <line x1={hover.x} x2={hover.x} y1={PAD.top} y2={PAD.top + ch} stroke="#6b7280" strokeWidth="0.5" strokeDasharray="3,2" />
+            <circle cx={hover.x} cy={hover.chartY} r="4" fill="white" stroke="#3b82f6" strokeWidth="2" />
+          </g>
+        )}
+      </svg>
+
+      {/* Tooltip */}
+      {hover && (
+        <div
+          className="absolute z-10 pointer-events-none bg-gray-900 text-white text-xs rounded-lg shadow-lg px-3 py-2 max-w-xs"
+          style={{
+            left: `${Math.min(85, Math.max(5, (hover.x / W) * 100))}%`,
+            top: '4px',
+            transform: 'translateX(-50%)',
+          }}
+        >
+          <p className="font-mono text-gray-300">{formatTooltipTime(new Date(hover.point.time))}</p>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: STATUS_COLORS[hover.point.status] }} />
+            <span className="font-bold">{hover.point.value !== null ? `${hover.point.value}${hover.point.unit ?? ''}` : '–'}</span>
+            <span className="text-gray-400">{hover.point.status}</span>
+          </div>
+          {hover.point.message && <p className="text-gray-400 mt-1 truncate">{hover.point.message}</p>}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function HistoryModal({ serviceId, serviceName, thresholdWarn, thresholdCrit, onClose }: HistoryModalProps) {
   const [hours, setHours] = useState(24)
+  const [tab, setTab] = useState<'chart' | 'table'>('chart')
 
   const { data: history = [], isLoading } = useQuery<HistoryPoint[]>({
     queryKey: ['history', serviceId, hours],
@@ -140,18 +351,30 @@ function HistoryModal({ serviceId, serviceName, onClose }: HistoryModalProps) {
     queryFn: () => api.get(`/api/v1/history/${serviceId}/summary?hours=${hours}`).then(r => r.data),
   })
 
-  const values = history.filter(p => p.value !== null).map(p => p.value as number)
+  const hasValues = history.some(p => p.value !== null)
   const unit = history.find(p => p.unit)?.unit ?? ''
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl mx-4 p-6 max-h-[85vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-5">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl mx-4 p-6 max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-overseer-600" />
             <h2 className="text-lg font-semibold text-gray-900">{serviceName}</h2>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <div className="flex bg-gray-100 rounded-lg p-0.5">
+              {[
+                { key: 'chart' as const, label: 'Graph' },
+                { key: 'table' as const, label: 'Tabelle' },
+              ].map(t => (
+                <button key={t.key} onClick={() => setTab(t.key)}
+                  className={clsx('px-3 py-1 text-xs font-medium rounded-md transition-colors',
+                    tab === t.key ? 'bg-white shadow text-gray-800' : 'text-gray-500 hover:text-gray-700'
+                  )}>{t.label}</button>
+              ))}
+            </div>
             <select value={hours} onChange={e => setHours(Number(e.target.value))}
               className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-overseer-500">
               <option value={1}>1h</option>
@@ -166,78 +389,120 @@ function HistoryModal({ serviceId, serviceName, onClose }: HistoryModalProps) {
 
         {/* Summary stats */}
         {summary && summary.total > 0 && (
-          <div className="grid grid-cols-4 gap-3 mb-5">
+          <div className="grid grid-cols-5 gap-2 mb-4">
             {[
-              { label: 'Min', value: summary.min !== undefined ? `${summary.min}${unit}` : '–' },
-              { label: 'Avg', value: summary.avg !== undefined ? `${summary.avg}${unit}` : '–' },
-              { label: 'Max', value: summary.max !== undefined ? `${summary.max}${unit}` : '–' },
-              { label: 'Checks', value: summary.total },
+              { label: 'Min', val: summary.min != null ? `${summary.min}${unit}` : '–', color: 'text-blue-600' },
+              { label: 'Durchschnitt', val: summary.avg != null ? `${summary.avg}${unit}` : '–', color: 'text-gray-800' },
+              { label: 'Max', val: summary.max != null ? `${summary.max}${unit}` : '–', color: 'text-blue-600' },
+              { label: 'Checks', val: summary.total, color: 'text-gray-800' },
+              { label: 'Verfügbarkeit', val: summary.total > 0 ? `${Math.round(((summary.ok_count ?? 0) / summary.total) * 100)}%` : '–', color: (summary.ok_count ?? 0) === summary.total ? 'text-emerald-600' : 'text-amber-600' },
             ].map(s => (
-              <div key={s.label} className="bg-gray-50 rounded-lg p-3 text-center">
-                <p className="text-xs text-gray-500">{s.label}</p>
-                <p className="text-sm font-bold text-gray-800 mt-0.5">{s.value}</p>
+              <div key={s.label} className="bg-gray-50 rounded-lg px-3 py-2">
+                <p className="text-[10px] text-gray-400 uppercase tracking-wide">{s.label}</p>
+                <p className={clsx('text-sm font-bold mt-0.5', s.color)}>{s.val}</p>
               </div>
             ))}
           </div>
         )}
 
-        {/* Sparkline (full-width) */}
-        {values.length >= 2 && (
-          <div className="bg-gray-50 rounded-lg p-4 mb-5">
-            <svg width="100%" height="60" viewBox={`0 0 100 60`} preserveAspectRatio="none">
-              {(() => {
-                const min = Math.min(...values), max = Math.max(...values), range = max - min || 1
-                const pts = values.map((v, i) => {
-                  const x = (i / (values.length - 1)) * 100
-                  const y = 58 - ((v - min) / range) * 55
-                  return `${x},${y}`
-                }).join(' ')
-                return <polyline points={pts} fill="none" stroke="#3b82f6" strokeWidth="1" strokeLinejoin="round" />
-              })()}
-            </svg>
-          </div>
-        )}
-
-        {/* Data table */}
         {isLoading ? (
-          <p className="text-center text-gray-400 py-8">Lade…</p>
+          <p className="text-center text-gray-400 py-12">Lade…</p>
         ) : history.length === 0 ? (
-          <p className="text-center text-gray-400 py-8">Keine Daten für diesen Zeitraum.</p>
+          <p className="text-center text-gray-400 py-12">Keine Daten für diesen Zeitraum.</p>
         ) : (
-          <div className="max-h-64 overflow-y-auto">
-            <table className="w-full text-xs">
-              <thead className="bg-gray-50 text-gray-500 uppercase tracking-wide sticky top-0">
-                <tr>
-                  <th className="px-4 py-2 text-left">Zeit</th>
-                  <th className="px-4 py-2 text-left">Status</th>
-                  <th className="px-4 py-2 text-right">Wert</th>
-                  <th className="px-4 py-2 text-left">Meldung</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {[...history].reverse().map((p, i) => (
-                  <tr key={i} className="hover:bg-gray-50">
-                    <td className="px-4 py-1.5 text-gray-400 font-mono">
-                      {formatDateTime(p.time)}
-                    </td>
-                    <td className="px-4 py-1.5">
-                      <span className={clsx('font-bold', {
-                        'text-emerald-600': p.status === 'OK',
-                        'text-amber-600': p.status === 'WARNING',
-                        'text-red-600': p.status === 'CRITICAL',
-                        'text-orange-500': p.status === 'NO_DATA',
-                        'text-gray-400': p.status === 'UNKNOWN',
-                      })}>{p.status === 'NO_DATA' ? 'NO DATA' : p.status}</span>
-                    </td>
-                    <td className="px-4 py-1.5 text-right font-mono text-gray-700">
-                      {p.value !== null ? `${p.value}${p.unit ?? ''}` : '–'}
-                    </td>
-                    <td className="px-4 py-1.5 text-gray-500 truncate max-w-xs">{p.message ?? '–'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <>
+            {/* Chart tab */}
+            {tab === 'chart' && (
+              <div className="space-y-3">
+                {hasValues ? (
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <InteractiveChart history={history} unit={unit} hours={hours} thresholdWarn={thresholdWarn} thresholdCrit={thresholdCrit} />
+                  </div>
+                ) : (
+                  /* No numeric values — show status timeline only */
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <p className="text-xs text-gray-500 mb-3">Kein numerischer Wert — Status-Verlauf:</p>
+                    <div className="flex gap-0.5 h-8 rounded overflow-hidden">
+                      {history.map((p, i) => {
+                        const w = history.length > 1 ? 100 / history.length : 100
+                        return (
+                          <div key={i} style={{ width: `${w}%`, backgroundColor: STATUS_COLORS[p.status] ?? '#9ca3af' }}
+                            title={`${formatTooltipTime(new Date(p.time))}: ${p.status}${p.message ? ' — ' + p.message : ''}`}
+                            className="min-w-[2px] hover:opacity-80 transition-opacity cursor-default" />
+                        )
+                      })}
+                    </div>
+                    <div className="flex justify-between mt-1">
+                      <span className="text-[10px] text-gray-400">{formatTimeLabel(new Date(history[0].time), hours)}</span>
+                      <span className="text-[10px] text-gray-400">{formatTimeLabel(new Date(history[history.length - 1].time), hours)}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Status distribution bar */}
+                {summary && summary.total > 0 && (
+                  <div>
+                    <div className="flex gap-0.5 h-2 rounded-full overflow-hidden">
+                      {(['OK', 'WARNING', 'CRITICAL', 'UNKNOWN', 'NO_DATA'] as const).map(s => {
+                        const key = s === 'NO_DATA' ? 'no_data_count' : `${s.toLowerCase()}_count`
+                        const count = (summary as any)[key] ?? 0
+                        if (count === 0) return null
+                        return <div key={s} style={{ width: `${(count / summary.total) * 100}%`, backgroundColor: STATUS_COLORS[s] }} />
+                      })}
+                    </div>
+                    <div className="flex gap-3 mt-1.5">
+                      {(['OK', 'WARNING', 'CRITICAL', 'UNKNOWN', 'NO_DATA'] as const).map(s => {
+                        const key = s === 'NO_DATA' ? 'no_data_count' : `${s.toLowerCase()}_count`
+                        const count = (summary as any)[key] ?? 0
+                        if (count === 0) return null
+                        return (
+                          <span key={s} className="flex items-center gap-1 text-[10px] text-gray-500">
+                            <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: STATUS_COLORS[s] }} />
+                            {s === 'NO_DATA' ? 'NO DATA' : s} ({count})
+                          </span>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Table tab */}
+            {tab === 'table' && (
+              <div className="max-h-[55vh] overflow-y-auto rounded-lg border border-gray-200">
+                <table className="w-full text-xs">
+                  <thead className="bg-gray-50 text-gray-500 uppercase tracking-wide sticky top-0">
+                    <tr>
+                      <th className="px-4 py-2 text-left">Zeit</th>
+                      <th className="px-4 py-2 text-left">Status</th>
+                      <th className="px-4 py-2 text-right">Wert</th>
+                      <th className="px-4 py-2 text-left">Meldung</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {[...history].reverse().map((p, i) => (
+                      <tr key={i} className="hover:bg-gray-50">
+                        <td className="px-4 py-1.5 text-gray-400 font-mono whitespace-nowrap">
+                          {formatTooltipTime(new Date(p.time))}
+                        </td>
+                        <td className="px-4 py-1.5">
+                          <span className="inline-flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: STATUS_COLORS[p.status] }} />
+                            <span className="font-bold" style={{ color: STATUS_COLORS[p.status] }}>{p.status === 'NO_DATA' ? 'NO DATA' : p.status}</span>
+                          </span>
+                        </td>
+                        <td className="px-4 py-1.5 text-right font-mono text-gray-700">
+                          {p.value !== null ? `${p.value}${p.unit ?? ''}` : '–'}
+                        </td>
+                        <td className="px-4 py-1.5 text-gray-500 truncate max-w-sm">{p.message ?? '–'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
@@ -1490,7 +1755,7 @@ export default function HostDetailPage() {
   const [showEditHost, setShowEditHost] = useState(false)
   const [showSnmpDiscovery, setShowSnmpDiscovery] = useState(false)
   const [editService, setEditService] = useState<ServiceItem | null>(null)
-  const [historyTarget, setHistoryTarget] = useState<{ id: string; name: string } | null>(null)
+  const [historyTarget, setHistoryTarget] = useState<{ id: string; name: string; warn: number | null; crit: number | null } | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showAgentSetup, setShowAgentSetup] = useState(false)
   const [generatedToken, setGeneratedToken] = useState<string | null>(null)
@@ -1603,8 +1868,8 @@ export default function HostDetailPage() {
     }
   }
 
-  const serviceNames: Record<string, { name: string; check_type: string; check_mode: string; active: boolean; max_check_attempts: number; retry_interval_seconds: number }> = {}
-  serviceList.forEach(s => { serviceNames[s.id] = { name: s.name, check_type: s.check_type, check_mode: s.check_mode ?? 'passive', active: s.active, max_check_attempts: s.max_check_attempts ?? 3, retry_interval_seconds: s.retry_interval_seconds ?? 15 } })
+  const serviceNames: Record<string, { name: string; check_type: string; check_mode: string; active: boolean; max_check_attempts: number; retry_interval_seconds: number; threshold_warn: number | null; threshold_crit: number | null }> = {}
+  serviceList.forEach(s => { serviceNames[s.id] = { name: s.name, check_type: s.check_type, check_mode: s.check_mode ?? 'passive', active: s.active, max_check_attempts: s.max_check_attempts ?? 3, retry_interval_seconds: s.retry_interval_seconds ?? 15, threshold_warn: s.threshold_warn, threshold_crit: s.threshold_crit } })
 
   // Merge: status data + services without status (inactive services may not have current_status)
   const statusServiceIds = new Set(services.map(s => s.service_id))
@@ -1709,6 +1974,8 @@ export default function HostDetailPage() {
         <HistoryModal
           serviceId={historyTarget.id}
           serviceName={historyTarget.name}
+          thresholdWarn={historyTarget.warn}
+          thresholdCrit={historyTarget.crit}
           onClose={() => setHistoryTarget(null)}
         />
       )}
@@ -2167,7 +2434,7 @@ export default function HostDetailPage() {
                     </td>
                     <td className="px-4 py-3">
                       <SparklineCell serviceId={svc.service_id} onClick={() =>
-                        setHistoryTarget({ id: svc.service_id, name: meta?.name ?? svc.service_id })
+                        setHistoryTarget({ id: svc.service_id, name: meta?.name ?? svc.service_id, warn: meta?.threshold_warn ?? null, crit: meta?.threshold_crit ?? null })
                       } />
                     </td>
                     <td className="px-6 py-3 text-right text-gray-400 text-xs whitespace-nowrap">
