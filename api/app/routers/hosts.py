@@ -38,6 +38,7 @@ def _enrich_host_out(data: HostOut, host_type_row) -> HostOut:
         data.host_type_agent_capable = host_type_row.agent_capable
         data.host_type_snmp_enabled = host_type_row.snmp_enabled
         data.host_type_ip_required = host_type_row.ip_required
+        data.host_type_os_family = host_type_row.os_family
     return data
 
 

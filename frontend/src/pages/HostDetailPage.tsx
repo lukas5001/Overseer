@@ -46,6 +46,7 @@ interface Host {
   host_type_agent_capable: boolean
   host_type_snmp_enabled: boolean
   host_type_ip_required: boolean
+  host_type_os_family: string | null
   snmp_community: string | null
   snmp_version: string | null
   tags: string[]
@@ -269,10 +270,73 @@ const CHECK_TYPES = [
   'agent_script', 'agent_services_auto',
 ]
 
-function ConfigFields({ checkType, config, onChange }: {
+interface MonitoringScript {
+  id: string
+  name: string
+  description: string
+  interpreter: string
+  expected_output: string
+}
+
+function ScriptSelector({ host, config, onChange }: {
+  host: Host
+  config: Record<string, string>
+  onChange: (k: string, v: string) => void
+}) {
+  const osFamily = host.host_type_os_family
+  const { data: scripts = [] } = useQuery<MonitoringScript[]>({
+    queryKey: ['monitoring-scripts', host.tenant_id],
+    queryFn: () => api.get('/api/v1/scripts/', { params: { tenant_id: host.tenant_id } }).then(r => r.data),
+  })
+
+  // Filter scripts by OS compatibility
+  const filtered = scripts.filter(s => {
+    if (osFamily === 'windows') return s.interpreter === 'powershell' || s.interpreter === 'python'
+    if (osFamily === 'linux') return s.interpreter === 'bash' || s.interpreter === 'python'
+    return true
+  })
+
+  const selectedScript = filtered.find(s => s.id === config.script_id)
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <label className="block text-xs font-medium text-gray-600 mb-1">Script</label>
+        <select
+          value={config.script_id ?? ''}
+          onChange={e => {
+            const script = filtered.find(s => s.id === e.target.value)
+            onChange('script_id', e.target.value)
+            if (script) {
+              onChange('expected_output', script.expected_output)
+              onChange('script_interpreter', script.interpreter)
+            }
+          }}
+          className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none"
+        >
+          <option value="">Script auswählen…</option>
+          {filtered.map(s => (
+            <option key={s.id} value={s.id}>
+              {s.name} ({s.interpreter}, {s.expected_output})
+            </option>
+          ))}
+        </select>
+        {selectedScript?.description && (
+          <p className="text-xs text-gray-500 mt-1">{selectedScript.description}</p>
+        )}
+        {filtered.length === 0 && scripts.length > 0 && (
+          <p className="text-xs text-amber-600 mt-1">Keine kompatiblen Scripts für diesen Host-Typ ({osFamily})</p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function ConfigFields({ checkType, config, onChange, host }: {
   checkType: string
   config: Record<string, string>
   onChange: (k: string, v: string) => void
+  host?: Host
 }) {
   const field = (label: string, key: string, placeholder = '') => (
     <div key={key}>
@@ -301,7 +365,7 @@ function ConfigFields({ checkType, config, onChange }: {
     case 'agent_process': return <>{field('Prozessname', 'process', 'nginx')}</>
     case 'agent_eventlog': return <>{field('Log', 'log', 'System')}{field('Level', 'level', 'Error')}{field('Minuten', 'minutes', '30')}</>
     case 'agent_custom':  return <>{field('Kommando', 'command', 'Get-Process | Measure')}{field('OK Pattern', 'ok_pattern', '.')}{field('Critical Pattern', 'crit_pattern', '')}</>
-    case 'agent_script':  return <>{field('Script-ID (Server)', 'script_id', 'UUID des Scripts aus der Scripts-Seite')}{field('Lokaler Pfad (alternativ)', 'script_path', 'C:\\Scripts\\check.ps1')}{field('Interpreter', 'script_interpreter', 'powershell / bash / python')}{field('Output-Format', 'expected_output', 'nagios / text / json')}</>
+    case 'agent_script':  return host ? <ScriptSelector host={host} config={config} onChange={onChange} /> : null
     case 'agent_services_auto': return <>{field('Exclude-Liste (kommagetrennt)', 'exclude', 'gupdate,gupdatem,sppsvc,RemoteRegistry')}</>
     default: return null
   }
@@ -677,6 +741,7 @@ function AddCheckModal({ host, onClose, onSaved }: AddCheckModalProps) {
                   checkType={form.check_type}
                   config={config}
                   onChange={(k, v) => setConfig(prev => ({ ...prev, [k]: v }))}
+                  host={host}
                 />
               )}
 
@@ -901,11 +966,12 @@ function EditHostModal({ host, onClose, onSaved }: EditHostModalProps) {
 
 interface EditServiceModalProps {
   service: ServiceItem
+  host: Host
   onClose: () => void
   onSaved: () => void
 }
 
-function EditServiceModal({ service, onClose, onSaved }: EditServiceModalProps) {
+function EditServiceModal({ service, host, onClose, onSaved }: EditServiceModalProps) {
   const isDisk = service.check_type === 'agent_disk'
 
   const [form, setForm] = useState({
@@ -1028,6 +1094,7 @@ function EditServiceModal({ service, onClose, onSaved }: EditServiceModalProps) 
               checkType={service.check_type}
               config={config}
               onChange={(k, v) => setConfig(prev => ({ ...prev, [k]: v }))}
+              host={host}
             />
           )}
 
@@ -1579,6 +1646,7 @@ export default function HostDetailPage() {
       {editService && (
         <EditServiceModal
           service={editService}
+          host={host}
           onClose={() => setEditService(null)}
           onSaved={() => {
             queryClient.invalidateQueries({ queryKey: ['services', hostId] })

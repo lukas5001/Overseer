@@ -117,6 +117,7 @@ class HostOut(BaseModel):
     host_type_agent_capable: bool = False
     host_type_snmp_enabled: bool = False
     host_type_ip_required: bool = False
+    host_type_os_family: str | None = None
     snmp_community: str | None = None
     snmp_version: str | None = None
     tags: list
