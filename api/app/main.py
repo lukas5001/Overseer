@@ -365,27 +365,35 @@ async def dead_agent_watcher():
 
 
 async def refresh_aggregate_views():
-    """Periodically refresh metrics_hourly and metrics_daily materialized views."""
+    """Periodically refresh metrics materialized views.
+
+    metrics_5m:     every 5 minutes
+    metrics_hourly: every hour (on the hour cycle)
+    metrics_daily:  every hour (on the hour cycle)
+    """
     from api.app.core.database import async_engine
     from sqlalchemy import text as sa_text
 
-    await asyncio.sleep(30)  # Initial delay
+    await asyncio.sleep(30)  # Initial delay — let the app fully start
+    cycle = 0
     while True:
         try:
+            # Always refresh 5-min aggregate
             async with async_engine.begin() as conn:
-                await conn.execute(sa_text("REFRESH MATERIALIZED VIEW CONCURRENTLY metrics_hourly"))
-                await conn.execute(sa_text("REFRESH MATERIALIZED VIEW CONCURRENTLY metrics_daily"))
-                print("[AggRefresh] Refreshed metrics_hourly + metrics_daily")
-        except Exception as e:
-            # CONCURRENTLY requires a unique index; fall back to non-concurrent
-            try:
+                await conn.execute(sa_text("REFRESH MATERIALIZED VIEW CONCURRENTLY metrics_5m"))
+
+            # Every 12th cycle (= every hour at 5-min intervals), also refresh hourly + daily
+            if cycle % 12 == 0:
                 async with async_engine.begin() as conn:
-                    await conn.execute(sa_text("REFRESH MATERIALIZED VIEW metrics_hourly"))
-                    await conn.execute(sa_text("REFRESH MATERIALIZED VIEW metrics_daily"))
-                    print("[AggRefresh] Refreshed metrics_hourly + metrics_daily (non-concurrent)")
-            except Exception as e2:
-                print(f"[AggRefresh] Error: {e2}")
-        await asyncio.sleep(3600)  # Every hour
+                    await conn.execute(sa_text("REFRESH MATERIALIZED VIEW CONCURRENTLY metrics_hourly"))
+                    await conn.execute(sa_text("REFRESH MATERIALIZED VIEW CONCURRENTLY metrics_daily"))
+                print("[AggRefresh] Refreshed all aggregate views")
+            else:
+                print("[AggRefresh] Refreshed metrics_5m")
+        except Exception as e:
+            print(f"[AggRefresh] Error: {e}")
+        cycle += 1
+        await asyncio.sleep(300)  # 5 minutes
 
 
 @app.on_event("startup")
