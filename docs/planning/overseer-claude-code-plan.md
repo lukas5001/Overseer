@@ -14,10 +14,13 @@ Dieses Dokument enthält nummerierte **Prompt-Blöcke**. Jeder Block ist ein eig
 
 ### Compact-Strategie
 
+Bei Opus 4.6 mit 200k Context füllt sich der Kontext schnell: Claude Code liest Codebase-Dateien (20-50k Tokens), schreibt Code, führt Tests aus, fixt Fehler. **Ein einziger Block kann 80-150k Tokens verbrauchen.** Deshalb: **nach jedem Block (oder maximal 2 kleinen zusammen) compacten.**
+
 Wenn du `/compact` verwendest, geht der bisherige Gesprächsverlauf verloren. Claude Code behält nur eine Zusammenfassung. Damit die Qualität nicht leidet:
-- Compact nur an den markierten Stellen
+- **Compact an JEDER markierten `🔄 COMPACT` Stelle** — nicht überspringen
 - Der Block nach einem Compact beginnt immer mit "Lies zuerst: [Dateien]" — damit Claude Code den aktuellen Stand der Codebase versteht
 - Jeder Post-Compact-Block ist **vollständig selbsterklärend**
+- Wenn du merkst dass Claude Code langsamer wird oder Dinge vergisst → sofort `/compact`, auch wenn noch kein Compact-Punkt markiert ist
 
 ---
 ---
@@ -122,9 +125,19 @@ Schreibe Go-Tests für:
 
 ---
 
+### 🔄 COMPACT — Nach Block 1.1
+
+**Compact jetzt** (`/compact`).
+
+**Was gebaut wurde:** Neuer Go Check-Typ `ssl_certificate` im Agent/Collector. Prüft Ablaufdatum, Hostname, Chain, Self-Signed, Algorithmus, Key-Länge, OCSP. Config: host, port, warning_days, critical_days, allow_self_signed, check_ocsp. Ergebnis enthält strukturierte Zertifikatsdaten als JSON.
+
+---
+
 ## Block 1.2 — SSL Certificate Check: Backend-Integration + Notification-Staffelung
 
-**Lies zuerst:** Die bestehende Backend-Logik wie Check-Ergebnisse empfangen und verarbeitet werden (Receiver/Worker). Lies auch die bestehende Notification/Alert-Logik.
+**Projekt:** github.com/lukas5001/Overseer
+
+**Lies zuerst:** Die bestehende Backend-Logik wie Check-Ergebnisse empfangen und verarbeitet werden (Receiver/Worker). Lies auch die bestehende Notification/Alert-Logik. Lies den neuen SSL-Check-Typ im Go Agent-Code um zu verstehen welche Daten er liefert.
 
 **Aufgabe:** Integriere den SSL-Check ins Backend und implementiere die gestaffelte Notification-Logik.
 
@@ -249,9 +262,23 @@ Verwende die bestehende Chart-Library des Projekts. X-Achse: Zeit, Y-Achse: Days
 
 ---
 
+### 🔄 COMPACT — Nach Block 1.3
+
+**Compact jetzt** (`/compact`).
+
+**Was gebaut wurde bisher:**
+- Go Agent: Neuer Check-Typ `ssl_certificate` (TLS-Verbindung, Cert-Daten extrahieren, Status-Logik)
+- Backend: SSL Check-Ergebnis-Verarbeitung + Notification-Staffelung (30d/14d/7d/3d gestaffelt, Erneuerungserkennung)
+- Frontend: SSL Check Config-Formular (Hostname, Port, Warning/Critical Days), Zertifikat-Detail-Ansicht mit allen Cert-Feldern + Farbkodierung, History-Chart (Days until expiry über Zeit)
+- DB: Staffelung-Tracking via `last_cert_notification_stage`
+
+---
+
 ## Block 1.4 — Notification Plugin System
 
-**Lies zuerst:** Die bestehende Notification/Alert-Logik im Backend. Wie werden Alerts aktuell versendet? Welche Channels gibt es (Email, Webhook)? Wie ist die Konfiguration gespeichert?
+**Projekt:** github.com/lukas5001/Overseer
+
+**Lies zuerst:** Die bestehende Notification/Alert-Logik im Backend. Wie werden Alerts aktuell versendet? Welche Channels gibt es (Email, Webhook)? Wie ist die Konfiguration gespeichert? Lies auch die bestehende Datenbank-Struktur und API-Patterns.
 
 **Aufgabe:** Baue ein erweiterbares Notification-Channel-System. Bestehende Email- und Webhook-Funktionalität muss danach genauso funktionieren wie vorher.
 
@@ -416,9 +443,25 @@ Wenn eine Alert Rule KEINE Channel-IDs hat → Fallback auf alle aktivierten Cha
 
 ---
 
+### 🔄 COMPACT — Nach Block 1.4
+
+**Compact jetzt** (`/compact`).
+
+**Was gebaut wurde bisher:**
+- SSL Certificate Check komplett (Go + Backend + Frontend)
+- Notification Plugin System: ABC `NotificationChannel` in `notifications/base.py`, Auto-Discovery Registry in `notifications/registry.py`, Dispatcher mit Retry + Auto-Disable in `notifications/dispatcher.py`
+- DB-Tabellen: `notification_channels` (config JSONB, consecutive_failures, enabled), `notification_log` (success/failure tracking)
+- API: CRUD `/api/notification-channels`, Test-Endpoint, `/api/notification-channels/types` (liefert config_schema pro Typ)
+- Bestehende Email+Webhook migriert nach `notifications/channels/email.py` und `webhook.py`
+- Alert Rules erweitert um `notification_channel_ids`
+
+---
+
 ## Block 1.5 — Channel-Implementierungen: Slack, Teams, Telegram
 
-**Lies zuerst:** Die in Block 1.4 erstellte `notifications/base.py` (ABC), `registry.py`, und die bestehenden Channel-Implementierungen (email.py, webhook.py) um das Pattern zu verstehen.
+**Projekt:** github.com/lukas5001/Overseer
+
+**Lies zuerst:** Das Notification Plugin System im Backend: `notifications/base.py` (ABC NotificationChannel), `notifications/registry.py` (Auto-Discovery), `notifications/channels/email.py` und `webhook.py` (als Pattern-Vorlage). Lies auch die `Notification` Datenklasse in `base.py`.
 
 **Aufgabe:** Implementiere drei neue Notification Channels: Slack, Microsoft Teams, Telegram.
 
@@ -551,9 +594,25 @@ Telegram unterstützt Markdown (MarkdownV2). Format:
 
 ---
 
+### 🔄 COMPACT — Nach Block 1.5
+
+**Compact jetzt** (`/compact`).
+
+**Was gebaut wurde bisher:**
+- SSL Certificate Check komplett
+- Notification Plugin System mit Registry, Dispatcher, Retry, Auto-Disable
+- Channel-Implementierungen: `notifications/channels/slack.py` (Block Kit, httpx), `teams.py` (Adaptive Cards), `telegram.py` (MarkdownV2 + escape). Alle verwenden `httpx` async, kein externes SDK.
+- DB: `notification_channels`, `notification_log`. API: CRUD + Test + Types-Endpoint
+- Nachrichtenformat: Severity-Emoji (🔴/🟠/✅), Host/Service/Value/Threshold Felder, "View in Overseer" Link
+- Alert Rules haben `notification_channel_ids` Feld
+
+---
+
 ## Block 1.6 — Notification Frontend: Channel-Verwaltung
 
-**Lies zuerst:** Die bestehende Frontend-Architektur (Routing, Components, API-Calls). Lies auch den `/api/notification-channels/types` Endpoint (erstellt in Block 1.4) der die verfügbaren Channel-Typen mit ihren Config-Schemas liefert.
+**Projekt:** github.com/lukas5001/Overseer
+
+**Lies zuerst:** Die bestehende Frontend-Architektur (Routing, Components, State Management, API-Call-Patterns). Lies auch die API Endpoints: `GET/POST/PUT/DELETE /api/notification-channels`, `POST /api/notification-channels/{id}/test`, `GET /api/notification-channels/types` (liefert verfügbare Channel-Typen mit JSON config_schema pro Typ für dynamische Formular-Generierung).
 
 **Aufgabe:** Baue die UI für Notification-Channel-Verwaltung.
 
@@ -633,9 +692,23 @@ Paginierung: 50 pro Seite.
 
 ---
 
+### 🔄 COMPACT — Nach Block 1.6
+
+**Compact jetzt** (`/compact`).
+
+**Was gebaut wurde bisher:**
+- SSL Certificate Check komplett (Go + Backend + Frontend)
+- Notification Plugin System komplett (Backend: Plugin ABC, Registry, Dispatcher mit Retry/Auto-Disable; Channels: Email, Webhook, Slack, Teams, Telegram)
+- Notification Frontend: Channel-Liste mit Status, Add/Edit/Delete/Test, dynamisches Config-Formular aus JSON Schema, Notification Log Seite, Channel-Zuordnung in Alert Rules
+- DB: `notification_channels`, `notification_log`
+
+---
+
 ## Block 1.7 — Alert Grouping
 
-**Lies zuerst:** Die bestehende Alert-Verarbeitungslogik im Backend (Worker, Alert-Erstellung, Notification-Dispatch). Lies auch den Dispatcher aus Block 1.4.
+**Projekt:** github.com/lukas5001/Overseer
+
+**Lies zuerst:** Die bestehende Alert-Verarbeitungslogik im Backend (Worker, Alert-Erstellung). Lies den Notification Dispatcher (`notifications/dispatcher.py`) — die Grouping-Logik wird ZWISCHEN Alert-Erkennung und Dispatcher eingebaut. Lies auch die Redis-Konfiguration.
 
 **Aufgabe:** Implementiere Alert Grouping — Alerts mit gleichen Eigenschaften werden zu einer einzigen Notification gebündelt statt einzeln gesendet.
 
@@ -729,18 +802,16 @@ Der Grouper-State (aktive Gruppen, Timer) muss persistiert werden weil der Serve
 
 ---
 
-# 🔄 COMPACT PUNKT — Nach Phase 1
+### 🔄 COMPACT — Nach Block 1.7 (Ende Phase 1)
 
-Sage Claude Code: `/compact`
+**Compact jetzt** (`/compact`).
 
-Der nächste Block (2.1) ist vollständig selbsterklärend und referenziert die Codebase direkt.
-
-**Was in Phase 1 gebaut wurde (für deine Referenz, nicht für Claude Code):**
-- SSL Certificate Check (Go Agent + Backend Staffelung + Frontend Detail-View)
-- Notification Plugin System (ABC, Registry, Dispatcher, DB Schema, API)
-- Slack, Teams, Telegram Channel Implementierungen
-- Notification Frontend (Channel-Verwaltung, Log, Alert-Rule-Integration)
-- Alert Grouping (Backend Logik + Redis State + Frontend Config)
+**Was in Phase 1 gebaut wurde:**
+- SSL Certificate Check komplett (Go Check-Typ `ssl_certificate`, Backend Staffelung 30d/14d/7d/3d, Frontend Detail-Ansicht + History-Chart)
+- Notification Plugin System (ABC, Registry, Dispatcher mit Retry/Auto-Disable, DB: `notification_channels` + `notification_log`)
+- Channels: Slack (Block Kit), Teams (Adaptive Cards), Telegram (MarkdownV2) — alle via httpx
+- Notification Frontend (Channel CRUD, Test, dynamisches Config-Formular, Log-Seite, Alert-Rule-Integration)
+- Alert Grouping (AlertGrouper mit group_by/group_wait/group_interval/repeat_interval, Redis State, Grouped Notification Format, Frontend Config + grouped Alert-Ansicht)
 
 ---
 ---
@@ -755,8 +826,9 @@ Der nächste Block (2.1) ist vollständig selbsterklärend und referenziert die 
 
 **Lies zuerst:**
 1. Die gesamte Frontend-Architektur: Routing, Component-Patterns, State Management, API-Call-Patterns
-2. Die bestehende Datenbank-Struktur (alle Tabellen, besonders `tenants`, `hosts`, `services`, `metrics` oder wie Metrikdaten gespeichert werden)
+2. Die bestehende Datenbank-Struktur (alle Tabellen, besonders `tenants`, `hosts`, `services`, und wo/wie Metrikdaten gespeichert werden)
 3. Die bestehende API-Struktur (Endpoint-Patterns, Auth, Tenant-Isolation)
+4. CLAUDE.md im Projekt-Root für Konventionen und Architektur-Entscheidungen
 
 **Kontext:** Overseer hat aktuell Mini-Graphs und eine Error-Übersicht. Es gibt keine frei konfigurierbaren Dashboards. Dieses Feature ist das größte UI-Feature des gesamten Plans.
 
@@ -917,9 +989,19 @@ Alle Widgets nutzen diese Time Range, es sei denn ein Widget hat eine eigene.
 
 ---
 
+### 🔄 COMPACT — Nach Block 2.1
+
+**Compact jetzt** (`/compact`).
+
+**Was gebaut wurde:** Dashboard-Grundgerüst. DB: `dashboards` (config JSONB, share_token) + `dashboard_versions`. API: CRUD `/api/dashboards`, Versionierung, Share-Token. Frontend: Dashboard-Liste als Kacheln, Dashboard-Ansicht mit react-grid-layout (24-Spalten Grid), Edit/View Modus Toggle, Time Range Picker mit URL-Sync, Auto-Refresh. Default "Overview" Dashboard wird pro Tenant auto-erstellt. Config-Struktur: `{schemaVersion, timeSettings, widgets, layout}`.
+
+---
+
 ## Block 2.2 — Widget-System + Erste Widgets
 
-**Lies zuerst:** Den Dashboard-Code aus dem vorherigen Block (DB Schema, API, Grid-Layout im Frontend). Lies auch wie Metrik-Daten in der Datenbank gespeichert sind und wie die bestehende API sie ausliefert.
+**Projekt:** github.com/lukas5001/Overseer
+
+**Lies zuerst:** Den Dashboard-Code: DB Schema (`dashboards`, `dashboard_versions`), API Endpoints (`/api/dashboards`), Frontend Grid (react-grid-layout). Lies auch wie Metrik-Daten in der Datenbank gespeichert sind und wie die bestehende API sie ausliefert. Lies die Dashboard Config JSON-Struktur in der `config` JSONB Spalte.
 
 **Aufgabe:** Baue das Widget-Framework und implementiere die ersten 4 Widget-Typen: Stat, Gauge, Line Chart, Table.
 
@@ -1083,9 +1165,19 @@ Jedes Widget hat einen eigenen Refresh-Timer:
 
 ---
 
+### 🔄 COMPACT — Nach Block 2.2
+
+**Compact jetzt** (`/compact`).
+
+**Was gebaut wurde:** Dashboard-System mit Widget-Framework. Widget Registry (React): jeder Widget-Typ registriert component + configComponent + defaultSize. Widget-Picker UI (Slide-Over). Widget Config Dialog mit Tabs Data/Display. 4 Widget-Typen: Stat (große Zahl + Sparkline), Gauge (ECharts Halbkreis mit Thresholds), Line Chart (ECharts Zeitreihe mit Zoom), Table (sortierbar). Dashboard Query API: `POST /api/dashboards/query` (metric_names, host_ids, from/to, aggregation, interval). Per-Widget Refresh mit Visibility-Aware Polling.
+
+---
+
 ## Block 2.3 — Template Variables + Dashboard Sharing + TV-Mode
 
-**Lies zuerst:** Den Dashboard-Code aus den vorherigen Blocks. Lies auch wie der bestehende TV-Mode funktioniert.
+**Projekt:** github.com/lukas5001/Overseer
+
+**Lies zuerst:** Das Dashboard-System: DB (`dashboards`, `dashboard_versions`), API (`/api/dashboards`, `/api/dashboards/query`), Frontend (react-grid-layout Grid, Widget Registry, Widget-Picker, Config Dialog, 4 Widget-Typen). Lies auch wie der bestehende TV-Mode funktioniert.
 
 **Aufgabe:** Implementiere Dashboard-Variablen (Dropdown-Filter), Sharing (Public Links), und TV-Mode-Integration.
 
@@ -1183,19 +1275,11 @@ Auf dem Dashboard: Im View-Modus ein Button "TV Mode" → öffnet das Dashboard 
 
 ---
 
-# 🔄 COMPACT PUNKT — Nach Phase 2
+### 🔄 COMPACT — Nach Block 2.3 (Ende Phase 2)
 
-Sage Claude Code: `/compact`
+**Compact jetzt** (`/compact`).
 
-**Was in Phase 2 gebaut wurde:**
-- Dashboard CRUD (DB, API, Frontend-Liste)
-- react-grid-layout Grid mit Edit/View Modus
-- Widget Framework (Registry, Config Dialog, Refresh-Logik)
-- 4 Widget-Typen: Stat, Gauge, Line Chart, Table
-- Dashboard Query API
-- Template Variables mit Cascading und URL-Sync
-- Dashboard Sharing (Internal, Public, Embed)
-- TV-Mode Integration
+**Was in Phase 2 gebaut wurde:** Vollständiges Dashboard-System. DB: `dashboards` (config JSONB) + `dashboard_versions`. API: CRUD, Query, Share, Versions. Frontend: react-grid-layout 24-Spalten Grid, Edit/View Modus, Widget-Picker, Config Dialog. 4 Widget-Typen (Stat, Gauge, Line Chart, Table). Dashboard Query API für Metrik-Daten. Template Variables als Dropdowns (Query/Custom, Multi-Select, Cascading, URL-Sync). Sharing (Internal Link, Public Token, iframe Embed). TV-Mode Integration mit Dashboard-Rotation.
 
 ---
 ---
@@ -1343,9 +1427,19 @@ Concerns (in dieser Reihenfolge priorisieren):
 
 ---
 
+### 🔄 COMPACT — Nach Block 3.1
+
+**Compact jetzt** (`/compact`).
+
+**Was gebaut wurde:** TimescaleDB Continuous Aggregates (`metrics_5m`, `metrics_hourly`, `metrics_daily`) mit automatischen Refresh-Policies und Compression. Dashboard Query API nutzt jetzt Aggregates basierend auf Zeitraum. PDF Report Engine in `reports/`: `engine.py` (Orchestrierung), `data_collector.py` (DB Queries), `chart_generator.py` (Plotly → SVG via Kaleido). Jinja2 Templates in `reports/templates/` (base.html mit @page Rules, Kopf/Fußzeile, Seitenzahlen). Health Score Berechnung (gewichteter Availability-Durchschnitt). Automatische Highlights/Concerns Generierung.
+
+---
+
 ## Block 3.2 — Report Scheduling, Branding, Delivery
 
-**Lies zuerst:** Den Report-Engine-Code aus Block 3.1. Lies auch die bestehende Email-Logik und die Tenant-Konfiguration.
+**Projekt:** github.com/lukas5001/Overseer
+
+**Lies zuerst:** Die Report Engine in `reports/` (engine.py, data_collector.py, chart_generator.py, templates/). Lies auch die bestehende Email-Logik, die Tenant-Konfiguration, und die APScheduler-Nutzung (falls schon vorhanden, sonst: apscheduler ist noch zu installieren).
 
 **Aufgabe:** Baue Report-Scheduling (automatische periodische Reports), Branding-System, Email-Delivery, und die Frontend-UI für Report-Verwaltung.
 
@@ -1490,9 +1584,19 @@ PDFs werden 90 Tage auf dem Server gespeichert, danach automatisch gelöscht (Cr
 
 ---
 
+### 🔄 COMPACT — Nach Block 3.2
+
+**Compact jetzt** (`/compact`).
+
+**Was gebaut wurde:** Report-Scheduling und -Delivery. DB: `report_schedules` (cron_expression, recipients JSONB, scope, branding, cover_text) + `report_deliveries` (status tracking). APScheduler AsyncIOScheduler für periodische Report-Generierung. Branding-System: Logo-Upload, Primary Color, Company Name, Footer Text — alles als CSS Custom Properties in Jinja2 Templates. Email-Delivery mit smtplib + Retry (3 Versuche, Backoff). Frontend: Reports-Seite mit Schedule-Verwaltung (Wizard: Typ→Frequenz→Scope→Empfänger→Branding→Preview), Delivery History (Download/Resend), "Generate Now" für On-Demand Reports. Report-Typen: Executive Summary (1-2 Seiten, Health Score, KPIs) und Technical (mehrseitig, SLA-Tabelle, Performance Charts, Incidents). PDF Retention: 90 Tage.
+
+---
+
 ## Block 3.3 — Public Status Pages
 
-**Lies zuerst:** Die bestehende Datenbank-Struktur (Tenants, Hosts, Services, Service-Status). Lies auch die bestehende Check-Status-Logik (wie wird OK/WARNING/CRITICAL bestimmt).
+**Projekt:** github.com/lukas5001/Overseer
+
+**Lies zuerst:** Die bestehende Datenbank-Struktur (Tenants, Hosts, Services, Service-Status). Lies auch die bestehende Check-Status-Logik (wie wird OK/WARNING/CRITICAL bestimmt). Lies die Frontend-Architektur für das Routing (Status Pages brauchen eine öffentliche Route ohne Auth).
 
 **Aufgabe:** Implementiere öffentliche Status Pages die MSPs für ihre Kunden anbieten können.
 
@@ -1713,18 +1817,11 @@ Neuer Menüpunkt: Status Pages
 
 ---
 
-# 🔄 COMPACT PUNKT — Nach Phase 3
+### 🔄 COMPACT — Nach Block 3.3 (Ende Phase 3)
 
-Sage Claude Code: `/compact`
+**Compact jetzt** (`/compact`).
 
-**Was in Phase 3 gebaut wurde:**
-- TimescaleDB Continuous Aggregates (5min, hourly, daily)
-- PDF Report Engine (WeasyPrint + Plotly + Jinja2)
-- Report Scheduling (APScheduler), Branding, Email-Delivery
-- Report Frontend (Schedule-Verwaltung, History, Preview, Generate Now)
-- Public Status Pages (DB, automatische Status-Berechnung, Incidents, Uptime-Balken)
-- Status Page Admin UI (Komponenten, Incidents, Wartung)
-- Subscriber-System
+**Was in Phase 3 gebaut wurde:** Continuous Aggregates (`metrics_5m`, `metrics_hourly`, `metrics_daily`). PDF Report Engine (WeasyPrint + Plotly/Kaleido + Jinja2) mit Health Score, auto Highlights/Concerns. Report Scheduling (APScheduler + DB `report_schedules`/`report_deliveries`) mit Branding und Email-Delivery. Report Frontend (Schedule-Wizard, History, Preview, Generate Now). Public Status Pages: DB (`status_pages`, `status_page_components`, `component_check_mappings`, `status_page_incidents`, `incident_updates`, `component_daily_uptime`, `status_page_subscribers`). Automatische Status-Berechnung aus zugeordneten Checks. Auto-Incident bei Outage + Auto-Resolve nach 5min Stabilität. 90-Tage Uptime-Balken. Subscriber-System (Email Double Opt-In). Admin UI für Komponenten, Incidents, geplante Wartung.
 
 ---
 ---
@@ -1891,9 +1988,19 @@ Network Scans werden on-demand ausgeführt (API-Call vom Backend) und optional p
 
 ---
 
+### 🔄 COMPACT — Nach Block 4.1
+
+**Compact jetzt** (`/compact`).
+
+**Was gebaut wurde:** Go Agent: Service Discovery — erkennt laufende Services via systemd (Linux) / Windows Service Manager, Listening Ports via gopsutil, generiert `suggested_checks` basierend auf Service-Typ. Sendet Ergebnisse als `service_discovery` JSON alle 10 Minuten. Go Collector: Network Discovery — nmap-Wrapper (`Ullaakut/nmap/v3`), Device-Typ-Erkennung (Port-Fingerprinting + SNMP sysObjectID + MAC OUI), generiert `network_discovery` JSON mit ip, hostname, vendor, device_type, open_ports, suggested_checks.
+
+---
+
 ## Block 4.2 — Auto-Discovery: Backend + Frontend
 
-**Lies zuerst:** Die Go-Discovery-Implementierung aus Block 4.1. Lies auch die bestehende Host/Service-Erstellungs-API und das Frontend dafür.
+**Projekt:** github.com/lukas5001/Overseer
+
+**Lies zuerst:** Die Go-Discovery-Implementierung im Agent (Service Discovery) und Collector (Network Discovery). Lies das Format der Discovery-Daten die sie senden. Lies auch die bestehende Host/Service-Erstellungs-API und das Frontend dafür.
 
 **Aufgabe:** Baue das Backend (Discovery Results verarbeiten, Rules Engine, Approval-Flow) und das Frontend (Discovery UI).
 
@@ -2007,9 +2114,19 @@ Checkboxen in der Tabelle + "Add Selected (5)" Button oben → Bulk-Dialog:
 
 ---
 
+### 🔄 COMPACT — Nach Block 4.2
+
+**Compact jetzt** (`/compact`).
+
+**Was gebaut wurde:** Discovery Backend: DB `discovery_results` (ip, hostname, device_type, open_ports, suggested_checks, status new/added/ignored, matched_host_id). API: `POST /api/discovery/network-scan` (startet Scan), `GET /api/discovery/results`, `POST .../add` + `.../ignore` + `.../bulk-add`. Discovery Rules Engine: DB `discovery_rules` (conditions JSONB, action auto_add/pending/ignore). Abgleich mit bestehenden Hosts via IP. Frontend: Discovery-Seite mit Scan-Start, Results-Tabelle (New/Known/Ignored), Add-Dialog (Hostname, Tags, Checks vorausgewählt), Bulk-Add, Ignore-Liste.
+
+---
+
 ## Block 4.3 — Alert Suppression & Dependencies
 
-**Lies zuerst:** Die bestehende Alert/Notification-Logik. Lies auch den Grouper aus Block 1.7.
+**Projekt:** github.com/lukas5001/Overseer
+
+**Lies zuerst:** Die bestehende Alert/Notification-Logik im Backend. Lies den Alert Grouper (`notifications/grouper.py`) — die Suppression kommt VOR dem Grouper. Lies auch die bestehende Host/Service Datenstruktur (wie Hosts und Services referenziert werden).
 
 **Aufgabe:** Implementiere Alert Suppression basierend auf Host/Service Dependencies.
 
@@ -2113,17 +2230,11 @@ Suppressed Alerts werden in der Alert-Liste angezeigt, aber visuell anders:
 
 ---
 
-# 🔄 COMPACT PUNKT — Nach Phase 4
+### 🔄 COMPACT — Nach Block 4.3 (Ende Phase 4)
 
-Sage Claude Code: `/compact`
+**Compact jetzt** (`/compact`).
 
-**Was in Phase 4 gebaut wurde:**
-- Agent Service Discovery (Linux: systemd + ports, Windows: services + ports)
-- Collector Network Discovery (nmap-Scan, Device-Typ-Erkennung, SNMP)
-- Discovery Backend (Results, Abgleich, Rules Engine)
-- Discovery Frontend (Scan starten, Results-Tabelle, Add/Ignore, Bulk-Add)
-- Alert Suppression (Dependencies DB, Inhibition Engine, Parent-Recovery-Logik)
-- Dependencies Frontend (Host/Service Detail, Dependency Map)
+**Was in Phase 4 gebaut wurde:** Auto-Discovery: Go Agent Service Discovery (systemd/Windows Services + Listening Ports + suggested_checks), Go Collector Network Discovery (nmap + SNMP + MAC OUI + Device-Typ-Erkennung). Backend: DB `discovery_results` + `discovery_rules`, API für Scan-Start/Results/Add/Ignore/Bulk-Add, Rules Engine. Frontend: Discovery-Seite mit Scan-UI, Results-Tabelle, Add/Ignore/Bulk-Add. Alert Suppression: DB `dependencies` (source→depends_on), InhibitionEngine (Ancestor-Walk, should_suppress), integriert VOR dem Grouper. Recovery-Logik: Parent recovered → suppressed Children werden reevaluiert. Frontend: Dependencies-Tab auf Host/Service Detail, Dependency Map Visualisierung, suppressed Alerts grau + eingeklappt in Alert-Liste.
 
 ---
 ---
@@ -2309,9 +2420,19 @@ Verwende `ts_headline()` für Highlighting und `websearch_to_tsquery()` für nat
 
 ---
 
+### 🔄 COMPACT — Nach Block 5.1
+
+**Compact jetzt** (`/compact`).
+
+**Was gebaut wurde:** Go Agent Log Collection: File Tailing (fsnotify + Offset-Checkpointing), journald (go-systemd/sdjournal), Windows Event Log. Batching (1000 Zeilen oder 5s), zstd-Kompression, Disk Queue bei Ausfall (500MB max), Severity-Erkennung aus Log-Text. Backend Log Ingestion: `POST /api/logs/ingest` (zstd-komprimiertes JSON Array), Bulk-Insert in TimescaleDB. DB: `logs` Hypertable (time, tenant_id, host_id, source, service, severity, message, fields JSONB, search_vector TSVECTOR), GIN Indexes, Compression nach 2h, Retention 30 Tage. Log Search API: `POST /api/logs/search` mit websearch_to_tsquery + ts_headline Highlighting.
+
+---
+
 ## Block 5.2 — Log Viewer Frontend + Log-basierte Alerts
 
-**Lies zuerst:** Die Log Search API aus Block 5.1. Lies auch die bestehende Alert-Ansicht und Alert-Rule-Konfiguration.
+**Projekt:** github.com/lukas5001/Overseer
+
+**Lies zuerst:** Die Log Search API: `POST /api/logs/search` (query, host_ids, services, severity_min, from/to, limit, offset → returns logs mit highlighted message). Lies auch die bestehende Alert-Rule-Konfiguration und die Frontend-Architektur. Lies die `logs` Tabelle im DB-Schema.
 
 **Aufgabe:** Baue den Log Viewer im Frontend und Log-basierte Alert Rules.
 
@@ -2409,9 +2530,19 @@ In der Alert-Rule-Konfiguration: Neuer Rule-Typ "Log Pattern".
 
 ---
 
+### 🔄 COMPACT — Nach Block 5.2
+
+**Compact jetzt** (`/compact`).
+
+**Was gebaut wurde:** Log Viewer Frontend: Neuer Menüpunkt "Logs", Such-Leiste (Freitext mit websearch-Syntax), Filter (Host/Service/Severity/Time), Log-Stream mit Severity-Badges und farbkodiertem Text, Ergebnis-Highlighting, klappbare mehrzeilige Einträge. Live-Tail Modus (WebSocket/SSE, Pause-Funktion). Log-Korrelation: Alert-Detail hat Tab "Logs" mit automatisch gefilterten Logs (Host + Zeitraum um den Alert). Log-basierte Alert Rules: Neuer Rule-Typ "Log Pattern" mit 3 Condition-Typen (Any match, Threshold, Absence), Pattern/Regex, Scope, Time Window. Backend: Redis Sliding Windows für Threshold-Rules, Redis Timer für Absence-Rules.
+
+---
+
 ## Block 5.3 — SSO (OIDC + SAML + LDAP)
 
-**Lies zuerst:** Die bestehende Authentifizierungs-Logik (Login, JWT, Session Management, User-Tabelle). Lies auch die Tenant-Tabelle.
+**Projekt:** github.com/lukas5001/Overseer
+
+**Lies zuerst:** Die bestehende Authentifizierungs-Logik (Login-Endpoint, JWT-Erstellung, Session/Token Management, User-Tabelle, 2FA). Lies auch die Tenant-Tabelle und wie Tenant-Isolation funktioniert. Lies CLAUDE.md für Sicherheitsarchitektur-Details.
 
 **Aufgabe:** Implementiere Single Sign-On mit OIDC, SAML und LDAP. Bestehende lokale Authentifizierung muss weiterhin funktionieren.
 
@@ -2574,9 +2705,19 @@ Erste Gruppe die matcht bestimmt die Rolle. `*` ist der Fallback.
 
 ---
 
+### 🔄 COMPACT — Nach Block 5.3
+
+**Compact jetzt** (`/compact`).
+
+**Was gebaut wurde:** SSO System. DB: `tenant_idp_config` (auth_type oidc/saml/ldap, email_domains, oidc_discovery_url + client_id/secret, saml_metadata_url, ldap_url + base_dn + bind_dn, role_mapping JSONB, jit_provisioning, allow_password_fallback). Home Realm Discovery: `POST /api/auth/discover` → Email-Domain → IdP Lookup. OIDC Flow: `/auth/oidc/start` → IdP Redirect → `/auth/oidc/callback` (authlib). SAML Flow: `/auth/saml/start` → `/auth/saml/acs` (python3-saml). LDAP: Direct bind via ldap3. JIT Provisioning: User auto-erstellt bei erstem Login, Attribute bei jedem Login aktualisiert. Rollen-Mapping: IdP Groups → Overseer Roles. Frontend: Login-Seite mit SSO-Button + Home Realm Discovery, Admin UI für IdP-Konfiguration (Settings → Authentication).
+
+---
+
 ## Block 5.4 — Anomaly Detection & Predictive Alerts
 
-**Lies zuerst:** Die Metrik-Datenstrukturen (wo und wie Metriken gespeichert werden). Lies auch den bestehenden AI-Service (Ollama-Integration). Lies die Continuous Aggregates aus Block 3.1.
+**Projekt:** github.com/lukas5001/Overseer
+
+**Lies zuerst:** Die Metrik-Datenstrukturen (wo und wie Metriken gespeichert werden, Tabellennamen). Lies die Continuous Aggregates (`metrics_5m`, `metrics_hourly`, `metrics_daily`). Lies den bestehenden AI-Service (Ollama-Integration) falls vorhanden. Lies die bestehende Alert-Erstellungs-Logik.
 
 **Aufgabe:** Implementiere Anomaly Detection (lernt was normal ist, alertiert bei Abweichungen) und Predictive Alerts (sagt voraus wann Ressourcen erschöpft sind).
 
@@ -2733,11 +2874,11 @@ Confidence: High (94%)
 
 ---
 
-# 🔄 COMPACT PUNKT — Nach Phase 5
+### 🔄 COMPACT — Nach Block 5.4 (Ende Phase 5)
 
 **Alles ist fertig.** Alle 10 Features sind implementiert.
 
-**Gesamtübersicht was gebaut wurde:**
+**Gesamtübersicht aller Features:**
 1. SSL Certificate Monitoring
 2. Notification Plugin System (Slack, Teams, Telegram)
 3. Alert Grouping
