@@ -372,7 +372,7 @@ async def refresh_aggregate_views():
     metrics_hourly: every hour (on the hour cycle)
     metrics_daily:  every hour (on the hour cycle)
     """
-    from api.app.core.database import async_engine
+    from api.app.core.database import engine as async_engine
     from sqlalchemy import text as sa_text
 
     await asyncio.sleep(30)  # Initial delay — let the app fully start
