@@ -26,6 +26,7 @@ import CustomDashboardViewPage from './pages/CustomDashboardViewPage'
 import TvPage from './pages/TvPage'
 import TvDashboardPage from './pages/TvDashboardPage'
 import PublicDashboardPage from './pages/PublicDashboardPage'
+import ReportsPage from './pages/ReportsPage'
 import LoginPage from './pages/LoginPage'
 import AiChatWidget from './components/AiChatWidget'
 
@@ -73,6 +74,7 @@ export default function App() {
           <Route path="/global-policies" element={<GlobalPoliciesPage />} />
           <Route path="/host-types" element={<HostTypesPage />} />
           <Route path="/sla" element={<SlaReportsPage />} />
+          <Route path="/reports" element={<ReportsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/security" element={<SecurityPage />} />
           <Route path="/admin" element={<AdminPage />} />

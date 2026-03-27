@@ -841,3 +841,96 @@ export interface DashboardVersion {
   changed_by: string | null
   created_at: string
 }
+
+// ── Report Scheduling ────────────────────────────────────────────────────────
+
+export interface ReportRecipients {
+  to: string[]
+  cc: string[]
+  bcc: string[]
+}
+
+export interface ReportScope {
+  host_ids?: string[] | null
+  tags?: string[] | null
+}
+
+export interface ReportBranding {
+  logo_path?: string | null
+  company_name: string
+  primary_color: string
+  footer_text: string
+}
+
+export interface ReportSchedule {
+  id: string
+  tenant_id: string
+  name: string
+  report_type: string
+  cron_expression: string
+  recipients: ReportRecipients
+  scope: ReportScope | null
+  branding: ReportBranding
+  cover_text: string | null
+  timezone: string
+  enabled: boolean
+  last_run_at: string | null
+  next_run_at: string | null
+  created_by: string | null
+  created_at: string
+}
+
+export interface ReportScheduleCreate {
+  tenant_id: string
+  name: string
+  report_type: string
+  cron_expression: string
+  recipients: ReportRecipients
+  scope?: ReportScope | null
+  branding?: ReportBranding
+  cover_text?: string | null
+  timezone?: string
+  enabled?: boolean
+}
+
+export interface ReportScheduleUpdate {
+  name?: string
+  report_type?: string
+  cron_expression?: string
+  recipients?: ReportRecipients
+  scope?: ReportScope | null
+  branding?: ReportBranding
+  cover_text?: string | null
+  timezone?: string
+  enabled?: boolean
+}
+
+export interface ReportDelivery {
+  id: string
+  schedule_id: string | null
+  tenant_id: string
+  report_type: string
+  report_period_start: string
+  report_period_end: string
+  pdf_path: string | null
+  pdf_size_bytes: number | null
+  recipients: ReportRecipients | null
+  status: string
+  error_message: string | null
+  generated_at: string | null
+  sent_at: string | null
+  created_by: string | null
+  created_at: string
+  schedule_name: string | null
+}
+
+export interface ReportGenerateRequest {
+  tenant_id: string
+  report_type: string
+  period_start: string
+  period_end: string
+  recipients?: ReportRecipients | null
+  branding?: ReportBranding
+  cover_text?: string | null
+  scope?: ReportScope | null
+}

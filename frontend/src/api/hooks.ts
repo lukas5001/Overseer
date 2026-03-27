@@ -16,6 +16,8 @@ import type {
   DashboardSummary, DashboardFull, DashboardVersion, DashboardShareConfig,
   DashboardQueryRequest, DashboardQueryResponse,
   MetaHost, MetaService,
+  ReportSchedule, ReportScheduleCreate, ReportScheduleUpdate,
+  ReportDelivery, ReportGenerateRequest,
 } from '../types'
 import axios from 'axios'
 
@@ -805,6 +807,71 @@ export function usePublicDashboardMetaHosts(shareToken?: string) {
     queryFn: () => publicApi.get(`/api/v1/public/dashboards/${shareToken}/meta/hosts`).then(r => r.data),
     enabled: !!shareToken,
     staleTime: 60_000,
+  })
+}
+
+// ── Reports ─────────────────────────────────────────────────────────────────
+
+export function useReportSchedules(tenantId?: string) {
+  return useQuery<ReportSchedule[]>({
+    queryKey: ['report-schedules', tenantId],
+    queryFn: () => api.get('/api/v1/reports/schedules', { params: tenantId ? { tenant_id: tenantId } : {} }).then(r => r.data),
+  })
+}
+
+export function useCreateReportSchedule() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body: ReportScheduleCreate) => api.post('/api/v1/reports/schedules', body).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['report-schedules'] }),
+  })
+}
+
+export function useUpdateReportSchedule() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...body }: ReportScheduleUpdate & { id: string }) =>
+      api.patch(`/api/v1/reports/schedules/${id}`, body).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['report-schedules'] }),
+  })
+}
+
+export function useDeleteReportSchedule() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/api/v1/reports/schedules/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['report-schedules'] }),
+  })
+}
+
+export function useReportHistory(params?: { tenant_id?: string; schedule_id?: string; status?: string; limit?: number; offset?: number }) {
+  return useQuery<ReportDelivery[]>({
+    queryKey: ['report-history', params],
+    queryFn: () => api.get('/api/v1/reports/history', { params }).then(r => r.data),
+  })
+}
+
+export function useGenerateReport() {
+  const qc = useQueryClient()
+  return useMutation<ReportDelivery, unknown, ReportGenerateRequest>({
+    mutationFn: (body) => api.post('/api/v1/reports/generate', body).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['report-history'] }),
+  })
+}
+
+export function useResendReport() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (deliveryId: string) => api.post(`/api/v1/reports/resend/${deliveryId}`).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['report-history'] }),
+  })
+}
+
+export function useRetryReport() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (deliveryId: string) => api.post(`/api/v1/reports/retry/${deliveryId}`).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['report-history'] }),
   })
 }
 

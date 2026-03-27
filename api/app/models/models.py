@@ -408,3 +408,48 @@ class DashboardVersion(Base):
     created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 
     dashboard = relationship("Dashboard", back_populates="versions")
+
+
+class ReportSchedule(Base):
+    __tablename__ = "report_schedules"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
+    name = Column(String(255), nullable=False)
+    report_type = Column(String(50), nullable=False)
+    cron_expression = Column(String(100), nullable=False)
+    recipients = Column(JSONB, nullable=False)
+    scope = Column(JSONB, nullable=True)
+    branding = Column(JSONB, nullable=False, default=dict)
+    cover_text = Column(Text, nullable=True)
+    timezone = Column(String(50), nullable=False, default="Europe/Rome")
+    enabled = Column(Boolean, nullable=False, default=True)
+    last_run_at = Column(DateTime(timezone=True), nullable=True)
+    next_run_at = Column(DateTime(timezone=True), nullable=True)
+    created_by = Column(UUID(as_uuid=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+    deliveries = relationship("ReportDelivery", back_populates="schedule", passive_deletes=True)
+
+
+class ReportDelivery(Base):
+    __tablename__ = "report_deliveries"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    schedule_id = Column(UUID(as_uuid=True), ForeignKey("report_schedules.id", ondelete="SET NULL"), nullable=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
+    report_type = Column(String(50), nullable=False)
+    report_period_start = Column(DateTime, nullable=False)
+    report_period_end = Column(DateTime, nullable=False)
+    pdf_path = Column(String(500), nullable=True)
+    pdf_size_bytes = Column(Integer, nullable=True)
+    recipients = Column(JSONB, nullable=True)
+    status = Column(String(20), nullable=False, default="pending")
+    error_message = Column(Text, nullable=True)
+    generated_at = Column(DateTime(timezone=True), nullable=True)
+    sent_at = Column(DateTime(timezone=True), nullable=True)
+    created_by = Column(UUID(as_uuid=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+    schedule = relationship("ReportSchedule", back_populates="deliveries")

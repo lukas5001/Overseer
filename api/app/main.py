@@ -14,7 +14,7 @@ from slowapi.errors import RateLimitExceeded
 from sqlalchemy import text
 
 from api.app.core.database import AsyncSessionLocal
-from api.app.routers import auth, status, tenants, hosts, services, collectors, downtimes, config, history, users, audit, notifications, templates, two_factor, saved_filters, alert_rules, sla, admin, agent, scripts, global_policies, host_types, dashboards
+from api.app.routers import auth, status, tenants, hosts, services, collectors, downtimes, config, history, users, audit, notifications, templates, two_factor, saved_filters, alert_rules, sla, admin, agent, scripts, global_policies, host_types, dashboards, reports
 
 # ==================== ENV Validation ====================
 
@@ -116,6 +116,7 @@ app.include_router(global_policies.router, prefix="/api/v1/global-policies", tag
 app.include_router(host_types.router, prefix="/api/v1/host-types", tags=["host-types"])
 app.include_router(dashboards.router, prefix="/api/v1/dashboards", tags=["dashboards"])
 app.include_router(dashboards.public_router, prefix="/api/v1/public", tags=["public"])
+app.include_router(reports.router, prefix="/api/v1/reports", tags=["reports"])
 
 
 @app.get("/health")
@@ -402,3 +403,8 @@ async def startup():
     asyncio.create_task(downtime_expiry_watcher())
     asyncio.create_task(dead_agent_watcher())
     asyncio.create_task(refresh_aggregate_views())
+
+    # Report scheduler
+    from reports.scheduler import start_scheduler, cleanup_old_pdfs
+    await start_scheduler()
+    asyncio.create_task(cleanup_old_pdfs())
