@@ -1,0 +1,45 @@
+{% if data.performance %}
+<table>
+  <thead>
+    <tr>
+      <th>Service</th>
+      <th>Host</th>
+      <th>Typ</th>
+      <th class="text-right">Avg</th>
+      <th class="text-right">Max</th>
+      <th class="text-right">Min</th>
+      <th class="text-right">Samples</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for p in data.performance | sort(attribute='avg_val', reverse=True) %}
+    {% if loop.index <= 30 %}
+    <tr>
+      <td>{{ p.service_name }}</td>
+      <td class="text-muted">{{ p.host_name }}</td>
+      <td class="text-muted">{{ p.check_type }}</td>
+      <td class="text-right">
+        {% if p.avg_val > 80 and p.check_type in ['agent_cpu', 'agent_memory', 'agent_disk'] %}
+          <span class="badge badge-red">{{ "%.1f"|format(p.avg_val) }}{{ p.unit }}</span>
+        {% else %}
+          {{ "%.1f"|format(p.avg_val) }}{{ p.unit }}
+        {% endif %}
+      </td>
+      <td class="text-right">{{ "%.1f"|format(p.max_val) }}{{ p.unit }}</td>
+      <td class="text-right">{{ "%.1f"|format(p.min_val) }}{{ p.unit }}</td>
+      <td class="text-right text-muted">{{ p.samples }}</td>
+    </tr>
+    {% endif %}
+    {% endfor %}
+  </tbody>
+</table>
+
+{% for chart_name, chart_svg in charts.items() %}
+{% if chart_name.startswith('perf_') %}
+<div class="chart mt-4">{{ chart_svg | safe }}</div>
+{% endif %}
+{% endfor %}
+
+{% else %}
+<div class="insufficient-data">Keine Performance-Daten für diesen Zeitraum.</div>
+{% endif %}

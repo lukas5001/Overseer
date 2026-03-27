@@ -1,0 +1,43 @@
+{% if data.incidents %}
+<table>
+  <thead>
+    <tr>
+      <th>Service</th>
+      <th>Host</th>
+      <th>Severity</th>
+      <th>Beginn</th>
+      <th>Ende</th>
+      <th class="text-right">Dauer</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for inc in data.incidents | sort(attribute='started_at', reverse=True) %}
+    {% if loop.index <= 50 %}
+    <tr>
+      <td>{{ inc.service_name }}</td>
+      <td class="text-muted">{{ inc.host_name }}</td>
+      <td>
+        {% if inc.severity == 'CRITICAL' %}
+          <span class="badge badge-red">CRITICAL</span>
+        {% else %}
+          <span class="badge badge-yellow">WARNING</span>
+        {% endif %}
+      </td>
+      <td>{{ inc.started_at.strftime('%d.%m. %H:%M') }}</td>
+      <td>{% if inc.ended_at %}{{ inc.ended_at.strftime('%d.%m. %H:%M') }}{% else %}—{% endif %}</td>
+      <td class="text-right">{{ "%.0f"|format(inc.duration_minutes) }} min</td>
+    </tr>
+    {% endif %}
+    {% endfor %}
+  </tbody>
+</table>
+{% if data.incidents | length > 50 %}
+<p class="text-sm text-muted mt-4">Zeigt die neuesten 50 von {{ data.incidents | length }} Incidents.</p>
+{% endif %}
+
+{% if charts.incident_timeline %}
+<div class="chart mt-4">{{ charts.incident_timeline | safe }}</div>
+{% endif %}
+{% else %}
+<div class="insufficient-data">Keine Incidents im Berichtszeitraum. &#10003;</div>
+{% endif %}

@@ -1,0 +1,26 @@
+{% if data.health_score is not none %}
+<div class="health-score-container">
+  <div>
+    <div class="health-big health-{{ data.health_color }}">{{ "%.2f"|format(data.health_score) }}%</div>
+    {% if data.health_score_prev is not none %}
+    <div class="health-trend">
+      {% set diff = data.health_score - data.health_score_prev %}
+      {% if diff > 0 %}
+        <span class="trend-up">&#9650; +{{ "%.2f"|format(diff) }}%</span> vs. Vorperiode
+      {% elif diff < 0 %}
+        <span class="trend-down">&#9660; {{ "%.2f"|format(diff) }}%</span> vs. Vorperiode
+      {% else %}
+        &#9654; Unverändert vs. Vorperiode
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+  {% if charts.health_gauge %}
+  <div class="chart">{{ charts.health_gauge | safe }}</div>
+  {% endif %}
+</div>
+{% else %}
+<div class="insufficient-data">
+  Health Score: N/A — Nicht genügend Daten für diesen Zeitraum.
+</div>
+{% endif %}

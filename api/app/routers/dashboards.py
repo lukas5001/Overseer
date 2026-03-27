@@ -572,12 +572,23 @@ async def public_dashboard_query(
         for row in svc_result.all()
     }
 
-    pg_agg = {"avg": "AVG(cr.value)", "min": "MIN(cr.value)", "max": "MAX(cr.value)", "sum": "SUM(cr.value)"}
+    agg_source = _pick_aggregate_source(time_from, time_to)
+    AGG_COL = {"avg": "avg_val", "min": "min_val", "max": "max_val", "sum": "avg_val"}
+    pg_agg_raw = {"avg": "AVG(cr.value)", "min": "MIN(cr.value)", "max": "MAX(cr.value)", "sum": "SUM(cr.value)"}
     series = []
 
     if body.interval:
         pg_interval = INTERVAL_TO_PG[body.interval]
-        if body.aggregation == "last":
+        if agg_source and body.aggregation != "last":
+            col = AGG_COL[body.aggregation]
+            sql = text(f"""
+                SELECT time_bucket(:interval, a.bucket) AS time, a.service_id, AVG(a.{col}) AS value
+                FROM {agg_source} a
+                WHERE a.service_id = ANY(:sids) AND a.bucket >= :t_from AND a.bucket <= :t_to
+                GROUP BY time_bucket(:interval, a.bucket), a.service_id ORDER BY a.service_id, time
+            """)
+            rows = await db.execute(sql, {"interval": pg_interval, "sids": service_ids, "t_from": time_from, "t_to": time_to})
+        elif body.aggregation == "last":
             sql = text("""
                 WITH buckets AS (
                     SELECT time_bucket(:interval, cr.time) AS bucket, cr.service_id, cr.value, cr.unit,
@@ -587,22 +598,24 @@ async def public_dashboard_query(
                 )
                 SELECT bucket AS time, service_id, value, unit FROM buckets WHERE rn = 1 ORDER BY service_id, bucket
             """)
+            rows = await db.execute(sql, {"interval": pg_interval, "sids": service_ids, "t_from": time_from, "t_to": time_to})
         else:
-            agg_expr = pg_agg[body.aggregation]
+            agg_expr = pg_agg_raw[body.aggregation]
             sql = text(f"""
                 SELECT time_bucket(:interval, cr.time) AS time, cr.service_id, {agg_expr} AS value, MAX(cr.unit) AS unit
                 FROM check_results cr
                 WHERE cr.service_id = ANY(:sids) AND cr.time >= :t_from AND cr.time <= :t_to AND cr.value IS NOT NULL
                 GROUP BY time_bucket(:interval, cr.time), cr.service_id ORDER BY cr.service_id, time
             """)
-        rows = await db.execute(sql, {"interval": pg_interval, "sids": service_ids, "t_from": time_from, "t_to": time_to})
+            rows = await db.execute(sql, {"interval": pg_interval, "sids": service_ids, "t_from": time_from, "t_to": time_to})
+
         by_service: dict = {}
         unit_by_service: dict = {}
         for row in rows.fetchall():
             sid = row.service_id
             if sid not in by_service:
                 by_service[sid] = []
-                unit_by_service[sid] = row.unit or ""
+                unit_by_service[sid] = getattr(row, "unit", "") or ""
             by_service[sid].append({"time": row.time.isoformat(), "value": round(row.value, 3) if row.value is not None else None})
         for sid, data in by_service.items():
             meta = svc_meta.get(sid, {})
@@ -614,8 +627,15 @@ async def public_dashboard_query(
                 FROM check_results cr WHERE cr.service_id = ANY(:sids) AND cr.time >= :t_from AND cr.time <= :t_to AND cr.value IS NOT NULL
                 ORDER BY cr.service_id, cr.time DESC
             """)
+        elif agg_source:
+            col = AGG_COL[body.aggregation]
+            sql = text(f"""
+                SELECT a.service_id, AVG(a.{col}) AS value
+                FROM {agg_source} a WHERE a.service_id = ANY(:sids) AND a.bucket >= :t_from AND a.bucket <= :t_to
+                GROUP BY a.service_id
+            """)
         else:
-            agg_expr = pg_agg[body.aggregation]
+            agg_expr = pg_agg_raw[body.aggregation]
             sql = text(f"""
                 SELECT cr.service_id, {agg_expr} AS value, MAX(cr.unit) AS unit
                 FROM check_results cr WHERE cr.service_id = ANY(:sids) AND cr.time >= :t_from AND cr.time <= :t_to AND cr.value IS NOT NULL
@@ -624,7 +644,7 @@ async def public_dashboard_query(
         rows = await db.execute(sql, {"sids": service_ids, "t_from": time_from, "t_to": time_to})
         for row in rows.fetchall():
             meta = svc_meta.get(row.service_id, {})
-            series.append({"service_id": str(row.service_id), "metric": meta.get("service_name", "Unknown"), "check_type": meta.get("check_type", ""), "host": meta.get("host", ""), "unit": row.unit or "", "value": round(row.value, 3) if row.value is not None else None})
+            series.append({"service_id": str(row.service_id), "metric": meta.get("service_name", "Unknown"), "check_type": meta.get("check_type", ""), "host": meta.get("host", ""), "unit": getattr(row, "unit", "") or "", "value": round(row.value, 3) if row.value is not None else None})
 
     return {"series": series}
 
@@ -737,6 +757,22 @@ def _parse_relative_time(value: str) -> datetime:
     return datetime.fromisoformat(value.replace("Z", "+00:00"))
 
 
+def _pick_aggregate_source(time_from: datetime, time_to: datetime) -> str | None:
+    """Pick the best aggregate view based on query time range.
+
+    Returns the view name or None for raw check_results.
+    >30d → metrics_daily, >3d → metrics_hourly, >6h → metrics_5m
+    """
+    span = (time_to - time_from).total_seconds()
+    if span > 30 * 86400:
+        return "metrics_daily"
+    if span > 3 * 86400:
+        return "metrics_hourly"
+    if span > 6 * 3600:
+        return "metrics_5m"
+    return None
+
+
 @router.post("/query")
 async def dashboard_query(
     body: DashboardQuery,
@@ -797,7 +833,12 @@ async def dashboard_query(
         for row in svc_result.all()
     }
 
-    pg_agg = {
+    # Pick aggregate view based on time range for performance
+    agg_source = _pick_aggregate_source(time_from, time_to)
+
+    # Aggregate column mappings per aggregation type
+    AGG_COL = {"avg": "avg_val", "min": "min_val", "max": "max_val", "sum": "avg_val"}
+    pg_agg_raw = {
         "avg": "AVG(cr.value)",
         "min": "MIN(cr.value)",
         "max": "MAX(cr.value)",
@@ -809,7 +850,27 @@ async def dashboard_query(
     if body.interval:
         pg_interval = INTERVAL_TO_PG[body.interval]
 
-        if body.aggregation == "last":
+        if agg_source and body.aggregation != "last":
+            # Use pre-aggregated data
+            col = AGG_COL[body.aggregation]
+            sql = text(f"""
+                SELECT
+                    time_bucket(:interval, a.bucket) AS time,
+                    a.service_id,
+                    AVG(a.{col}) AS value
+                FROM {agg_source} a
+                WHERE a.service_id = ANY(:sids)
+                  AND a.bucket >= :t_from AND a.bucket <= :t_to
+                GROUP BY time_bucket(:interval, a.bucket), a.service_id
+                ORDER BY a.service_id, time
+            """)
+            rows = await db.execute(sql, {
+                "interval": pg_interval,
+                "sids": service_ids,
+                "t_from": time_from,
+                "t_to": time_to,
+            })
+        elif body.aggregation == "last":
             sql = text("""
                 WITH buckets AS (
                     SELECT
@@ -830,8 +891,14 @@ async def dashboard_query(
                 FROM buckets WHERE rn = 1
                 ORDER BY service_id, bucket
             """)
+            rows = await db.execute(sql, {
+                "interval": pg_interval,
+                "sids": service_ids,
+                "t_from": time_from,
+                "t_to": time_to,
+            })
         else:
-            agg_expr = pg_agg[body.aggregation]
+            agg_expr = pg_agg_raw[body.aggregation]
             sql = text(f"""
                 SELECT
                     time_bucket(:interval, cr.time) AS time,
@@ -845,13 +912,12 @@ async def dashboard_query(
                 GROUP BY time_bucket(:interval, cr.time), cr.service_id
                 ORDER BY cr.service_id, time
             """)
-
-        rows = await db.execute(sql, {
-            "interval": pg_interval,
-            "sids": service_ids,
-            "t_from": time_from,
-            "t_to": time_to,
-        })
+            rows = await db.execute(sql, {
+                "interval": pg_interval,
+                "sids": service_ids,
+                "t_from": time_from,
+                "t_to": time_to,
+            })
 
         by_service: dict = {}
         unit_by_service: dict = {}
@@ -859,7 +925,7 @@ async def dashboard_query(
             sid = row.service_id
             if sid not in by_service:
                 by_service[sid] = []
-                unit_by_service[sid] = row.unit or ""
+                unit_by_service[sid] = getattr(row, "unit", "") or ""
             by_service[sid].append({
                 "time": row.time.isoformat(),
                 "value": round(row.value, 3) if row.value is not None else None,
@@ -886,8 +952,19 @@ async def dashboard_query(
                   AND cr.value IS NOT NULL
                 ORDER BY cr.service_id, cr.time DESC
             """)
+        elif agg_source:
+            col = AGG_COL[body.aggregation]
+            sql = text(f"""
+                SELECT
+                    a.service_id,
+                    AVG(a.{col}) AS value
+                FROM {agg_source} a
+                WHERE a.service_id = ANY(:sids)
+                  AND a.bucket >= :t_from AND a.bucket <= :t_to
+                GROUP BY a.service_id
+            """)
         else:
-            agg_expr = pg_agg[body.aggregation]
+            agg_expr = pg_agg_raw[body.aggregation]
             sql = text(f"""
                 SELECT
                     cr.service_id,
@@ -913,7 +990,7 @@ async def dashboard_query(
                 "metric": meta.get("service_name", "Unknown"),
                 "check_type": meta.get("check_type", ""),
                 "host": meta.get("host", ""),
-                "unit": row.unit or "",
+                "unit": getattr(row, "unit", "") or "",
                 "value": round(row.value, 3) if row.value is not None else None,
             })
 

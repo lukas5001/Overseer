@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% if limited_data %}
+<div class="note-banner">
+  Hinweis: Für einige Metriken liegen nur begrenzte Daten für diesen Berichtszeitraum vor.
+</div>
+{% endif %}
+
+<!-- Health Score -->
+<h2>Health Score</h2>
+{% include "sections/health_score.html" %}
+
+<!-- KPIs -->
+<div class="kpi-row">
+  <div class="kpi-card">
+    <div class="kpi-value">{{ data.total_hosts }}</div>
+    <div class="kpi-label">Hosts</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-value">{{ data.total_services }}</div>
+    <div class="kpi-label">Services</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-value">{{ data.services_meeting_sla }}</div>
+    <div class="kpi-label">SLA erfüllt</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-value">{{ data.incidents | length }}</div>
+    <div class="kpi-label">Incidents</div>
+  </div>
+</div>
+
+<!-- Highlights -->
+{% if data.positives or data.concerns %}
+<h2>Highlights</h2>
+{% if data.positives %}
+<h3>Positiv</h3>
+{% for h in data.positives %}
+<div class="highlight-box highlight-positive">
+  <div class="highlight-title">{{ h.title }}</div>
+  <div class="highlight-detail">{{ h.detail }}</div>
+</div>
+{% endfor %}
+{% endif %}
+{% if data.concerns %}
+<h3>Aufmerksamkeit erforderlich</h3>
+{% for h in data.concerns %}
+<div class="highlight-box highlight-concern">
+  <div class="highlight-title">{{ h.title }}</div>
+  <div class="highlight-detail">{{ h.detail }}</div>
+</div>
+{% endfor %}
+{% endif %}
+{% endif %}
+
+<!-- SLA Table (detailed) -->
+<div class="page-break"></div>
+<h2>Service Level Agreement — Detail</h2>
+{% include "sections/sla_table.html" %}
+
+{% if charts.uptime_bar %}
+<div class="chart mt-4">{{ charts.uptime_bar | safe }}</div>
+{% endif %}
+
+<!-- Incidents -->
+<div class="page-break"></div>
+<h2>Incidents</h2>
+{% include "sections/incidents.html" %}
+
+<!-- Performance -->
+<div class="page-break"></div>
+<h2>Performance</h2>
+{% include "sections/performance_charts.html" %}
+
+<!-- Capacity -->
+<h2>Kapazität</h2>
+{% include "sections/capacity.html" %}
+
+{% endblock %}

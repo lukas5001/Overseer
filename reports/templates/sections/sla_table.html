@@ -1,0 +1,42 @@
+{% if data.services_sla %}
+<table>
+  <thead>
+    <tr>
+      <th>Service</th>
+      <th>Host</th>
+      <th class="text-right">SLA %</th>
+      <th class="text-right">Ziel</th>
+      <th class="text-right">Uptime</th>
+      <th class="text-right">Downtime</th>
+      <th class="text-right">Checks</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for s in data.services_sla | sort(attribute='sla_pct') %}
+    <tr>
+      <td>{{ s.service_name }}</td>
+      <td class="text-muted">{{ s.host_name }}</td>
+      <td class="text-right">
+        {% if s.total_checks == 0 %}
+          <span class="badge badge-gray">N/A</span>
+        {% elif s.sla_pct >= 99.9 %}
+          <span class="badge badge-green">{{ "%.2f"|format(s.sla_pct) }}%</span>
+        {% elif s.sla_pct >= 99 %}
+          <span class="badge badge-yellow">{{ "%.2f"|format(s.sla_pct) }}%</span>
+        {% else %}
+          <span class="badge badge-red">{{ "%.2f"|format(s.sla_pct) }}%</span>
+        {% endif %}
+      </td>
+      <td class="text-right text-muted">
+        {% if s.sla_target %}{{ "%.1f"|format(s.sla_target) }}%{% else %}—{% endif %}
+      </td>
+      <td class="text-right">{{ "%.0f"|format(s.uptime_minutes) }} min</td>
+      <td class="text-right">{{ "%.0f"|format(s.downtime_minutes) }} min</td>
+      <td class="text-right text-muted">{{ s.total_checks }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="insufficient-data">Keine SLA-Daten für diesen Zeitraum.</div>
+{% endif %}

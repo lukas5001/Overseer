@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<style>
+  @page {
+    size: A4;
+    margin: 20mm 15mm 25mm 15mm;
+    @top-left {
+      content: element(header-left);
+    }
+    @top-right {
+      content: element(header-right);
+    }
+    @bottom-left {
+      content: element(footer-left);
+    }
+    @bottom-right {
+      content: "Seite " counter(page) " von " counter(pages);
+      font-size: 9px;
+      color: #6b7280;
+      font-family: Inter, Roboto, Helvetica, Arial, sans-serif;
+    }
+  }
+  @page :first {
+    @top-left { content: none; }
+    @top-right { content: none; }
+  }
+
+  :root {
+    --primary-color: {{ branding.primary_color | default('#3b82f6') }};
+    --text-color: #1f2937;
+    --text-muted: #6b7280;
+    --border-color: #e5e7eb;
+    --bg-light: #f9fafb;
+    --green: #22c55e;
+    --yellow: #eab308;
+    --red: #ef4444;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: Inter, Roboto, Helvetica, Arial, sans-serif;
+    font-size: 10pt;
+    line-height: 1.5;
+    color: var(--text-color);
+  }
+
+  /* Running header/footer elements */
+  .running-header-left {
+    position: running(header-left);
+    font-size: 9px;
+    color: var(--text-muted);
+  }
+  .running-header-right {
+    position: running(header-right);
+    font-size: 9px;
+    color: var(--text-muted);
+  }
+  .running-footer-left {
+    position: running(footer-left);
+    font-size: 9px;
+    color: var(--text-muted);
+  }
+
+  /* Cover page */
+  .cover {
+    page-break-after: always;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 80vh;
+    text-align: center;
+  }
+  .cover-logo {
+    max-width: 180px;
+    max-height: 80px;
+    margin-bottom: 40px;
+  }
+  .cover h1 {
+    font-size: 28pt;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 8px;
+  }
+  .cover .subtitle {
+    font-size: 14pt;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  .cover .period {
+    font-size: 12pt;
+    color: var(--text-muted);
+    margin-top: 20px;
+    padding: 8px 24px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+  }
+  .cover .cover-text {
+    font-size: 11pt;
+    color: var(--text-color);
+    margin-top: 40px;
+    max-width: 500px;
+    text-align: left;
+    line-height: 1.6;
+  }
+
+  /* Section headers */
+  h2 {
+    font-size: 16pt;
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-top: 24px;
+    margin-bottom: 12px;
+    padding-bottom: 4px;
+    border-bottom: 2px solid var(--primary-color);
+  }
+  h3 {
+    font-size: 12pt;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-top: 16px;
+    margin-bottom: 8px;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0;
+    font-size: 9pt;
+  }
+  th {
+    background: var(--bg-light);
+    font-weight: 600;
+    text-align: left;
+    padding: 6px 8px;
+    border-bottom: 2px solid var(--border-color);
+    color: var(--text-muted);
+    font-size: 8pt;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  td {
+    padding: 5px 8px;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+
+  /* Status badges */
+  .badge {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 8pt;
+    font-weight: 600;
+  }
+  .badge-green { background: #dcfce7; color: #166534; }
+  .badge-yellow { background: #fef3c7; color: #854d0e; }
+  .badge-red { background: #fee2e2; color: #991b1b; }
+  .badge-gray { background: #f3f4f6; color: #374151; }
+
+  /* Chart container */
+  .chart {
+    margin: 12px 0;
+    text-align: center;
+  }
+  .chart svg {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Highlight boxes */
+  .highlight-box {
+    padding: 10px 14px;
+    border-radius: 6px;
+    margin: 6px 0;
+  }
+  .highlight-positive {
+    background: #f0fdf4;
+    border-left: 3px solid var(--green);
+  }
+  .highlight-concern {
+    background: #fef2f2;
+    border-left: 3px solid var(--red);
+  }
+  .highlight-title {
+    font-weight: 600;
+    font-size: 10pt;
+  }
+  .highlight-detail {
+    font-size: 9pt;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  /* KPI row */
+  .kpi-row {
+    display: flex;
+    gap: 12px;
+    margin: 12px 0;
+  }
+  .kpi-card {
+    flex: 1;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    text-align: center;
+  }
+  .kpi-value {
+    font-size: 20pt;
+    font-weight: 700;
+    color: var(--primary-color);
+  }
+  .kpi-label {
+    font-size: 8pt;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+  }
+
+  /* Health score */
+  .health-score-container {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin: 12px 0;
+  }
+  .health-big {
+    font-size: 48pt;
+    font-weight: 700;
+  }
+  .health-green { color: var(--green); }
+  .health-yellow { color: var(--yellow); }
+  .health-red { color: var(--red); }
+  .health-gray { color: var(--text-muted); }
+  .health-trend {
+    font-size: 11pt;
+    color: var(--text-muted);
+  }
+  .trend-up { color: var(--green); }
+  .trend-down { color: var(--red); }
+
+  /* Utility */
+  .page-break { page-break-before: always; }
+  .text-right { text-align: right; }
+  .text-center { text-align: center; }
+  .mt-4 { margin-top: 16px; }
+  .mb-2 { margin-bottom: 8px; }
+  .text-muted { color: var(--text-muted); }
+  .text-sm { font-size: 9pt; }
+
+  .insufficient-data {
+    padding: 30px;
+    text-align: center;
+    color: var(--text-muted);
+    font-style: italic;
+    border: 1px dashed var(--border-color);
+    border-radius: 6px;
+    margin: 12px 0;
+  }
+
+  .note-banner {
+    background: #fffbeb;
+    border: 1px solid #fbbf24;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 9pt;
+    color: #92400e;
+    margin: 12px 0;
+  }
+</style>
+</head>
+<body>
+  <!-- Running elements (picked up by @page rules) -->
+  <div class="running-header-left">
+    {% if branding.logo_path %}
+    <img src="file://{{ branding.logo_path }}" style="height: 20px;">
+    {% endif %}
+    {{ branding.company_name | default('Overseer') }}
+  </div>
+  <div class="running-header-right">{{ report_title }}</div>
+  <div class="running-footer-left">{{ branding.footer_text | default('Generated by Overseer') }}</div>
+
+  <!-- Cover page -->
+  <div class="cover">
+    {% if branding.logo_path %}
+    <img src="file://{{ branding.logo_path }}" class="cover-logo">
+    {% endif %}
+    <h1>{{ report_title }}</h1>
+    <div class="subtitle">{{ data.tenant_name }}</div>
+    <div class="period">
+      {{ data.period_start.strftime('%d.%m.%Y') }} — {{ data.period_end.strftime('%d.%m.%Y') }}
+    </div>
+    {% if cover_text %}
+    <div class="cover-text">{{ cover_text }}</div>
+    {% endif %}
+  </div>
+
+  {% block content %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,39 @@
+{% set capacity_types = ['agent_cpu', 'agent_memory', 'agent_disk'] %}
+{% set capacity_metrics = data.performance | selectattr('check_type', 'in', capacity_types) | list %}
+
+{% if capacity_metrics %}
+<table>
+  <thead>
+    <tr>
+      <th>Host</th>
+      <th>Ressource</th>
+      <th class="text-right">Avg</th>
+      <th class="text-right">Max</th>
+      <th>Bewertung</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for p in capacity_metrics | sort(attribute='avg_val', reverse=True) %}
+    <tr>
+      <td>{{ p.host_name }}</td>
+      <td>{{ p.check_type | replace('agent_', '') | capitalize }}</td>
+      <td class="text-right">{{ "%.1f"|format(p.avg_val) }}%</td>
+      <td class="text-right">{{ "%.1f"|format(p.max_val) }}%</td>
+      <td>
+        {% if p.avg_val > 90 %}
+          <span class="badge badge-red">Kritisch</span>
+        {% elif p.avg_val > 80 %}
+          <span class="badge badge-yellow">Aufmerksamkeit</span>
+        {% elif p.avg_val > 60 %}
+          <span class="badge badge-gray">Normal</span>
+        {% else %}
+          <span class="badge badge-green">Gut</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="insufficient-data">Keine Kapazitätsdaten (CPU/RAM/Disk) verfügbar.</div>
+{% endif %}
