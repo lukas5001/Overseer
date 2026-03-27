@@ -934,3 +934,94 @@ export interface ReportGenerateRequest {
   cover_text?: string | null
   scope?: ReportScope | null
 }
+
+// ── Status Pages ──────────────────────────────────────────────────────────────
+
+export interface StatusPageComponent {
+  id: string
+  name: string
+  description: string | null
+  position: number
+  group_name: string | null
+  current_status: string
+  status_override: boolean
+  show_uptime: boolean
+  service_ids: string[]
+}
+
+export interface StatusPage {
+  id: string
+  tenant_id: string
+  slug: string
+  title: string
+  description: string | null
+  logo_url: string | null
+  primary_color: string
+  timezone: string
+  is_public: boolean
+  created_at: string
+  updated_at: string
+  component_count?: number
+  components?: StatusPageComponent[]
+}
+
+export interface StatusPageCreate {
+  slug: string
+  title: string
+  description?: string | null
+  logo_url?: string | null
+  primary_color?: string
+  timezone?: string
+  is_public?: boolean
+  components?: { name: string; description?: string; position?: number; group_name?: string; service_ids?: string[]; show_uptime?: boolean }[]
+}
+
+export interface StatusPageUpdate {
+  title?: string
+  description?: string | null
+  logo_url?: string | null
+  primary_color?: string
+  timezone?: string
+  is_public?: boolean
+}
+
+export interface IncidentUpdate {
+  id: string
+  status: string
+  body: string
+  created_at: string
+}
+
+export interface StatusPageIncident {
+  id: string
+  status_page_id: string
+  title: string
+  status: string
+  impact: string
+  is_auto_created: boolean
+  created_at: string
+  resolved_at: string | null
+  updates: IncidentUpdate[]
+  affected_component_ids: string[]
+}
+
+export interface PublicStatusPageData {
+  title: string
+  description: string | null
+  logo_url: string | null
+  primary_color: string
+  timezone: string
+  overall_status: string
+  components: {
+    id: string
+    name: string
+    description: string | null
+    group_name: string | null
+    current_status: string
+    show_uptime: boolean
+    uptime_90d: { date: string; uptime: number | null; worst_status: string | null; outage_minutes: number }[]
+    overall_uptime: number
+  }[]
+  active_incidents: StatusPageIncident[]
+  past_incidents: StatusPageIncident[]
+}

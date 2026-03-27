@@ -18,6 +18,8 @@ import type {
   MetaHost, MetaService,
   ReportSchedule, ReportScheduleCreate, ReportScheduleUpdate,
   ReportDelivery, ReportGenerateRequest,
+  StatusPage, StatusPageCreate, StatusPageUpdate,
+  StatusPageIncident, PublicStatusPageData,
 } from '../types'
 import axios from 'axios'
 
@@ -872,6 +874,122 @@ export function useRetryReport() {
   return useMutation({
     mutationFn: (deliveryId: string) => api.post(`/api/v1/reports/retry/${deliveryId}`).then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['report-history'] }),
+  })
+}
+
+// ── Status Pages ─────────────────────────────────────────────────────────────
+
+export function useStatusPages() {
+  return useQuery<StatusPage[]>({
+    queryKey: ['status-pages'],
+    queryFn: () => api.get('/api/v1/status-pages').then(r => r.data),
+  })
+}
+
+export function useStatusPage(id?: string) {
+  return useQuery<StatusPage>({
+    queryKey: ['status-page', id],
+    queryFn: () => api.get(`/api/v1/status-pages/${id}`).then(r => r.data),
+    enabled: !!id,
+  })
+}
+
+export function useCreateStatusPage() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: StatusPageCreate) => api.post('/api/v1/status-pages', data).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['status-pages'] }),
+  })
+}
+
+export function useUpdateStatusPage() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: StatusPageUpdate }) =>
+      api.patch(`/api/v1/status-pages/${id}`, data).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['status-pages'] })
+      qc.invalidateQueries({ queryKey: ['status-page'] })
+    },
+  })
+}
+
+export function useDeleteStatusPage() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/api/v1/status-pages/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['status-pages'] }),
+  })
+}
+
+export function useStatusPageIncidents(pageId?: string) {
+  return useQuery<StatusPageIncident[]>({
+    queryKey: ['status-page-incidents', pageId],
+    queryFn: () => api.get(`/api/v1/status-pages/${pageId}/incidents`).then(r => r.data),
+    enabled: !!pageId,
+  })
+}
+
+export function useCreateIncident() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ pageId, data }: { pageId: string; data: Record<string, unknown> }) =>
+      api.post(`/api/v1/status-pages/${pageId}/incidents`, data).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['status-page-incidents'] }),
+  })
+}
+
+export function useAddIncidentUpdate() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ pageId, incidentId, data }: { pageId: string; incidentId: string; data: { status: string; body: string } }) =>
+      api.post(`/api/v1/status-pages/${pageId}/incidents/${incidentId}/updates`, data).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['status-page-incidents'] }),
+  })
+}
+
+export function useAddComponent() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ pageId, data }: { pageId: string; data: Record<string, unknown> }) =>
+      api.post(`/api/v1/status-pages/${pageId}/components`, data).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['status-pages'] })
+      qc.invalidateQueries({ queryKey: ['status-page'] })
+    },
+  })
+}
+
+export function useUpdateComponent() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ pageId, compId, data }: { pageId: string; compId: string; data: Record<string, unknown> }) =>
+      api.patch(`/api/v1/status-pages/${pageId}/components/${compId}`, data).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['status-pages'] })
+      qc.invalidateQueries({ queryKey: ['status-page'] })
+    },
+  })
+}
+
+export function useDeleteComponent() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ pageId, compId }: { pageId: string; compId: string }) =>
+      api.delete(`/api/v1/status-pages/${pageId}/components/${compId}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['status-pages'] })
+      qc.invalidateQueries({ queryKey: ['status-page'] })
+    },
+  })
+}
+
+export function usePublicStatusPage(slug?: string) {
+  return useQuery<PublicStatusPageData>({
+    queryKey: ['public-status-page', slug],
+    queryFn: () => publicApi.get(`/api/v1/public/status/${slug}`).then(r => r.data),
+    enabled: !!slug,
+    refetchInterval: 60_000,
   })
 }
 

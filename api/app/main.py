@@ -14,7 +14,7 @@ from slowapi.errors import RateLimitExceeded
 from sqlalchemy import text
 
 from api.app.core.database import AsyncSessionLocal
-from api.app.routers import auth, status, tenants, hosts, services, collectors, downtimes, config, history, users, audit, notifications, templates, two_factor, saved_filters, alert_rules, sla, admin, agent, scripts, global_policies, host_types, dashboards, reports
+from api.app.routers import auth, status, tenants, hosts, services, collectors, downtimes, config, history, users, audit, notifications, templates, two_factor, saved_filters, alert_rules, sla, admin, agent, scripts, global_policies, host_types, dashboards, reports, status_pages
 
 # ==================== ENV Validation ====================
 
@@ -117,6 +117,8 @@ app.include_router(host_types.router, prefix="/api/v1/host-types", tags=["host-t
 app.include_router(dashboards.router, prefix="/api/v1/dashboards", tags=["dashboards"])
 app.include_router(dashboards.public_router, prefix="/api/v1/public", tags=["public"])
 app.include_router(reports.router, prefix="/api/v1/reports", tags=["reports"])
+app.include_router(status_pages.router, prefix="/api/v1", tags=["status-pages"])
+app.include_router(status_pages.public_router, prefix="/api/v1/public", tags=["public"])
 
 
 @app.get("/health")
@@ -408,3 +410,8 @@ async def startup():
     from reports.scheduler import start_scheduler, cleanup_old_pdfs
     await start_scheduler()
     asyncio.create_task(cleanup_old_pdfs())
+
+    # Status page background workers
+    from statuspage.worker import status_page_worker, daily_uptime_worker
+    asyncio.create_task(status_page_worker())
+    asyncio.create_task(daily_uptime_worker())

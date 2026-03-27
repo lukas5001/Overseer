@@ -453,3 +453,119 @@ class ReportDelivery(Base):
     created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 
     schedule = relationship("ReportSchedule", back_populates="deliveries")
+
+
+# ── Association table for incident <-> component links ─────────────────────
+incident_component_links = Table(
+    "incident_component_links",
+    Base.metadata,
+    Column("incident_id", UUID(as_uuid=True), ForeignKey("status_page_incidents.id", ondelete="CASCADE"), primary_key=True),
+    Column("component_id", UUID(as_uuid=True), ForeignKey("status_page_components.id", ondelete="CASCADE"), primary_key=True),
+)
+
+
+class StatusPage(Base):
+    __tablename__ = "status_pages"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
+    slug = Column(String(63), unique=True, nullable=False)
+    title = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    logo_url = Column(Text, nullable=True)
+    primary_color = Column(String(7), nullable=False, default="#22c55e")
+    favicon_url = Column(Text, nullable=True)
+    custom_css = Column(Text, nullable=True)
+    timezone = Column(String(50), nullable=False, default="UTC")
+    is_public = Column(Boolean, nullable=False, default=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+    components = relationship("StatusPageComponent", back_populates="status_page", passive_deletes=True, order_by="StatusPageComponent.position")
+    incidents = relationship("StatusPageIncident", back_populates="status_page", passive_deletes=True)
+
+
+class StatusPageComponent(Base):
+    __tablename__ = "status_page_components"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    status_page_id = Column(UUID(as_uuid=True), ForeignKey("status_pages.id", ondelete="CASCADE"), nullable=False)
+    name = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    position = Column(Integer, nullable=False, default=0)
+    group_name = Column(String(255), nullable=True)
+    current_status = Column(String(20), nullable=False, default="operational")
+    status_override = Column(Boolean, nullable=False, default=False)
+    show_uptime = Column(Boolean, nullable=False, default=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+    status_page = relationship("StatusPage", back_populates="components")
+    check_mappings = relationship("ComponentCheckMapping", back_populates="component", passive_deletes=True)
+    daily_uptimes = relationship("ComponentDailyUptime", back_populates="component", passive_deletes=True)
+
+
+class ComponentCheckMapping(Base):
+    __tablename__ = "component_check_mappings"
+
+    component_id = Column(UUID(as_uuid=True), ForeignKey("status_page_components.id", ondelete="CASCADE"), primary_key=True)
+    service_id = Column(UUID(as_uuid=True), ForeignKey("services.id", ondelete="CASCADE"), primary_key=True)
+
+    component = relationship("StatusPageComponent", back_populates="check_mappings")
+
+
+class StatusPageIncident(Base):
+    __tablename__ = "status_page_incidents"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    status_page_id = Column(UUID(as_uuid=True), ForeignKey("status_pages.id", ondelete="CASCADE"), nullable=False)
+    title = Column(String(255), nullable=False)
+    status = Column(String(20), nullable=False, default="investigating")
+    impact = Column(String(20), nullable=False, default="minor")
+    is_auto_created = Column(Boolean, nullable=False, default=False)
+    scheduled_start = Column(DateTime(timezone=True), nullable=True)
+    scheduled_end = Column(DateTime(timezone=True), nullable=True)
+    created_by = Column(UUID(as_uuid=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    resolved_at = Column(DateTime(timezone=True), nullable=True)
+
+    status_page = relationship("StatusPage", back_populates="incidents")
+    updates = relationship("IncidentUpdate", back_populates="incident", passive_deletes=True, order_by="IncidentUpdate.created_at")
+    affected_components = relationship("StatusPageComponent", secondary=incident_component_links)
+
+
+class IncidentUpdate(Base):
+    __tablename__ = "incident_updates"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    incident_id = Column(UUID(as_uuid=True), ForeignKey("status_page_incidents.id", ondelete="CASCADE"), nullable=False)
+    status = Column(String(20), nullable=False)
+    body = Column(Text, nullable=False)
+    created_by = Column(UUID(as_uuid=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+    incident = relationship("StatusPageIncident", back_populates="updates")
+
+
+class ComponentDailyUptime(Base):
+    __tablename__ = "component_daily_uptime"
+
+    component_id = Column(UUID(as_uuid=True), ForeignKey("status_page_components.id", ondelete="CASCADE"), primary_key=True)
+    date = Column(DateTime, primary_key=True)
+    uptime_percentage = Column(Float, nullable=True)
+    worst_status = Column(String(20), nullable=True)
+    outage_minutes = Column(Integer, nullable=False, default=0)
+
+    component = relationship("StatusPageComponent", back_populates="daily_uptimes")
+
+
+class StatusPageSubscriber(Base):
+    __tablename__ = "status_page_subscribers"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    status_page_id = Column(UUID(as_uuid=True), ForeignKey("status_pages.id", ondelete="CASCADE"), nullable=False)
+    type = Column(String(10), nullable=False)
+    endpoint = Column(String(512), nullable=False)
+    confirmed = Column(Boolean, nullable=False, default=False)
+    confirmation_token = Column(UUID(as_uuid=True), default=uuid.uuid4)
+    component_ids = Column(ARRAY(UUID(as_uuid=True)), nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))

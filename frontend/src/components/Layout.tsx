@@ -4,7 +4,7 @@ import {
   LayoutDashboard, AlertTriangle, Monitor, Building2, Shield, ShieldCheck,
   LogOut, Users, Clock, ScrollText, Bell, Layers, Menu, X,
   ChevronLeft, ChevronRight, Wifi, BarChart3, Mail, ShieldAlert, Settings,
-  FileCode2, Globe, Boxes, LayoutGrid, FileText,
+  FileCode2, Globe, Boxes, LayoutGrid, FileText, Radio,
 } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -51,6 +51,7 @@ export default function Layout() {
     { to: '/downtimes', label: 'Downtimes', icon: Clock },
     { to: '/sla', label: 'SLA Reports', icon: BarChart3 },
     ...(isAdmin ? [{ to: '/reports', label: 'PDF Reports', icon: FileText }] : []),
+    ...(isAdmin ? [{ to: '/status-pages', label: 'Status Pages', icon: Radio }] : []),
   ]
 
   const configNav = [
