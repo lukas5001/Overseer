@@ -272,8 +272,27 @@ class NotificationChannel(Base):
     config = Column(JSONB, nullable=False, default=dict)
     events = Column(ARRAY(String), nullable=False)
     active = Column(Boolean, nullable=False, default=True)
+    consecutive_failures = Column(Integer, nullable=False, default=0)
+    last_failure_at = Column(DateTime(timezone=True), nullable=True)
+    last_failure_reason = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+
+class NotificationLog(Base):
+    __tablename__ = "notification_log"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
+    channel_id = Column(UUID(as_uuid=True), ForeignKey("notification_channels.id", ondelete="SET NULL"), nullable=True)
+    channel_type = Column(String(50), nullable=False)
+    notification_type = Column(String(20), nullable=False)
+    host_name = Column(String(255), nullable=True)
+    service_name = Column(String(255), nullable=True)
+    status = Column(String(20), nullable=True)
+    success = Column(Boolean, nullable=False)
+    error_message = Column(Text, nullable=True)
+    sent_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 
 
 class SavedFilter(Base):

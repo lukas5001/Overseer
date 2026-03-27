@@ -3,15 +3,13 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
 
-import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.app.core.database import get_db
+from api.app.core.database import get_db, AsyncSessionLocal
 from api.app.core.auth import get_current_user, tenant_scope, apply_tenant_filter
-from api.app.core.email import send_email, render_alert_html
 from api.app.models.models import AlertRule, ActiveAlert, EscalationPolicy, NotificationChannel
 
 router = APIRouter()
@@ -172,18 +170,42 @@ async def test_alert_rule(
         "is_test": True,
     }
 
-    sent = 0
-    errors = []
-    for channel_id in (rule.notification_channels or []):
-        channel = await db.get(NotificationChannel, channel_id)
-        if not channel or not channel.active:
-            continue
-        try:
-            await _send_notification(channel, ctx)
-            sent += 1
-        except Exception as e:
-            errors.append(str(e))
+    # Collect active channels for this rule
+    channel_rows = []
+    for ch_id in (rule.notification_channels or []):
+        channel = await db.get(NotificationChannel, ch_id)
+        if channel and channel.active:
+            channel_rows.append({
+                "id": channel.id,
+                "channel_type": channel.channel_type,
+                "config": channel.config,
+                "name": channel.name,
+            })
 
+    if not channel_rows:
+        return {"sent": 0, "errors": ["No active channels configured for this rule."]}
+
+    from shared.notifications.base import Notification
+    from shared.notifications.dispatcher import Dispatcher
+
+    notification = Notification(
+        type="test",
+        host_name=ctx["host_name"],
+        host_ip="",
+        service_name=ctx["service_name"],
+        status=ctx["status"],
+        previous_status="OK",
+        message=ctx["message"],
+        triggered_at=datetime.now(timezone.utc),
+        tenant_name=ctx["tenant_name"],
+        extra_data={"alert_rule_name": rule.name, "is_test": True},
+    )
+
+    dispatcher = Dispatcher(AsyncSessionLocal)
+    results = await dispatcher.dispatch(notification, channel_rows, rule.tenant_id)
+
+    sent = sum(1 for r in results if r.success)
+    errors = [r.error for r in results if not r.success and r.error]
     return {"sent": sent, "errors": errors}
 
 
@@ -266,28 +288,3 @@ async def delete_escalation_policy(
         await db.commit()
 
 
-async def _send_notification(channel: NotificationChannel, ctx: dict) -> None:
-    """Send a single notification to a channel."""
-    if channel.channel_type == "email":
-        email_to = channel.config.get("email") or channel.config.get("to")
-        if not email_to:
-            raise ValueError("Channel config missing 'email' field")
-        subject = f"[Overseer] {'TEST: ' if ctx.get('is_test') else ''}Alert – {ctx['alert_rule_name']}: {ctx['service_name']} is {ctx['status']}"
-        body_plain = (
-            f"Alert: {ctx['alert_rule_name']}\n"
-            f"Service: {ctx['service_name']} on {ctx['host_name']}\n"
-            f"Status: {ctx['status']}\n"
-            f"Duration: {ctx['duration_minutes']} minutes\n"
-            f"Message: {ctx['message']}\n"
-            f"Fired at: {ctx['fired_at']}\n"
-        )
-        body_html = render_alert_html(ctx)
-        await send_email(email_to, subject, body_plain, body_html)
-    elif channel.channel_type == "webhook":
-        url = channel.config.get("url")
-        if not url:
-            raise ValueError("Channel config missing 'url' field")
-        headers = channel.config.get("headers", {})
-        async with httpx.AsyncClient(timeout=10) as client:
-            resp = await client.post(url, json=ctx, headers=headers)
-            resp.raise_for_status()

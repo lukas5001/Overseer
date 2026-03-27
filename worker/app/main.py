@@ -28,7 +28,8 @@ from shared.ssl_notification import (
     compute_ssl_stage, should_notify, is_renewal,
     render_ssl_notification_html, build_ssl_notification_context,
 )
-from shared.email import send_email
+from shared.notifications.base import Notification
+from shared.notifications.dispatcher import Dispatcher
 
 # ==================== Config ====================
 
@@ -329,9 +330,9 @@ class Worker:
 
             await db.commit()
 
-        # Fire webhooks after commit (non-blocking)
+        # Fire notifications after commit (non-blocking)
         if webhook_events:
-            asyncio.create_task(self._fire_webhooks(tenant_id, webhook_events))
+            asyncio.create_task(self._fire_notifications(tenant_id, webhook_events))
 
         # Process SSL certificate notification staffelung (non-blocking)
         if ssl_checks:
@@ -345,34 +346,42 @@ class Worker:
 
         return len(resolved)
 
-    async def _fire_webhooks(self, tenant_id, events: list[dict]):
-        """Fire webhook notifications (best-effort, non-blocking)."""
+    async def _fire_notifications(self, tenant_id, events: list[dict]):
+        """Fire notifications via all active channels (best-effort, non-blocking)."""
         try:
-            import httpx
             async with AsyncSessionLocal() as db:
                 result = await db.execute(
-                    text("""SELECT config FROM notification_channels
-                            WHERE tenant_id = :tid AND active = true AND channel_type = 'webhook'"""),
+                    text("""SELECT id, channel_type, config, name FROM notification_channels
+                            WHERE tenant_id = :tid AND active = true"""),
                     {"tid": tenant_id},
                 )
-                channels = result.fetchall()
+                channels = [
+                    {
+                        "id": row.id, "channel_type": row.channel_type,
+                        "config": row.config if isinstance(row.config, dict) else json.loads(row.config),
+                        "name": row.name,
+                    }
+                    for row in result.fetchall()
+                ]
                 if not channels:
                     return
 
-            async with httpx.AsyncClient(timeout=5) as client:
-                for row in channels:
-                    config = row.config if isinstance(row.config, dict) else json.loads(row.config)
-                    url = config.get("url")
-                    if not url:
-                        continue
-                    headers = config.get("headers", {})
-                    for event in events:
-                        try:
-                            await client.post(url, json=event, headers=headers)
-                        except Exception as e:
-                            logger.warning("Webhook to %s failed: %s", url, e)
+            dispatcher = Dispatcher(AsyncSessionLocal)
+            for event in events:
+                notification = Notification(
+                    type="recovery" if event.get("event") == "recovery" else "alert",
+                    host_name=event.get("host", ""),
+                    host_ip="",
+                    service_name=event.get("service", ""),
+                    status=event.get("status", "UNKNOWN"),
+                    previous_status=event.get("previous_status", ""),
+                    message=event.get("message", ""),
+                    triggered_at=datetime.now(timezone.utc),
+                    extra_data=event,
+                )
+                await dispatcher.dispatch(notification, channels, tenant_id)
         except Exception as e:
-            logger.warning("Webhook error: %s", e)
+            logger.warning("Notification dispatch error: %s", e)
 
     async def _process_ssl_notifications(self, ssl_checks: list[tuple], now: datetime):
         """Process SSL certificate notification staffelung for a batch of SSL checks."""
@@ -470,47 +479,40 @@ class Worker:
             logger.error("SSL notification processing error: %s", e, exc_info=True)
 
     async def _send_ssl_notification(self, tenant_id, ctx: dict):
-        """Send an SSL notification via all active notification channels for the tenant."""
+        """Send an SSL notification via all active notification channels using the dispatcher."""
         try:
-            import httpx
             async with AsyncSessionLocal() as db:
                 result = await db.execute(
-                    text("""SELECT channel_type, config FROM notification_channels
+                    text("""SELECT id, channel_type, config, name FROM notification_channels
                             WHERE tenant_id = :tid AND active = true"""),
                     {"tid": tenant_id},
                 )
-                channels = result.fetchall()
-                if not channels:
+                channel_rows = [
+                    {
+                        "id": row.id, "channel_type": row.channel_type,
+                        "config": row.config if isinstance(row.config, dict) else json.loads(row.config),
+                        "name": row.name,
+                    }
+                    for row in result.fetchall()
+                ]
+                if not channel_rows:
                     return
 
-            subject = f"[Overseer] SSL Certificate {ctx['status']}: {ctx['host']} - {ctx['service_name']}"
-            body_plain = (
-                f"SSL Certificate {ctx['status']}\n"
-                f"Host: {ctx['host']}\n"
-                f"Service: {ctx['service_name']}\n"
-                f"Message: {ctx['message']}\n"
-                f"Days until expiry: {ctx.get('days_until_expiry', 'N/A')}\n"
-                f"Expiry date: {ctx.get('not_after', 'N/A')}\n"
-                f"Issuer: {ctx.get('issuer', 'N/A')}\n"
-            )
             body_html = render_ssl_notification_html(ctx)
+            notification = Notification(
+                type="ssl_certificate",
+                host_name=ctx.get("host", ""),
+                host_ip="",
+                service_name=ctx.get("service_name", ""),
+                status=ctx.get("status", "UNKNOWN"),
+                previous_status="",
+                message=ctx.get("message", ""),
+                triggered_at=datetime.now(timezone.utc),
+                extra_data={**ctx, "html_body": body_html},
+            )
 
-            for row in channels:
-                channel_type = row.channel_type
-                config = row.config if isinstance(row.config, dict) else json.loads(row.config)
-                try:
-                    if channel_type == "email":
-                        email_to = config.get("email") or config.get("to")
-                        if email_to:
-                            await send_email(email_to, subject, body_plain, body_html)
-                    elif channel_type == "webhook":
-                        url = config.get("url")
-                        if url:
-                            headers = config.get("headers", {})
-                            async with httpx.AsyncClient(timeout=10) as client:
-                                await client.post(url, json=ctx, headers=headers)
-                except Exception as e:
-                    logger.warning("SSL notification to %s channel failed: %s", channel_type, e)
+            dispatcher = Dispatcher(AsyncSessionLocal)
+            await dispatcher.dispatch(notification, channel_rows, tenant_id)
         except Exception as e:
             logger.warning("SSL notification send error: %s", e)
 
