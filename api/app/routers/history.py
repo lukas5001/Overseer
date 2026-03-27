@@ -88,6 +88,65 @@ async def get_history_summary(
     }
 
 
+@router.get("/{service_id}/ssl-history")
+async def get_ssl_history(
+    service_id: UUID,
+    hours: int = Query(default=4320, ge=1, le=4320),
+    db: AsyncSession = Depends(get_db),
+    _user: dict = Depends(get_current_user),
+):
+    """Return days_until_expiry time-series for SSL checks (up to 180 days)."""
+    since = datetime.now(timezone.utc) - timedelta(hours=hours)
+
+    rows = await db.execute(
+        text("""
+            SELECT time, (metadata->>'days_until_expiry')::int AS days_until_expiry
+            FROM check_results
+            WHERE service_id = :sid AND time >= :since
+              AND metadata IS NOT NULL
+              AND metadata->>'days_until_expiry' IS NOT NULL
+            ORDER BY time ASC
+        """),
+        {"sid": service_id, "since": since},
+    )
+    return [
+        {
+            "time": row.time.isoformat(),
+            "days_until_expiry": row.days_until_expiry,
+        }
+        for row in rows.fetchall()
+    ]
+
+
+@router.get("/{service_id}/ssl-latest")
+async def get_ssl_latest(
+    service_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    _user: dict = Depends(get_current_user),
+):
+    """Return the latest SSL certificate metadata for a service."""
+    row = await db.execute(
+        text("""
+            SELECT metadata, time, status
+            FROM check_results
+            WHERE service_id = :sid
+              AND metadata IS NOT NULL
+              AND metadata->>'days_until_expiry' IS NOT NULL
+            ORDER BY time DESC
+            LIMIT 1
+        """),
+        {"sid": service_id},
+    )
+    result = row.fetchone()
+    if not result:
+        return None
+    return {
+        "metadata": result.metadata,
+        "time": result.time.isoformat(),
+        "status": result.status,
+    }
+
+
 @router.get("/{service_id}/transitions")
 async def get_status_transitions(
     service_id: UUID,

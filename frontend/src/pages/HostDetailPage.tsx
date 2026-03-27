@@ -4,7 +4,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowLeft, Play, Search,
   CheckCircle, Clock, Plus, X, Trash2, TrendingUp, Pencil, Settings2, Power, Copy,
-  Monitor, ClipboardCopy, KeyRound, Download,
+  Monitor, ClipboardCopy, KeyRound, Download, Shield, ShieldX,
+  AlertTriangle, CheckCircle2,
 } from 'lucide-react'
 import { getHostTypeIcon, getCheckTypeDef, getCheckTypeLabel, getAvailableCheckTypes, groupCheckTypesByCategory } from '../lib/constants'
 import RegistryConfigFields from '../components/RegistryConfigFields'
@@ -529,6 +530,304 @@ function SparklineCell({ serviceId, onClick }: { serviceId: string; onClick: () 
 
 // ── Check type helpers (registry-driven) ─────────────────────────────────────
 
+// ── SSL Certificate Detail Panel ───────────────────────────────────────────────
+
+function SslCertificatePanel({ serviceId }: { serviceId: string }) {
+  const { data: sslLatest } = useQuery<{ metadata: Record<string, unknown>; time: string; status: string } | null>({
+    queryKey: ['ssl-latest', serviceId],
+    queryFn: () => api.get(`/api/v1/history/${serviceId}/ssl-latest`).then(r => r.data),
+    staleTime: 30000,
+  })
+  const { data: sslHistory = [] } = useQuery<{ time: string; days_until_expiry: number }[]>({
+    queryKey: ['ssl-history', serviceId],
+    queryFn: () => api.get(`/api/v1/history/${serviceId}/ssl-history?hours=4320`).then(r => r.data),
+    staleTime: 60000,
+  })
+
+  if (!sslLatest?.metadata) return null
+
+  const meta = sslLatest.metadata
+  const days = meta.days_until_expiry as number | undefined
+  const notAfter = meta.not_after as string | undefined
+  const notBefore = meta.not_before as string | undefined
+  const issuer = meta.issuer as string | undefined
+  const subject = meta.subject as string | undefined
+  const serial = meta.serial_number as string | undefined
+  const sans = meta.sans as string[] | undefined
+  const signatureAlg = meta.signature_algorithm as string | undefined
+  const keyType = meta.key_type as string | undefined
+  const keyBits = meta.key_bits as number | undefined
+  const chainValid = meta.chain_valid as boolean | undefined
+  const chainLength = meta.chain_length as number | undefined
+  const hostnameMatch = meta.hostname_match as boolean | undefined
+  const ocspStatus = meta.ocsp_status as string | undefined
+  const selfSigned = meta.self_signed as boolean | undefined
+
+  // Days remaining color
+  const getDaysColor = (d: number | undefined) => {
+    if (d === undefined) return 'var(--color-gray-500)'
+    if (d <= 0) return '#dc2626'
+    if (d <= 14) return '#dc2626'
+    if (d <= 30) return '#d97706'
+    return '#16a34a'
+  }
+
+  const Check = ({ ok, label }: { ok: boolean | undefined; label: string }) => {
+    if (ok === undefined) return null
+    return (
+      <div className="flex items-center gap-2">
+        {ok ? (
+          <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+        ) : (
+          <ShieldX className="w-4 h-4 text-red-500 flex-shrink-0" />
+        )}
+        <span className="text-sm text-gray-700">{label}</span>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mt-4 space-y-4">
+      {/* Certificate Details Card */}
+      <div className="bg-white rounded-xl border border-gray-200 p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <Shield className="w-5 h-5 text-overseer-600" />
+          <h3 className="font-semibold text-gray-800">Certificate Details</h3>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-sm">
+          {subject && (
+            <div className="flex justify-between py-1.5 border-b border-gray-50">
+              <span className="text-gray-500 font-medium">Subject</span>
+              <span className="text-gray-800 font-mono text-xs">{subject}</span>
+            </div>
+          )}
+          {issuer && (
+            <div className="flex justify-between py-1.5 border-b border-gray-50">
+              <span className="text-gray-500 font-medium">Issuer</span>
+              <span className="text-gray-800 text-xs">{issuer}</span>
+            </div>
+          )}
+          {notBefore && (
+            <div className="flex justify-between py-1.5 border-b border-gray-50">
+              <span className="text-gray-500 font-medium">Valid From</span>
+              <span className="text-gray-800 text-xs">{notBefore}</span>
+            </div>
+          )}
+          {notAfter && (
+            <div className="flex justify-between py-1.5 border-b border-gray-50">
+              <span className="text-gray-500 font-medium">Valid Until</span>
+              <span className="text-xs">
+                <span className="text-gray-800">{notAfter}</span>
+                {days !== undefined && (
+                  <span className="ml-2 font-bold" style={{ color: getDaysColor(days) }}>
+                    {days <= 0 ? `EXPIRED ${Math.abs(days)} days ago` : `(${days} days remaining)`}
+                  </span>
+                )}
+              </span>
+            </div>
+          )}
+          {serial && (
+            <div className="flex justify-between py-1.5 border-b border-gray-50">
+              <span className="text-gray-500 font-medium">Serial</span>
+              <span className="text-gray-800 font-mono text-[11px] truncate max-w-[200px]" title={serial}>{serial}</span>
+            </div>
+          )}
+          {sans && sans.length > 0 && (
+            <div className="flex justify-between py-1.5 border-b border-gray-50 col-span-full">
+              <span className="text-gray-500 font-medium">SANs</span>
+              <span className="text-gray-800 text-xs">{sans.join(', ')}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Validation checks */}
+        <div className="mt-4 pt-3 border-t border-gray-100 grid grid-cols-2 md:grid-cols-3 gap-2">
+          {signatureAlg && (
+            <Check ok={true} label={`${signatureAlg}`} />
+          )}
+          {keyType && (
+            <Check ok={true} label={`${keyType}${keyBits ? ` ${keyBits} bit` : ''}`} />
+          )}
+          <Check ok={chainValid} label={`Chain${chainLength ? ` (${chainLength} certs)` : ''}`} />
+          <Check ok={hostnameMatch} label="Hostname Match" />
+          {ocspStatus && (
+            <Check ok={ocspStatus.toLowerCase() === 'good'} label={`OCSP: ${ocspStatus}`} />
+          )}
+          {selfSigned && (
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />
+              <span className="text-sm text-amber-700">Self-Signed</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Days until Expiry Chart */}
+      {sslHistory.length >= 2 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <TrendingUp className="w-5 h-5 text-overseer-600" />
+            <h3 className="font-semibold text-gray-800">Days until Expiry</h3>
+          </div>
+          <SslExpiryChart data={sslHistory} />
+        </div>
+      )}
+    </div>
+  )
+}
+
+function SslExpiryChart({ data }: { data: { time: string; days_until_expiry: number }[] }) {
+  const [hover, setHover] = React.useState<{ x: number; point: typeof data[0]; chartY: number } | null>(null)
+  const svgRef = React.useRef<SVGSVGElement>(null)
+
+  const W = 720, H = 200
+  const PAD = { top: 12, right: 16, bottom: 32, left: 52 }
+  const cw = W - PAD.left - PAD.right
+  const ch = H - PAD.top - PAD.bottom
+
+  const values = data.map(d => d.days_until_expiry)
+  const times = data.map(d => new Date(d.time).getTime())
+
+  let yMin = Math.min(0, Math.min(...values))
+  let yMax = Math.max(...values)
+  const yPad = (yMax - yMin) * 0.1 || 5
+  yMax = yMax + yPad
+
+  const tMin = Math.min(...times)
+  const tMax = Math.max(...times)
+  const tRange = tMax - tMin || 1
+
+  const toX = (t: number) => PAD.left + ((t - tMin) / tRange) * cw
+  const toY = (v: number) => PAD.top + ch - ((v - yMin) / (yMax - yMin)) * ch
+
+  // Y-axis ticks
+  const yTicks: number[] = []
+  for (let i = 0; i <= 4; i++) yTicks.push(yMin + (i / 4) * (yMax - yMin))
+
+  // X-axis ticks
+  const xTicks: number[] = []
+  for (let i = 0; i <= 6; i++) xTicks.push(tMin + (i / 6) * tRange)
+
+  // Line path
+  const linePath = data.map((d, i) => {
+    const x = toX(times[i])
+    const y = toY(d.days_until_expiry)
+    return `${i === 0 ? 'M' : 'L'}${x},${y}`
+  }).join(' ')
+
+  const areaPath = linePath + ` L${toX(times[times.length - 1])},${PAD.top + ch} L${toX(times[0])},${PAD.top + ch} Z`
+
+  // Threshold reference lines
+  const warnDays = 30
+  const critDays = 14
+
+  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    const svg = svgRef.current
+    if (!svg) return
+    const rect = svg.getBoundingClientRect()
+    const scaleX = W / rect.width
+    const mouseX = (e.clientX - rect.left) * scaleX
+    if (mouseX < PAD.left || mouseX > W - PAD.right) { setHover(null); return }
+    const mouseT = tMin + ((mouseX - PAD.left) / cw) * tRange
+    let nearest = 0, minDist = Infinity
+    for (let i = 0; i < data.length; i++) {
+      const d = Math.abs(times[i] - mouseT)
+      if (d < minDist) { minDist = d; nearest = i }
+    }
+    setHover({
+      x: toX(times[nearest]),
+      point: data[nearest],
+      chartY: toY(data[nearest].days_until_expiry),
+    })
+  }
+
+  const fmtDate = (t: number) => new Date(t).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })
+
+  return (
+    <div className="relative">
+      <svg
+        ref={svgRef}
+        viewBox={`0 0 ${W} ${H}`}
+        className="w-full"
+        onMouseMove={handleMouseMove}
+        onMouseLeave={() => setHover(null)}
+        style={{ cursor: 'crosshair' }}
+      >
+        <defs>
+          <linearGradient id="sslAreaGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.12" />
+            <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.02" />
+          </linearGradient>
+        </defs>
+
+        {/* Grid */}
+        {yTicks.map((v, i) => (
+          <g key={`y${i}`}>
+            <line x1={PAD.left} x2={W - PAD.right} y1={toY(v)} y2={toY(v)} stroke="#e5e7eb" strokeWidth="0.5" />
+            <text x={PAD.left - 6} y={toY(v) + 3} textAnchor="end" fontSize="9" fill="#9ca3af" fontFamily="monospace">{Math.round(v)}d</text>
+          </g>
+        ))}
+        {xTicks.map((t, i) => (
+          <g key={`x${i}`}>
+            <line x1={toX(t)} x2={toX(t)} y1={PAD.top} y2={PAD.top + ch} stroke="#f3f4f6" strokeWidth="0.5" />
+            <text x={toX(t)} y={H - 4} textAnchor="middle" fontSize="9" fill="#9ca3af">{fmtDate(t)}</text>
+          </g>
+        ))}
+
+        {/* Warning threshold line (30d) */}
+        {warnDays >= yMin && warnDays <= yMax && (
+          <g>
+            <line x1={PAD.left} x2={W - PAD.right} y1={toY(warnDays)} y2={toY(warnDays)} stroke="#f59e0b" strokeWidth="1" strokeDasharray="6,3" />
+            <text x={W - PAD.right + 4} y={toY(warnDays) + 3} fontSize="8" fill="#f59e0b" fontWeight="bold">30d</text>
+          </g>
+        )}
+        {/* Critical threshold line (14d) */}
+        {critDays >= yMin && critDays <= yMax && (
+          <g>
+            <line x1={PAD.left} x2={W - PAD.right} y1={toY(critDays)} y2={toY(critDays)} stroke="#ef4444" strokeWidth="1" strokeDasharray="6,3" />
+            <text x={W - PAD.right + 4} y={toY(critDays) + 3} fontSize="8" fill="#ef4444" fontWeight="bold">14d</text>
+          </g>
+        )}
+
+        {/* Area + line */}
+        <path d={areaPath} fill="url(#sslAreaGrad)" />
+        <path d={linePath} fill="none" stroke="#3b82f6" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
+
+        {/* Points (if not too many) */}
+        {data.length <= 200 && data.map((d, i) => {
+          const color = d.days_until_expiry <= 0 ? '#dc2626' : d.days_until_expiry <= 14 ? '#dc2626' : d.days_until_expiry <= 30 ? '#d97706' : '#3b82f6'
+          return <circle key={i} cx={toX(times[i])} cy={toY(d.days_until_expiry)} r="2" fill={color} />
+        })}
+
+        {/* Hover */}
+        {hover && (
+          <g>
+            <line x1={hover.x} x2={hover.x} y1={PAD.top} y2={PAD.top + ch} stroke="#6b7280" strokeWidth="0.5" strokeDasharray="3,2" />
+            <circle cx={hover.x} cy={hover.chartY} r="4" fill="white" stroke="#3b82f6" strokeWidth="2" />
+          </g>
+        )}
+      </svg>
+
+      {hover && (
+        <div
+          className="absolute z-10 pointer-events-none bg-gray-900 text-white text-xs rounded-lg shadow-lg px-3 py-2"
+          style={{
+            left: `${Math.min(85, Math.max(5, (hover.x / W) * 100))}%`,
+            top: '4px',
+            transform: 'translateX(-50%)',
+          }}
+        >
+          <p className="font-mono text-gray-300">{new Date(hover.point.time).toLocaleString('de-DE')}</p>
+          <p className="font-bold mt-1" style={{ color: hover.point.days_until_expiry <= 0 ? '#ef4444' : hover.point.days_until_expiry <= 14 ? '#ef4444' : hover.point.days_until_expiry <= 30 ? '#f59e0b' : '#10b981' }}>
+            {hover.point.days_until_expiry} days
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Add Check Modal ────────────────────────────────────────────────────────────
 
 interface AddCheckModalProps {
@@ -620,6 +919,32 @@ function AddCheckModal({ host, onClose, onSaved }: AddCheckModalProps) {
         if (diskConfig.exclude.trim()) {
           finalConfig.exclude = diskConfig.exclude.split(',').map(s => s.trim()).filter(Boolean)
         }
+      }
+      // SSL certificate validations
+      if (form.check_type === 'ssl_certificate') {
+        const hostname = (finalConfig.hostname as string ?? '').trim()
+        if (/^https?:\/\//.test(hostname) || hostname.includes('/')) {
+          throw { response: { data: { detail: 'Enter only the hostname, without protocol or path.' } } }
+        }
+        const warnDays = parseInt(finalConfig.warning_days as string) || 30
+        const critDays = parseInt(finalConfig.critical_days as string) || 14
+        if (warnDays <= critDays) {
+          throw { response: { data: { detail: 'Warning Days must be greater than Critical Days.' } } }
+        }
+        if (critDays < 1) {
+          throw { response: { data: { detail: 'Critical Days must be at least 1.' } } }
+        }
+        const port = parseInt(finalConfig.port as string) || 443
+        if (port < 1 || port > 65535) {
+          throw { response: { data: { detail: 'Port must be between 1 and 65535.' } } }
+        }
+        // Convert checkbox strings to booleans, numbers to ints
+        finalConfig.hostname = hostname
+        finalConfig.port = port
+        finalConfig.warning_days = warnDays
+        finalConfig.critical_days = critDays
+        finalConfig.allow_self_signed = finalConfig.allow_self_signed === 'true'
+        finalConfig.check_ocsp = finalConfig.check_ocsp === 'true'
       }
       return api.post('/api/v1/services/', {
         host_id: host.id,
@@ -1523,6 +1848,7 @@ export default function HostDetailPage() {
   const [showSnmpDiscovery, setShowSnmpDiscovery] = useState(false)
   const [editService, setEditService] = useState<ServiceItem | null>(null)
   const [historyTarget, setHistoryTarget] = useState<{ id: string; name: string; warn: number | null; crit: number | null } | null>(null)
+  const [expandedSslService, setExpandedSslService] = useState<string | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showAgentSetup, setShowAgentSetup] = useState(false)
   const [generatedToken, setGeneratedToken] = useState<string | null>(null)
@@ -2150,8 +2476,14 @@ export default function HostDetailPage() {
                 const isInactive = meta?.active === false
                 const cfg = getStatusConfig(svc.status)
                 const Icon = cfg.icon
+                const isSslCheck = meta?.check_type === 'ssl_certificate'
+                const isSslExpanded = isSslCheck && expandedSslService === svc.service_id
                 return (
-                  <tr key={svc.service_id} className={clsx('hover:bg-gray-50', isInactive && 'opacity-50')}>
+                  <React.Fragment key={svc.service_id}>
+                  <tr
+                    className={clsx('hover:bg-gray-50', isInactive && 'opacity-50', isSslCheck && 'cursor-pointer')}
+                    onClick={isSslCheck ? () => setExpandedSslService(prev => prev === svc.service_id ? null : svc.service_id) : undefined}
+                  >
                     <td className="px-6 py-3 whitespace-nowrap">
                       {isInactive ? (
                         <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-bold bg-gray-100 text-gray-400">
@@ -2175,7 +2507,15 @@ export default function HostDetailPage() {
                       )}
                     </td>
                     <td className={clsx('px-6 py-3 font-medium whitespace-nowrap', isInactive ? 'text-gray-400 line-through' : 'text-gray-800')}>
-                      {meta?.name ?? '–'}
+                      <span className="flex items-center gap-1.5">
+                        {isSslCheck && <Shield className={clsx('w-3.5 h-3.5', isSslExpanded ? 'text-overseer-500' : 'text-gray-400')} />}
+                        {meta?.name ?? '–'}
+                        {isSslCheck && (
+                          <svg className={clsx('w-3 h-3 transition-transform', isSslExpanded && 'rotate-180')} viewBox="0 0 12 12" fill="currentColor">
+                            <path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        )}
+                      </span>
                     </td>
                     <td className="px-6 py-3 text-gray-500 text-xs whitespace-nowrap">
                       <span className="flex items-center gap-1.5">
@@ -2283,6 +2623,14 @@ export default function HostDetailPage() {
                       </div>
                     </td>
                   </tr>
+                  {isSslExpanded && (
+                    <tr>
+                      <td colSpan={8} className="px-4 py-2 bg-gray-50/50">
+                        <SslCertificatePanel serviceId={svc.service_id} />
+                      </td>
+                    </tr>
+                  )}
+                  </React.Fragment>
                 )
               })}
             </tbody>

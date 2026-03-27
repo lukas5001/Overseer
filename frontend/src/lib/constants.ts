@@ -39,7 +39,7 @@ export function getHostTypeIcon(iconName: string | null | undefined): LucideIcon
 export interface ConfigFieldDef {
   key: string
   label: string
-  type: 'text' | 'number' | 'password' | 'select' | 'script_selector' | 'disk_config'
+  type: 'text' | 'number' | 'password' | 'select' | 'checkbox' | 'script_selector' | 'disk_config'
   placeholder?: string
   options?: { value: string; label: string }[]
   required?: boolean
@@ -90,6 +90,20 @@ export const CHECK_TYPE_REGISTRY: CheckTypeDef[] = [
     category: 'network', mode: 'active', requires: {},
     fields: [{ key: 'url', label: 'URL', type: 'text', placeholder: 'https://example.com/', required: true }],
     defaults: { interval: 60, warn: 1000, crit: 5000 },
+  },
+  {
+    key: 'ssl_certificate', label: 'SSL-Zertifikat', description: 'SSL/TLS-Zertifikat prüfen und Ablauf überwachen',
+    category: 'network', mode: 'passive', requires: {},
+    fields: [
+      { key: 'hostname', label: 'Hostname', type: 'text', placeholder: 'api.example.com', required: true },
+      { key: 'port', label: 'Port', type: 'number', placeholder: '443', default: '443' },
+      { key: 'warning_days', label: 'Warn before expiry (days)', type: 'number', placeholder: '30', default: '30' },
+      { key: 'critical_days', label: 'Critical before expiry (days)', type: 'number', placeholder: '14', default: '14' },
+      { key: 'allow_self_signed', label: 'Allow Self-Signed', type: 'checkbox' },
+      { key: 'check_ocsp', label: 'Check OCSP', type: 'checkbox' },
+    ],
+    managesOwnThresholds: true,
+    defaults: { interval: 21600 },
   },
 
   // ── SNMP ───────────────────────────────────────────────────────────────────

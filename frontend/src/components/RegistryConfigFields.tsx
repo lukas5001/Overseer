@@ -84,6 +84,20 @@ function FieldRenderer({ field, config, onChange, tenantId, osFamily, diskConfig
     )
   }
 
+  if (field.type === 'checkbox') {
+    return (
+      <label className="flex items-center gap-2 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={config[field.key] === 'true'}
+          onChange={e => onChange(field.key, e.target.checked ? 'true' : '')}
+          className="w-4 h-4 rounded border-gray-300 text-overseer-600 focus:ring-overseer-500"
+        />
+        <span className="text-sm text-gray-700">{field.label}</span>
+      </label>
+    )
+  }
+
   // text / number / password
   return (
     <div>
