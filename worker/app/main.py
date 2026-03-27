@@ -24,6 +24,11 @@ import uuid as uuid_mod
 
 from shared.schemas import SingleCheckResult
 from shared.status import compute_new_state
+from shared.ssl_notification import (
+    compute_ssl_stage, should_notify, is_renewal,
+    render_ssl_notification_html, build_ssl_notification_context,
+)
+from shared.email import send_email
 
 # ==================== Config ====================
 
@@ -215,6 +220,7 @@ class Worker:
             check_inserts = []
             history_inserts = []
             webhook_events = []
+            ssl_checks = []  # (check, service_id, tenant_id) for SSL staffelung
 
             for check, tid, hid, sid, max_attempts in resolved:
                 new_status = check.status.value
@@ -250,6 +256,7 @@ class Worker:
                     "status": new_status, "value": check.value, "unit": check.unit,
                     "message": check.message,
                     "perfdata": json.dumps(check.perfdata) if check.perfdata else None,
+                    "metadata": json.dumps(check.metadata) if check.metadata else None,
                     "check_duration_ms": check.check_duration_ms,
                 })
 
@@ -280,6 +287,10 @@ class Worker:
                         "timestamp": now.isoformat(),
                     })
 
+                # Collect SSL checks for staffelung (only if metadata has cert data)
+                if check.check_type == "ssl_certificate" and check.metadata and "days_until_expiry" in check.metadata:
+                    ssl_checks.append((check, sid, tid))
+
             # ── Batch UPSERT current_status (1 query) ──
             if upserts:
                 stmt = pg_insert(CurrentStatus).values(upserts)
@@ -302,8 +313,8 @@ class Worker:
             if check_inserts:
                 await db.execute(
                     text("""INSERT INTO check_results
-                            (time, service_id, tenant_id, status, value, unit, message, perfdata, check_duration_ms)
-                            VALUES (:time, :service_id, :tenant_id, :status, :value, :unit, :message, :perfdata, :check_duration_ms)"""),
+                            (time, service_id, tenant_id, status, value, unit, message, perfdata, metadata, check_duration_ms)
+                            VALUES (:time, :service_id, :tenant_id, :status, :value, :unit, :message, :perfdata, :metadata, :check_duration_ms)"""),
                     check_inserts,
                 )
 
@@ -321,6 +332,10 @@ class Worker:
         # Fire webhooks after commit (non-blocking)
         if webhook_events:
             asyncio.create_task(self._fire_webhooks(tenant_id, webhook_events))
+
+        # Process SSL certificate notification staffelung (non-blocking)
+        if ssl_checks:
+            asyncio.create_task(self._process_ssl_notifications(ssl_checks, now))
 
         n_changes = len(history_inserts)
         if n_changes > 0:
@@ -358,6 +373,146 @@ class Worker:
                             logger.warning("Webhook to %s failed: %s", url, e)
         except Exception as e:
             logger.warning("Webhook error: %s", e)
+
+    async def _process_ssl_notifications(self, ssl_checks: list[tuple], now: datetime):
+        """Process SSL certificate notification staffelung for a batch of SSL checks."""
+        try:
+            service_ids = [sid for _, sid, _ in ssl_checks]
+
+            async with AsyncSessionLocal() as db:
+                # Load existing notification state for all SSL services in batch
+                result = await db.execute(
+                    text("""SELECT service_id, last_stage, last_notified_at, last_days_until_expiry
+                            FROM ssl_notification_state WHERE service_id = ANY(:sids)"""),
+                    {"sids": service_ids},
+                )
+                state_map = {row.service_id: row for row in result}
+
+                upserts = []
+                notifications = []
+
+                for check, sid, tid in ssl_checks:
+                    days = int(check.metadata["days_until_expiry"])
+                    prev = state_map.get(sid)
+                    prev_stage = prev.last_stage if prev else None
+                    prev_notified = prev.last_notified_at if prev else None
+                    prev_days = prev.last_days_until_expiry if prev else None
+
+                    # Check for certificate renewal
+                    if is_renewal(days, prev_days):
+                        ctx = build_ssl_notification_context(
+                            host=check.host,
+                            service_name=check.name,
+                            check_message=check.message or "",
+                            metadata=check.metadata,
+                            stage="renewal",
+                            is_recovery=True,
+                        )
+                        notifications.append((tid, ctx))
+                        # Reset state after renewal
+                        upserts.append({
+                            "service_id": sid, "tenant_id": tid,
+                            "last_stage": None, "last_notified_at": now,
+                            "last_days_until_expiry": days, "updated_at": now,
+                        })
+                        logger.info("SSL renewal detected for %s/%s (days: %d → %d)",
+                                    check.host, check.name, prev_days, days)
+                        continue
+
+                    # Compute current stage
+                    stage = compute_ssl_stage(days)
+
+                    if should_notify(stage, prev_stage, prev_notified, now):
+                        ctx = build_ssl_notification_context(
+                            host=check.host,
+                            service_name=check.name,
+                            check_message=check.message or "",
+                            metadata=check.metadata,
+                            stage=stage or "30d",
+                        )
+                        notifications.append((tid, ctx))
+                        upserts.append({
+                            "service_id": sid, "tenant_id": tid,
+                            "last_stage": stage, "last_notified_at": now,
+                            "last_days_until_expiry": days, "updated_at": now,
+                        })
+                        logger.info("SSL notification: %s/%s stage=%s days=%d",
+                                    check.host, check.name, stage, days)
+                    else:
+                        # Update days tracking even without notification
+                        upserts.append({
+                            "service_id": sid, "tenant_id": tid,
+                            "last_stage": stage if stage else prev_stage,
+                            "last_notified_at": prev_notified,
+                            "last_days_until_expiry": days, "updated_at": now,
+                        })
+
+                # Batch upsert notification state
+                if upserts:
+                    await db.execute(
+                        text("""INSERT INTO ssl_notification_state
+                                (service_id, tenant_id, last_stage, last_notified_at, last_days_until_expiry, updated_at)
+                                VALUES (:service_id, :tenant_id, :last_stage, :last_notified_at, :last_days_until_expiry, :updated_at)
+                                ON CONFLICT (service_id) DO UPDATE SET
+                                    last_stage = EXCLUDED.last_stage,
+                                    last_notified_at = EXCLUDED.last_notified_at,
+                                    last_days_until_expiry = EXCLUDED.last_days_until_expiry,
+                                    updated_at = EXCLUDED.updated_at"""),
+                        upserts,
+                    )
+                    await db.commit()
+
+                # Send notifications via all active channels
+                for tid, ctx in notifications:
+                    await self._send_ssl_notification(tid, ctx)
+
+        except Exception as e:
+            logger.error("SSL notification processing error: %s", e, exc_info=True)
+
+    async def _send_ssl_notification(self, tenant_id, ctx: dict):
+        """Send an SSL notification via all active notification channels for the tenant."""
+        try:
+            import httpx
+            async with AsyncSessionLocal() as db:
+                result = await db.execute(
+                    text("""SELECT channel_type, config FROM notification_channels
+                            WHERE tenant_id = :tid AND active = true"""),
+                    {"tid": tenant_id},
+                )
+                channels = result.fetchall()
+                if not channels:
+                    return
+
+            subject = f"[Overseer] SSL Certificate {ctx['status']}: {ctx['host']} - {ctx['service_name']}"
+            body_plain = (
+                f"SSL Certificate {ctx['status']}\n"
+                f"Host: {ctx['host']}\n"
+                f"Service: {ctx['service_name']}\n"
+                f"Message: {ctx['message']}\n"
+                f"Days until expiry: {ctx.get('days_until_expiry', 'N/A')}\n"
+                f"Expiry date: {ctx.get('not_after', 'N/A')}\n"
+                f"Issuer: {ctx.get('issuer', 'N/A')}\n"
+            )
+            body_html = render_ssl_notification_html(ctx)
+
+            for row in channels:
+                channel_type = row.channel_type
+                config = row.config if isinstance(row.config, dict) else json.loads(row.config)
+                try:
+                    if channel_type == "email":
+                        email_to = config.get("email") or config.get("to")
+                        if email_to:
+                            await send_email(email_to, subject, body_plain, body_html)
+                    elif channel_type == "webhook":
+                        url = config.get("url")
+                        if url:
+                            headers = config.get("headers", {})
+                            async with httpx.AsyncClient(timeout=10) as client:
+                                await client.post(url, json=ctx, headers=headers)
+                except Exception as e:
+                    logger.warning("SSL notification to %s channel failed: %s", channel_type, e)
+        except Exception as e:
+            logger.warning("SSL notification send error: %s", e)
 
     async def _handle_failed(self, msg_id: str, msg_data: dict, error: str):
         try:

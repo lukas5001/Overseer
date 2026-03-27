@@ -44,6 +44,7 @@ class SingleCheckResult(BaseModel):
     message: str | None = None
     check_type: str = Field(..., description="e.g. 'ping', 'snmp', 'ssh_disk', 'http'")
     perfdata: dict | None = None
+    metadata: dict | None = None
     check_duration_ms: int | None = None
 
 
