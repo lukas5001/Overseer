@@ -3,12 +3,13 @@ import {
   useStatusPages, useStatusPage, useCreateStatusPage, useUpdateStatusPage, useDeleteStatusPage,
   useStatusPageIncidents, useCreateIncident, useAddIncidentUpdate,
   useAddComponent, useUpdateComponent, useDeleteComponent,
+  useCreateMaintenance, useStatusPageSubscribers, useDeleteSubscriber,
   useHosts, useServices,
 } from '../api/hooks'
 import type { StatusPage, StatusPageComponent } from '../types'
 import {
   Plus, Trash2, ExternalLink, Pencil, ChevronRight, AlertTriangle, CheckCircle,
-  XCircle, MinusCircle, Copy,
+  XCircle, MinusCircle, Copy, Wrench, Mail, Clock,
 } from 'lucide-react'
 
 const STATUS_COLORS: Record<string, string> = {
@@ -16,6 +17,7 @@ const STATUS_COLORS: Record<string, string> = {
   degraded_performance: 'bg-yellow-500',
   partial_outage: 'bg-orange-500',
   major_outage: 'bg-red-500',
+  under_maintenance: 'bg-blue-500',
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -23,6 +25,7 @@ const STATUS_LABELS: Record<string, string> = {
   degraded_performance: 'Degraded',
   partial_outage: 'Partial Outage',
   major_outage: 'Major Outage',
+  under_maintenance: 'Under Maintenance',
 }
 
 const INCIDENT_STATUS_OPTS = ['investigating', 'identified', 'monitoring', 'resolved']
@@ -162,11 +165,15 @@ function StatusPageDetail({ pageId, onBack }: { pageId: string; onBack: () => vo
   const { data: page, isLoading } = useStatusPage(pageId)
   const updateMut = useUpdateStatusPage()
   const { data: incidents } = useStatusPageIncidents(pageId)
-  const [tab, setTab] = useState<'components' | 'incidents' | 'settings'>('components')
+  const [tab, setTab] = useState<'components' | 'incidents' | 'maintenance' | 'subscribers' | 'settings'>('components')
   const [showAddComp, setShowAddComp] = useState(false)
   const [showAddIncident, setShowAddIncident] = useState(false)
+  const [showAddMaint, setShowAddMaint] = useState(false)
 
   if (isLoading || !page) return <div className="p-6 text-gray-400">Laden...</div>
+
+  const regularIncidents = incidents?.filter(i => i.impact !== 'maintenance') || []
+  const maintenanceIncidents = incidents?.filter(i => i.impact === 'maintenance') || []
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6">
@@ -180,10 +187,10 @@ function StatusPageDetail({ pageId, onBack }: { pageId: string; onBack: () => vo
 
       {/* Tabs */}
       <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1 w-fit">
-        {(['components', 'incidents', 'settings'] as const).map(t => (
+        {(['components', 'incidents', 'maintenance', 'subscribers', 'settings'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${tab === t ? 'bg-white dark:bg-gray-700 shadow' : 'text-gray-500 hover:text-gray-700'}`}>
-            {t === 'components' ? 'Komponenten' : t === 'incidents' ? 'Incidents' : 'Einstellungen'}
+            {{ components: 'Komponenten', incidents: 'Incidents', maintenance: 'Wartung', subscribers: 'Subscriber', settings: 'Einstellungen' }[t]}
           </button>
         ))}
       </div>
@@ -215,9 +222,9 @@ function StatusPageDetail({ pageId, onBack }: { pageId: string; onBack: () => vo
               <Plus className="w-4 h-4" /> Incident erstellen
             </button>
           </div>
-          {incidents?.length ? (
+          {regularIncidents.length ? (
             <div className="space-y-3">
-              {incidents.map(inc => (
+              {regularIncidents.map(inc => (
                 <IncidentRow key={inc.id} pageId={pageId} incident={inc} />
               ))}
             </div>
@@ -226,6 +233,30 @@ function StatusPageDetail({ pageId, onBack }: { pageId: string; onBack: () => vo
           )}
           {showAddIncident && <CreateIncidentDialog pageId={pageId} components={page.components || []} onClose={() => setShowAddIncident(false)} />}
         </div>
+      )}
+
+      {tab === 'maintenance' && (
+        <div className="space-y-4">
+          <div className="flex justify-end">
+            <button onClick={() => setShowAddMaint(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+              <Plus className="w-4 h-4" /> Wartung planen
+            </button>
+          </div>
+          {maintenanceIncidents.length ? (
+            <div className="space-y-3">
+              {maintenanceIncidents.map(inc => (
+                <MaintenanceRow key={inc.id} pageId={pageId} incident={inc} />
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 text-center py-8">Keine geplanten Wartungen.</p>
+          )}
+          {showAddMaint && <CreateMaintenanceDialog pageId={pageId} components={page.components || []} onClose={() => setShowAddMaint(false)} />}
+        </div>
+      )}
+
+      {tab === 'subscribers' && (
+        <SubscribersTab pageId={pageId} />
       )}
 
       {tab === 'settings' && (
@@ -510,6 +541,184 @@ function CreateIncidentDialog({ pageId, components, onClose }: { pageId: string;
           </button>
         </div>
       </div>
+    </div>
+  )
+}
+
+
+function MaintenanceRow({ pageId, incident: inc }: { pageId: string; incident: { id: string; title: string; status: string; scheduled_start: string | null; scheduled_end: string | null; created_at: string; resolved_at: string | null; updates: { id: string; status: string; body: string; created_at: string }[]; affected_component_ids: string[] } }) {
+  const addUpdateMut = useAddIncidentUpdate()
+  const [showUpdate, setShowUpdate] = useState(false)
+  const [updateBody, setUpdateBody] = useState('')
+
+  const statusColor = inc.status === 'resolved' ? 'text-green-500' : inc.status === 'in_progress' ? 'text-blue-500' : 'text-gray-500'
+
+  const fmtDate = (d: string | null) => d ? new Date(d).toLocaleString('de', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'
+
+  return (
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Wrench className="w-4 h-4 text-blue-500" />
+          <span className="font-medium">{inc.title}</span>
+          <span className={`text-xs px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-900/30 ${statusColor}`}>{inc.status}</span>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-gray-500">
+          {inc.status !== 'resolved' && (
+            <button onClick={() => setShowUpdate(!showUpdate)} className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-300">
+              Update
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="flex items-center gap-4 text-sm text-gray-500">
+        <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {fmtDate(inc.scheduled_start)} — {fmtDate(inc.scheduled_end)}</span>
+      </div>
+
+      {inc.updates.length > 0 && (
+        <div className="ml-6 border-l-2 border-blue-200 dark:border-blue-800 pl-4 space-y-2">
+          {inc.updates.map(u => (
+            <div key={u.id} className="text-sm">
+              <span className="font-medium capitalize">{u.status}</span>
+              <span className="text-gray-400 ml-2">{new Date(u.created_at).toLocaleString('de')}</span>
+              <p className="text-gray-600 dark:text-gray-400">{u.body}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showUpdate && (
+        <div className="pt-2 border-t border-gray-200 dark:border-gray-700 space-y-2">
+          <textarea value={updateBody} onChange={e => setUpdateBody(e.target.value)} rows={2} placeholder="Update-Text..."
+            className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 text-sm" />
+          <div className="flex justify-end gap-2">
+            <button onClick={() => setShowUpdate(false)} className="px-3 py-1.5 text-sm text-gray-500">Abbrechen</button>
+            <button
+              onClick={() => {
+                addUpdateMut.mutate({ pageId, incidentId: inc.id, data: { status: 'resolved', body: updateBody } }, {
+                  onSuccess: () => { setShowUpdate(false); setUpdateBody('') },
+                })
+              }}
+              disabled={!updateBody}
+              className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">
+              Abschließen
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+
+function CreateMaintenanceDialog({ pageId, components, onClose }: { pageId: string; components: StatusPageComponent[]; onClose: () => void }) {
+  const createMut = useCreateMaintenance()
+  const [title, setTitle] = useState('')
+  const [body, setBody] = useState('')
+  const [selectedComps, setSelectedComps] = useState<string[]>([])
+  const [start, setStart] = useState('')
+  const [end, setEnd] = useState('')
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md p-6 space-y-4" onClick={e => e.stopPropagation()}>
+        <h2 className="text-xl font-bold">Wartung planen</h2>
+        <div>
+          <label className="block text-sm font-medium mb-1">Titel</label>
+          <input value={title} onChange={e => setTitle(e.target.value)} placeholder="z.B. Server-Update"
+            className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600" />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-medium mb-1">Beginn</label>
+            <input type="datetime-local" value={start} onChange={e => setStart(e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 text-sm" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Ende</label>
+            <input type="datetime-local" value={end} onChange={e => setEnd(e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 text-sm" />
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Betroffene Komponenten</label>
+          <div className="border rounded-lg dark:border-gray-600 max-h-32 overflow-y-auto">
+            {components.map(c => (
+              <label key={c.id} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer text-sm">
+                <input type="checkbox" checked={selectedComps.includes(c.id)} onChange={() => setSelectedComps(prev => prev.includes(c.id) ? prev.filter(x => x !== c.id) : [...prev, c.id])} />
+                {c.name}
+              </label>
+            ))}
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Beschreibung</label>
+          <textarea value={body} onChange={e => setBody(e.target.value)} rows={2}
+            className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600" />
+        </div>
+        <div className="flex justify-end gap-3 pt-2">
+          <button onClick={onClose} className="px-4 py-2 text-gray-600">Abbrechen</button>
+          <button
+            onClick={() => {
+              if (!title || !start || !end) return
+              createMut.mutate({ pageId, data: {
+                title, body,
+                component_ids: selectedComps,
+                scheduled_start: new Date(start).toISOString(),
+                scheduled_end: new Date(end).toISOString(),
+              } }, { onSuccess: onClose })
+            }}
+            disabled={!title || !start || !end || createMut.isPending}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
+            Planen
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
+function SubscribersTab({ pageId }: { pageId: string }) {
+  const { data: subscribers, isLoading } = useStatusPageSubscribers(pageId)
+  const deleteMut = useDeleteSubscriber()
+
+  if (isLoading) return <div className="text-gray-400">Laden...</div>
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 text-sm text-gray-500">
+        <Mail className="w-4 h-4" />
+        <span>{subscribers?.length || 0} Subscriber ({subscribers?.filter(s => s.confirmed).length || 0} bestätigt)</span>
+      </div>
+      {subscribers?.length ? (
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg divide-y divide-gray-100 dark:divide-gray-700">
+          {subscribers.map(sub => (
+            <div key={sub.id} className="px-4 py-3 flex items-center justify-between">
+              <div>
+                <span className="font-medium text-sm">{sub.email}</span>
+                <span className={`ml-2 text-xs px-2 py-0.5 rounded ${sub.confirmed ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'}`}>
+                  {sub.confirmed ? 'Bestätigt' : 'Ausstehend'}
+                </span>
+                {sub.component_ids.length > 0 && (
+                  <span className="ml-2 text-xs text-gray-400">{sub.component_ids.length} Komponenten</span>
+                )}
+              </div>
+              <div className="flex items-center gap-2 text-xs text-gray-500">
+                <span>{new Date(sub.created_at).toLocaleDateString('de')}</span>
+                <button
+                  onClick={() => { if (confirm('Subscriber entfernen?')) deleteMut.mutate({ pageId, subId: sub.id }) }}
+                  className="p-1 text-gray-400 hover:text-red-500">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-gray-500 text-center py-8">Keine Subscriber. Besucher können sich auf der öffentlichen Status Page anmelden.</p>
+      )}
     </div>
   )
 }

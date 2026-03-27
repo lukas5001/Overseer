@@ -1,17 +1,21 @@
 """Overseer API – Public Status Pages: admin CRUD + public endpoints."""
 from __future__ import annotations
 
+import asyncio
+import logging
+import os
 import re
 from datetime import date, datetime, timedelta, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import BaseModel, Field
-from sqlalchemy import select, func, delete
+from sqlalchemy import select, func, delete, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.app.core.database import get_db
 from api.app.core.auth import get_current_user, require_role, tenant_scope, apply_tenant_filter
+from shared.email import send_email
 from api.app.models.models import (
     StatusPage, StatusPageComponent, ComponentCheckMapping,
     StatusPageIncident, IncidentUpdate, ComponentDailyUptime,
@@ -108,10 +112,23 @@ class IncidentCreateReq(BaseModel):
     impact: str = "minor"
     component_ids: list[str] = []
     body: str = ""
+    scheduled_start: datetime | None = None
+    scheduled_end: datetime | None = None
 
 class IncidentUpdateReq(BaseModel):
     status: str
     body: str
+
+class MaintenanceCreateReq(BaseModel):
+    title: str = Field(..., max_length=255)
+    component_ids: list[str] = []
+    body: str = ""
+    scheduled_start: datetime
+    scheduled_end: datetime
+
+class SubscribeReq(BaseModel):
+    email: str = Field(..., max_length=512)
+    component_ids: list[str] = []
 
 class IncidentOut(BaseModel):
     id: str
@@ -120,6 +137,8 @@ class IncidentOut(BaseModel):
     status: str
     impact: str
     is_auto_created: bool
+    scheduled_start: datetime | None
+    scheduled_end: datetime | None
     created_at: datetime
     resolved_at: datetime | None
     updates: list[dict]
@@ -167,6 +186,8 @@ def _incident_out(inc: StatusPageIncident) -> dict:
         "status": inc.status,
         "impact": inc.impact,
         "is_auto_created": inc.is_auto_created,
+        "scheduled_start": inc.scheduled_start.isoformat() if inc.scheduled_start else None,
+        "scheduled_end": inc.scheduled_end.isoformat() if inc.scheduled_end else None,
         "created_at": inc.created_at.isoformat() if inc.created_at else None,
         "resolved_at": inc.resolved_at.isoformat() if inc.resolved_at else None,
         "updates": [
@@ -479,6 +500,8 @@ async def create_incident(
         title=body.title,
         status=body.status,
         impact=body.impact,
+        scheduled_start=body.scheduled_start,
+        scheduled_end=body.scheduled_end,
         created_by=UUID(user["sub"]) if user.get("sub") else None,
     )
     db.add(inc)
@@ -502,6 +525,10 @@ async def create_incident(
     await db.commit()
     await db.refresh(inc, ["updates", "affected_components"])
     await write_audit(db, user, "incident.create", {"title": body.title, "page_id": str(page_id)})
+
+    # Notify subscribers
+    asyncio.ensure_future(_notify_subscribers(db, page_id, inc, body.body or f"New incident: {body.title}"))
+
     return _incident_out(inc)
 
 
@@ -531,7 +558,99 @@ async def add_incident_update(
     ))
     await db.commit()
     await db.refresh(inc, ["updates", "affected_components"])
+
+    # Notify subscribers
+    asyncio.ensure_future(_notify_subscribers(db, page_id, inc, body.body))
+
     return _incident_out(inc)
+
+
+@router.post("/status-pages/{page_id}/maintenance", status_code=201)
+async def create_maintenance(
+    page_id: UUID,
+    body: MaintenanceCreateReq,
+    db: AsyncSession = Depends(get_db),
+    user: dict = Depends(require_role("super_admin", "tenant_admin")),
+    scope=Depends(tenant_scope),
+):
+    """Create a scheduled maintenance window."""
+    await _get_page_for_tenant(db, page_id, scope)
+
+    if body.scheduled_end <= body.scheduled_start:
+        raise HTTPException(400, "End must be after start")
+
+    inc = StatusPageIncident(
+        status_page_id=page_id,
+        title=body.title,
+        status="scheduled",
+        impact="maintenance",
+        scheduled_start=body.scheduled_start,
+        scheduled_end=body.scheduled_end,
+        created_by=UUID(user["sub"]) if user.get("sub") else None,
+    )
+    db.add(inc)
+    await db.flush()
+
+    for cid in body.component_ids:
+        await db.execute(
+            incident_component_links.insert().values(incident_id=inc.id, component_id=UUID(cid))
+        )
+
+    if body.body:
+        db.add(IncidentUpdate(
+            incident_id=inc.id,
+            status="scheduled",
+            body=body.body,
+            created_by=UUID(user["sub"]) if user.get("sub") else None,
+        ))
+
+    await db.commit()
+    await db.refresh(inc, ["updates", "affected_components"])
+    await write_audit(db, user, "maintenance.create", {"title": body.title, "page_id": str(page_id)})
+    return _incident_out(inc)
+
+
+# ── Admin: Subscribers ───────────────────────────────────────────────────────
+
+@router.get("/status-pages/{page_id}/subscribers")
+async def list_subscribers(
+    page_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    scope=Depends(tenant_scope),
+):
+    await _get_page_for_tenant(db, page_id, scope)
+    result = await db.execute(
+        select(StatusPageSubscriber)
+        .where(StatusPageSubscriber.status_page_id == page_id)
+        .order_by(StatusPageSubscriber.created_at.desc())
+    )
+    subs = result.scalars().all()
+    return [
+        {
+            "id": str(s.id),
+            "email": s.endpoint,
+            "confirmed": s.confirmed,
+            "component_ids": [str(c) for c in (s.component_ids or [])],
+            "created_at": s.created_at.isoformat() if s.created_at else None,
+        }
+        for s in subs
+    ]
+
+
+@router.delete("/status-pages/{page_id}/subscribers/{sub_id}", status_code=204)
+async def delete_subscriber(
+    page_id: UUID,
+    sub_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    user: dict = Depends(require_role("super_admin", "tenant_admin")),
+    scope=Depends(tenant_scope),
+):
+    await _get_page_for_tenant(db, page_id, scope)
+    sub = await db.get(StatusPageSubscriber, sub_id)
+    if not sub or sub.status_page_id != page_id:
+        raise HTTPException(404, "Subscriber not found")
+    await db.delete(sub)
+    await db.commit()
 
 
 # ── Public API (no auth) ─────────────────────────────────────────────────────
@@ -629,9 +748,39 @@ async def public_status_page(
         await db.refresh(inc, ["updates", "affected_components"])
         past_out.append(_incident_out(inc))
 
+    # Scheduled maintenance (upcoming or in-progress)
+    now = datetime.now(timezone.utc)
+    maint_result = await db.execute(
+        select(StatusPageIncident)
+        .where(
+            StatusPageIncident.status_page_id == page.id,
+            StatusPageIncident.impact == "maintenance",
+            StatusPageIncident.status.in_(["scheduled", "in_progress"]),
+            StatusPageIncident.scheduled_end >= now,
+        )
+        .order_by(StatusPageIncident.scheduled_start)
+    )
+    maintenance_incidents = maint_result.scalars().unique().all()
+    maint_out = []
+    for inc in maintenance_incidents:
+        await db.refresh(inc, ["updates", "affected_components"])
+        maint_out.append(_incident_out(inc))
+
+    # Check which components are currently under maintenance
+    maint_component_ids: set[str] = set()
+    for m in maint_out:
+        if m.get("status") == "in_progress":
+            maint_component_ids.update(m.get("affected_component_ids", []))
+
+    for comp in comp_list:
+        if comp["id"] in maint_component_ids:
+            comp["current_status"] = "under_maintenance"
+
     # Overall status
     statuses = [c["current_status"] for c in comp_list]
-    if any(s == "major_outage" for s in statuses):
+    if any(s == "under_maintenance" for s in statuses):
+        overall = "under_maintenance"
+    elif any(s == "major_outage" for s in statuses):
         overall = "major_outage"
     elif any(s == "partial_outage" for s in statuses):
         overall = "partial_outage"
@@ -650,4 +799,233 @@ async def public_status_page(
         "components": comp_list,
         "active_incidents": active_out,
         "past_incidents": past_out,
+        "scheduled_maintenances": maint_out,
     }
+
+
+@public_router.post("/status/{slug}/subscribe", status_code=201)
+async def public_subscribe(
+    slug: str,
+    body: SubscribeReq,
+    db: AsyncSession = Depends(get_db),
+):
+    """Subscribe to status page updates (double opt-in)."""
+    result = await db.execute(
+        select(StatusPage).where(StatusPage.slug == slug, StatusPage.is_public == True)
+    )
+    page = result.scalar_one_or_none()
+    if not page:
+        raise HTTPException(404, "Status page not found")
+
+    # Check if already subscribed
+    existing = await db.execute(
+        select(StatusPageSubscriber).where(
+            StatusPageSubscriber.status_page_id == page.id,
+            StatusPageSubscriber.endpoint == body.email,
+        )
+    )
+    sub = existing.scalar_one_or_none()
+    if sub:
+        if sub.confirmed:
+            return {"message": "Already subscribed"}
+        # Resend confirmation
+        await _send_confirmation_email(page, sub)
+        return {"message": "Confirmation email resent"}
+
+    comp_uuids = [UUID(c) for c in body.component_ids] if body.component_ids else None
+    sub = StatusPageSubscriber(
+        status_page_id=page.id,
+        type="email",
+        endpoint=body.email,
+        component_ids=comp_uuids,
+    )
+    db.add(sub)
+    await db.commit()
+    await db.refresh(sub)
+
+    await _send_confirmation_email(page, sub)
+    return {"message": "Confirmation email sent"}
+
+
+@public_router.get("/status/{slug}/confirm/{token}")
+async def public_confirm_subscription(
+    slug: str,
+    token: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """Confirm a subscription via the token from the confirmation email."""
+    result = await db.execute(
+        select(StatusPage).where(StatusPage.slug == slug, StatusPage.is_public == True)
+    )
+    page = result.scalar_one_or_none()
+    if not page:
+        raise HTTPException(404, "Status page not found")
+
+    sub_result = await db.execute(
+        select(StatusPageSubscriber).where(
+            StatusPageSubscriber.status_page_id == page.id,
+            StatusPageSubscriber.confirmation_token == UUID(token),
+        )
+    )
+    sub = sub_result.scalar_one_or_none()
+    if not sub:
+        raise HTTPException(404, "Invalid confirmation link")
+
+    sub.confirmed = True
+    await db.commit()
+    return {"message": "Subscription confirmed", "email": sub.endpoint}
+
+
+@public_router.get("/status/{slug}/unsubscribe/{token}")
+async def public_unsubscribe(
+    slug: str,
+    token: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """Unsubscribe from status page updates."""
+    result = await db.execute(
+        select(StatusPage).where(StatusPage.slug == slug, StatusPage.is_public == True)
+    )
+    page = result.scalar_one_or_none()
+    if not page:
+        raise HTTPException(404, "Status page not found")
+
+    sub_result = await db.execute(
+        select(StatusPageSubscriber).where(
+            StatusPageSubscriber.status_page_id == page.id,
+            StatusPageSubscriber.confirmation_token == UUID(token),
+        )
+    )
+    sub = sub_result.scalar_one_or_none()
+    if not sub:
+        raise HTTPException(404, "Invalid unsubscribe link")
+
+    await db.delete(sub)
+    await db.commit()
+    return {"message": "Successfully unsubscribed"}
+
+
+# ── Email helpers ─────────────────────────────────────────────────────────────
+
+logger = logging.getLogger("overseer.statuspage")
+
+_BASE_URL = os.getenv("PUBLIC_BASE_URL", "https://overseer.dailycrust.it")
+
+
+async def _send_confirmation_email(page: StatusPage, sub: StatusPageSubscriber) -> None:
+    """Send double-opt-in confirmation email."""
+    confirm_url = f"{_BASE_URL}/api/v1/public/status/{page.slug}/confirm/{sub.confirmation_token}"
+    subject = f"Confirm your subscription to {page.title}"
+    body_plain = (
+        f"Please confirm your subscription to status updates for {page.title}.\n\n"
+        f"Click here to confirm: {confirm_url}\n\n"
+        f"If you did not request this, ignore this email."
+    )
+    body_html = (
+        '<!DOCTYPE html><html><head><meta charset="UTF-8"></head>'
+        '<body style="margin:0;padding:0;background:#f0f4f8;font-family:\'Segoe UI\',Arial,sans-serif;">'
+        '<div style="max-width:480px;margin:40px auto;background:#fff;border-radius:12px;'
+        'overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.08);">'
+        '<div style="background:#1e293b;padding:24px 32px;text-align:center;">'
+        f'<div style="color:#fff;font-size:20px;font-weight:700;">{page.title}</div>'
+        '<div style="color:#94a3b8;font-size:13px;margin-top:4px;">Status Page Updates</div>'
+        '</div>'
+        '<div style="padding:28px 32px;text-align:center;">'
+        '<p style="color:#334155;font-size:15px;">Confirm your subscription to receive status updates.</p>'
+        f'<a href="{confirm_url}" style="display:inline-block;margin:16px 0;padding:12px 32px;'
+        'background:#3b82f6;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;">Confirm Subscription</a>'
+        '<p style="color:#94a3b8;font-size:12px;margin-top:16px;">If you did not request this, ignore this email.</p>'
+        '</div></div></body></html>'
+    )
+    try:
+        await send_email(sub.endpoint, subject, body_plain, body_html)
+    except Exception as e:
+        logger.error("[StatusPage] Failed to send confirmation email to %s: %s", sub.endpoint, e)
+
+
+async def _notify_subscribers(
+    db: AsyncSession,
+    page_id: UUID,
+    incident: StatusPageIncident,
+    update_body: str,
+) -> None:
+    """Send email notification to all confirmed subscribers of this page."""
+    from api.app.core.database import AsyncSessionLocal
+
+    try:
+        async with AsyncSessionLocal() as notify_db:
+            # Get page info
+            page_result = await notify_db.execute(
+                select(StatusPage).where(StatusPage.id == page_id)
+            )
+            page = page_result.scalar_one_or_none()
+            if not page:
+                return
+
+            # Get confirmed subscribers
+            subs_result = await notify_db.execute(
+                select(StatusPageSubscriber).where(
+                    StatusPageSubscriber.status_page_id == page_id,
+                    StatusPageSubscriber.confirmed == True,
+                )
+            )
+            subscribers = subs_result.scalars().all()
+            if not subscribers:
+                return
+
+            # Get affected component IDs for filtering
+            affected_ids = set()
+            try:
+                await notify_db.refresh(incident, ["affected_components"])
+                affected_ids = {c.id for c in (incident.affected_components or [])}
+            except Exception:
+                pass
+
+            status_label = incident.status.replace("_", " ").title()
+            impact_color = {"critical": "#ef4444", "major": "#f97316", "minor": "#eab308", "maintenance": "#3b82f6"}.get(incident.impact, "#6b7280")
+
+            for sub in subscribers:
+                # Filter by component subscription
+                if sub.component_ids and affected_ids:
+                    sub_set = set(sub.component_ids)
+                    if not sub_set.intersection(affected_ids):
+                        continue
+
+                unsubscribe_url = f"{_BASE_URL}/api/v1/public/status/{page.slug}/unsubscribe/{sub.confirmation_token}"
+                subject = f"[{page.title}] {status_label}: {incident.title}"
+                body_plain = (
+                    f"Status Update for {page.title}\n\n"
+                    f"Incident: {incident.title}\n"
+                    f"Status: {status_label}\n"
+                    f"Impact: {incident.impact}\n\n"
+                    f"{update_body}\n\n"
+                    f"View: {_BASE_URL}/status/{page.slug}\n"
+                    f"Unsubscribe: {unsubscribe_url}"
+                )
+                body_html = (
+                    '<!DOCTYPE html><html><head><meta charset="UTF-8"></head>'
+                    '<body style="margin:0;padding:0;background:#f0f4f8;font-family:\'Segoe UI\',Arial,sans-serif;">'
+                    '<div style="max-width:520px;margin:40px auto;background:#fff;border-radius:12px;'
+                    'overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.08);">'
+                    '<div style="background:#1e293b;padding:24px 32px;text-align:center;">'
+                    f'<div style="color:#fff;font-size:20px;font-weight:700;">{page.title}</div>'
+                    '</div>'
+                    f'<div style="background:{impact_color};padding:12px 32px;text-align:center;">'
+                    f'<span style="color:#fff;font-size:16px;font-weight:700;">{status_label}</span>'
+                    '</div>'
+                    '<div style="padding:28px 32px;">'
+                    f'<h2 style="color:#1e293b;margin:0 0 12px;">{incident.title}</h2>'
+                    f'<p style="color:#334155;font-size:14px;line-height:1.6;">{update_body}</p>'
+                    f'<a href="{_BASE_URL}/status/{page.slug}" style="display:inline-block;margin:16px 0;'
+                    'padding:10px 24px;background:#3b82f6;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;">View Status Page</a>'
+                    '</div>'
+                    '<div style="padding:16px 32px;background:#f8fafc;border-top:1px solid #e2e8f0;">'
+                    f'<a href="{unsubscribe_url}" style="color:#94a3b8;font-size:12px;">Unsubscribe</a>'
+                    '</div></div></body></html>'
+                )
+                try:
+                    await send_email(sub.endpoint, subject, body_plain, body_html)
+                except Exception as e:
+                    logger.error("[StatusPage] Failed to notify %s: %s", sub.endpoint, e)
+    except Exception as e:
+        logger.error("[StatusPage] Notification error: %s", e)

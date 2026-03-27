@@ -19,7 +19,7 @@ import type {
   ReportSchedule, ReportScheduleCreate, ReportScheduleUpdate,
   ReportDelivery, ReportGenerateRequest,
   StatusPage, StatusPageCreate, StatusPageUpdate,
-  StatusPageIncident, PublicStatusPageData,
+  StatusPageIncident, StatusPageSubscriber, PublicStatusPageData,
 } from '../types'
 import axios from 'axios'
 
@@ -990,6 +990,39 @@ export function usePublicStatusPage(slug?: string) {
     queryFn: () => publicApi.get(`/api/v1/public/status/${slug}`).then(r => r.data),
     enabled: !!slug,
     refetchInterval: 60_000,
+  })
+}
+
+export function useCreateMaintenance() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ pageId, data }: { pageId: string; data: Record<string, unknown> }) =>
+      api.post(`/api/v1/status-pages/${pageId}/maintenance`, data).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['status-page-incidents'] }),
+  })
+}
+
+export function useStatusPageSubscribers(pageId?: string) {
+  return useQuery<StatusPageSubscriber[]>({
+    queryKey: ['status-page-subscribers', pageId],
+    queryFn: () => api.get(`/api/v1/status-pages/${pageId}/subscribers`).then(r => r.data),
+    enabled: !!pageId,
+  })
+}
+
+export function useDeleteSubscriber() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ pageId, subId }: { pageId: string; subId: string }) =>
+      api.delete(`/api/v1/status-pages/${pageId}/subscribers/${subId}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['status-page-subscribers'] }),
+  })
+}
+
+export function usePublicSubscribe() {
+  return useMutation({
+    mutationFn: ({ slug, email, componentIds }: { slug: string; email: string; componentIds?: string[] }) =>
+      publicApi.post(`/api/v1/public/status/${slug}/subscribe`, { email, component_ids: componentIds || [] }).then(r => r.data),
   })
 }
 

@@ -55,8 +55,54 @@ def _compute_component_status(check_statuses: list[str]) -> str:
     return "operational"
 
 
+async def _process_maintenance_windows(db: AsyncSession) -> None:
+    """Auto-start and auto-end scheduled maintenance windows."""
+    now = datetime.now(timezone.utc)
+
+    # Auto-start: scheduled maintenances whose start time has passed
+    scheduled = await db.execute(text("""
+        SELECT id, title, status_page_id FROM status_page_incidents
+        WHERE impact = 'maintenance'
+          AND status = 'scheduled'
+          AND scheduled_start <= :now
+    """), {"now": now})
+    for row in scheduled.fetchall():
+        await db.execute(text("""
+            UPDATE status_page_incidents SET status = 'in_progress' WHERE id = :iid
+        """), {"iid": row.id})
+        await db.execute(text("""
+            INSERT INTO incident_updates (incident_id, status, body)
+            VALUES (:iid, 'in_progress', 'Scheduled maintenance has started.')
+        """), {"iid": row.id})
+        logger.info("[StatusPage] Maintenance auto-started: %s", row.title)
+
+    # Auto-end: in-progress maintenances whose end time has passed
+    ended = await db.execute(text("""
+        SELECT id, title, status_page_id FROM status_page_incidents
+        WHERE impact = 'maintenance'
+          AND status = 'in_progress'
+          AND scheduled_end <= :now
+    """), {"now": now})
+    for row in ended.fetchall():
+        await db.execute(text("""
+            UPDATE status_page_incidents
+            SET status = 'resolved', resolved_at = :now
+            WHERE id = :iid
+        """), {"iid": row.id, "now": now})
+        await db.execute(text("""
+            INSERT INTO incident_updates (incident_id, status, body)
+            VALUES (:iid, 'resolved', 'Scheduled maintenance has been completed.')
+        """), {"iid": row.id})
+        logger.info("[StatusPage] Maintenance auto-ended: %s", row.title)
+
+    await db.commit()
+
+
 async def _update_component_statuses(db: AsyncSession) -> None:
     """Recalculate status for all non-overridden components."""
+    # First process maintenance windows
+    await _process_maintenance_windows(db)
+
     # Get all components with their mapped check statuses
     rows = await db.execute(text("""
         SELECT

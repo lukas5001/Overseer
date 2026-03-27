@@ -999,10 +999,20 @@ export interface StatusPageIncident {
   status: string
   impact: string
   is_auto_created: boolean
+  scheduled_start: string | null
+  scheduled_end: string | null
   created_at: string
   resolved_at: string | null
   updates: IncidentUpdate[]
   affected_component_ids: string[]
+}
+
+export interface StatusPageSubscriber {
+  id: string
+  email: string
+  confirmed: boolean
+  component_ids: string[]
+  created_at: string
 }
 
 export interface PublicStatusPageData {
@@ -1024,4 +1034,5 @@ export interface PublicStatusPageData {
   }[]
   active_incidents: StatusPageIncident[]
   past_incidents: StatusPageIncident[]
+  scheduled_maintenances: StatusPageIncident[]
 }

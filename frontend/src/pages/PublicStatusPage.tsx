@@ -1,5 +1,5 @@
 import { useParams } from 'react-router-dom'
-import { usePublicStatusPage } from '../api/hooks'
+import { usePublicStatusPage, usePublicSubscribe } from '../api/hooks'
 import type { PublicStatusPageData } from '../types'
 import { useState } from 'react'
 
@@ -8,6 +8,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: string
   degraded_performance: { label: 'Degraded Performance', color: '#eab308', icon: '!' },
   partial_outage: { label: 'Partial Outage', color: '#f97316', icon: '⚠' },
   major_outage: { label: 'Major Outage', color: '#ef4444', icon: '✕' },
+  under_maintenance: { label: 'Under Maintenance', color: '#3b82f6', icon: '🔧' },
 }
 
 const OVERALL_LABELS: Record<string, { text: string; bg: string; fg: string }> = {
@@ -15,6 +16,7 @@ const OVERALL_LABELS: Record<string, { text: string; bg: string; fg: string }> =
   degraded_performance: { text: 'Some Systems Degraded', bg: '#eab308', fg: '#fff' },
   partial_outage: { text: 'Partial System Outage', bg: '#f97316', fg: '#fff' },
   major_outage: { text: 'Major System Outage', bg: '#ef4444', fg: '#fff' },
+  under_maintenance: { text: 'Scheduled Maintenance In Progress', bg: '#3b82f6', fg: '#fff' },
 }
 
 export default function PublicStatusPage() {
@@ -40,11 +42,11 @@ export default function PublicStatusPage() {
     )
   }
 
-  return <StatusPageView data={data} />
+  return <StatusPageView data={data} slug={slug!} />
 }
 
 
-function StatusPageView({ data }: { data: PublicStatusPageData }) {
+function StatusPageView({ data, slug }: { data: PublicStatusPageData; slug: string }) {
   const overall = OVERALL_LABELS[data.overall_status] || OVERALL_LABELS.operational
 
   // Group components
@@ -54,6 +56,11 @@ function StatusPageView({ data }: { data: PublicStatusPageData }) {
     if (!groups.has(key)) groups.set(key, [])
     groups.get(key)!.push(comp)
   }
+
+  // Upcoming maintenance (scheduled, not yet started)
+  const upcomingMaint = (data.scheduled_maintenances || []).filter(m => m.status === 'scheduled')
+  // Active maintenance (in_progress)
+  const activeMaint = (data.scheduled_maintenances || []).filter(m => m.status === 'in_progress')
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#f0f4f8', fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
@@ -65,9 +72,42 @@ function StatusPageView({ data }: { data: PublicStatusPageData }) {
           {data.description && <p className="text-gray-500">{data.description}</p>}
         </div>
 
+        {/* Upcoming maintenance banner */}
+        {upcomingMaint.map(m => (
+          <div key={m.id} className="rounded-xl px-6 py-4 shadow-sm border border-blue-200" style={{ backgroundColor: '#eff6ff' }}>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-blue-500 text-lg">🔧</span>
+              <span className="font-semibold text-blue-900">Scheduled Maintenance</span>
+            </div>
+            <p className="text-blue-800 font-medium">{m.title}</p>
+            <p className="text-sm text-blue-600 mt-1">
+              {m.scheduled_start && new Date(m.scheduled_start).toLocaleString('en', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+              {' — '}
+              {m.scheduled_end && new Date(m.scheduled_end).toLocaleString('en', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+            </p>
+            {m.updates.length > 0 && (
+              <p className="text-sm text-blue-700 mt-2">{m.updates[m.updates.length - 1].body}</p>
+            )}
+          </div>
+        ))}
+
+        {/* Active maintenance banner */}
+        {activeMaint.map(m => (
+          <div key={m.id} className="rounded-xl px-6 py-4 shadow-sm" style={{ backgroundColor: '#3b82f6', color: '#fff' }}>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-lg">🔧</span>
+              <span className="font-semibold">Maintenance In Progress</span>
+            </div>
+            <p className="font-medium">{m.title}</p>
+            <p className="text-sm opacity-90 mt-1">
+              Expected completion: {m.scheduled_end && new Date(m.scheduled_end).toLocaleString('en', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+            </p>
+          </div>
+        ))}
+
         {/* Overall status banner */}
         <div className="rounded-xl px-6 py-4 text-center font-semibold text-lg shadow-sm" style={{ backgroundColor: overall.bg, color: overall.fg }}>
-          {data.overall_status === 'operational' ? '✓ ' : '⚠ '}{overall.text}
+          {data.overall_status === 'operational' ? '✓ ' : data.overall_status === 'under_maintenance' ? '🔧 ' : '⚠ '}{overall.text}
         </div>
 
         {/* Components */}
@@ -106,11 +146,62 @@ function StatusPageView({ data }: { data: PublicStatusPageData }) {
           </div>
         )}
 
+        {/* Subscribe to updates */}
+        <SubscribeForm slug={slug} />
+
         {/* Footer */}
         <div className="text-center text-xs text-gray-400 pt-4 pb-8">
           Powered by Overseer
         </div>
       </div>
+    </div>
+  )
+}
+
+
+function SubscribeForm({ slug }: { slug: string }) {
+  const subscribeMut = usePublicSubscribe()
+  const [email, setEmail] = useState('')
+  const [done, setDone] = useState(false)
+  const [message, setMessage] = useState('')
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!email) return
+    subscribeMut.mutate({ slug, email }, {
+      onSuccess: (data: { message: string }) => {
+        setDone(true)
+        setMessage(data.message)
+        setEmail('')
+      },
+      onError: () => setMessage('An error occurred. Please try again.'),
+    })
+  }
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+      <h3 className="font-semibold text-gray-900 mb-3">Subscribe to Updates</h3>
+      {done ? (
+        <p className="text-sm text-green-600">{message}</p>
+      ) : (
+        <form onSubmit={handleSubmit} className="flex gap-3">
+          <input
+            type="email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            placeholder="your@email.com"
+            required
+            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            type="submit"
+            disabled={subscribeMut.isPending}
+            className="px-5 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 disabled:opacity-50"
+          >
+            Subscribe
+          </button>
+        </form>
+      )}
     </div>
   )
 }
