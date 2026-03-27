@@ -14,7 +14,7 @@ from slowapi.errors import RateLimitExceeded
 from sqlalchemy import text
 
 from api.app.core.database import AsyncSessionLocal
-from api.app.routers import auth, status, tenants, hosts, services, collectors, downtimes, config, history, users, audit, notifications, templates, two_factor, saved_filters, alert_rules, sla, admin, agent, scripts, global_policies, host_types, dashboards, reports, status_pages, discovery
+from api.app.routers import auth, status, tenants, hosts, services, collectors, downtimes, config, history, users, audit, notifications, templates, two_factor, saved_filters, alert_rules, sla, admin, agent, scripts, global_policies, host_types, dashboards, reports, status_pages, discovery, dependencies
 
 # ==================== ENV Validation ====================
 
@@ -120,6 +120,7 @@ app.include_router(reports.router, prefix="/api/v1/reports", tags=["reports"])
 app.include_router(status_pages.router, prefix="/api/v1", tags=["status-pages"])
 app.include_router(status_pages.public_router, prefix="/api/v1/public", tags=["public"])
 app.include_router(discovery.router, prefix="/api/v1/discovery", tags=["discovery"])
+app.include_router(dependencies.router, prefix="/api/v1/dependencies", tags=["dependencies"])
 
 
 @app.get("/health")

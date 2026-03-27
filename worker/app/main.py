@@ -376,8 +376,18 @@ class Worker:
             return cached[1] if cached else {}
 
     async def _fire_notifications(self, tenant_id, events: list[dict]):
-        """Fire notifications via AlertGrouper (best-effort, non-blocking)."""
+        """Fire notifications via AlertGrouper (best-effort, non-blocking).
+        Applies inhibition check first — suppresses alerts for children of CRITICAL parents."""
         try:
+            # Inhibition: suppress alerts when parent dependency is CRITICAL
+            from shared.notifications.inhibition import filter_events
+            async with AsyncSessionLocal() as db:
+                events, suppressed = await filter_events(db, str(tenant_id), events)
+            if not events:
+                if suppressed > 0:
+                    logger.info("All %d alerts suppressed by dependency inhibition", suppressed)
+                return
+
             tenant_settings = await self._get_tenant_settings(tenant_id)
             await self.grouper.handle_events(tenant_id, events, tenant_settings)
         except Exception as e:

@@ -608,3 +608,15 @@ class DiscoveryScan(Base):
     started_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     completed_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+
+class Dependency(Base):
+    __tablename__ = "dependencies"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
+    source_type = Column(String(20), nullable=False)
+    source_id = Column(UUID(as_uuid=True), nullable=False)
+    depends_on_type = Column(String(20), nullable=False)
+    depends_on_id = Column(UUID(as_uuid=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))

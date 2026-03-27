@@ -1883,6 +1883,27 @@ export default function HostDetailPage() {
     refetchInterval: 30000,
   })
 
+  // Dependencies
+  const { data: dependencies = [] } = useQuery<{ id: string; source_type: string; source_id: string; source_name: string | null; depends_on_type: string; depends_on_id: string; depends_on_name: string | null }[]>({
+    queryKey: ['dependencies', hostId],
+    queryFn: () => api.get(`/api/v1/dependencies/?host_id=${hostId}`).then(r => r.data),
+    enabled: !!hostId,
+  })
+  const { data: allHosts = [] } = useQuery<{ id: string; hostname: string }[]>({
+    queryKey: ['hosts-simple'],
+    queryFn: () => api.get('/api/v1/hosts/?limit=500').then(r => r.data.map((h: any) => ({ id: h.id, hostname: h.hostname }))),
+  })
+  const [depTarget, setDepTarget] = useState('')
+  const addDepMutation = useMutation({
+    mutationFn: (data: { source_type: string; source_id: string; depends_on_type: string; depends_on_id: string }) =>
+      api.post('/api/v1/dependencies/', data).then(r => r.data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['dependencies', hostId] }); setDepTarget('') },
+  })
+  const deleteDepMutation = useMutation({
+    mutationFn: (depId: string) => api.delete(`/api/v1/dependencies/${depId}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['dependencies', hostId] }),
+  })
+
   const generateTokenMutation = useMutation({
     mutationFn: () => api.post(`/api/v1/hosts/${hostId}/agent-token`),
     onSuccess: (resp) => {
@@ -2636,6 +2657,93 @@ export default function HostDetailPage() {
             </tbody>
           </table>
         )}
+      </div>
+
+      {/* Dependencies section */}
+      <div className="bg-white rounded-xl border border-gray-200">
+        <div className="px-6 py-4 border-b border-gray-100">
+          <h2 className="font-semibold text-gray-800">Dependencies</h2>
+          <p className="text-xs text-gray-500 mt-0.5">When a parent host is down, alerts for this host are suppressed.</p>
+        </div>
+        <div className="p-6 space-y-4">
+          {/* Parents: this host depends on */}
+          {(() => {
+            const parents = dependencies.filter(d => d.source_type === 'host' && d.source_id === hostId)
+            const children = dependencies.filter(d => d.depends_on_type === 'host' && d.depends_on_id === hostId)
+            return (
+              <>
+                <div>
+                  <h3 className="text-xs font-medium text-gray-600 uppercase tracking-wider mb-2">This host depends on</h3>
+                  {parents.length === 0 ? (
+                    <p className="text-sm text-gray-400">No parent dependencies</p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {parents.map(d => (
+                        <div key={d.id} className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg">
+                          <Link to={`/hosts/${d.depends_on_id}`} className="text-sm font-medium text-blue-600 hover:underline">
+                            {d.depends_on_name || d.depends_on_id}
+                          </Link>
+                          <button
+                            onClick={() => deleteDepMutation.mutate(d.id)}
+                            className="text-gray-400 hover:text-red-500 p-1"
+                            title="Remove dependency"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {/* Add parent */}
+                  <div className="flex items-center gap-2 mt-2">
+                    <select
+                      value={depTarget} onChange={e => setDepTarget(e.target.value)}
+                      className="flex-1 text-sm border border-gray-300 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-overseer-500"
+                    >
+                      <option value="">Select parent host...</option>
+                      {allHosts
+                        .filter(h => h.id !== hostId && !parents.some(p => p.depends_on_id === h.id))
+                        .map(h => <option key={h.id} value={h.id}>{h.hostname}</option>)
+                      }
+                    </select>
+                    <button
+                      onClick={() => depTarget && addDepMutation.mutate({ source_type: 'host', source_id: hostId!, depends_on_type: 'host', depends_on_id: depTarget })}
+                      disabled={!depTarget || addDepMutation.isPending}
+                      className="px-3 py-1.5 rounded-lg bg-overseer-600 text-white text-xs font-medium hover:bg-overseer-700 disabled:opacity-50"
+                    >
+                      Add
+                    </button>
+                  </div>
+                  {addDepMutation.isError && (
+                    <p className="text-xs text-red-500 mt-1">{(addDepMutation.error as any)?.response?.data?.detail || 'Error'}</p>
+                  )}
+                </div>
+
+                {children.length > 0 && (
+                  <div className="pt-3 border-t border-gray-100">
+                    <h3 className="text-xs font-medium text-gray-600 uppercase tracking-wider mb-2">Dependent hosts (children)</h3>
+                    <div className="space-y-1.5">
+                      {children.map(d => (
+                        <div key={d.id} className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg">
+                          <Link to={`/hosts/${d.source_id}`} className="text-sm font-medium text-blue-600 hover:underline">
+                            {d.source_name || d.source_id}
+                          </Link>
+                          <button
+                            onClick={() => deleteDepMutation.mutate(d.id)}
+                            className="text-gray-400 hover:text-red-500 p-1"
+                            title="Remove dependency"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )
+          })()}
+        </div>
       </div>
     </div>
   )
