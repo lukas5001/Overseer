@@ -364,8 +364,33 @@ async def dead_agent_watcher():
         await asyncio.sleep(60)
 
 
+async def refresh_aggregate_views():
+    """Periodically refresh metrics_hourly and metrics_daily materialized views."""
+    from api.app.core.database import async_engine
+    from sqlalchemy import text as sa_text
+
+    await asyncio.sleep(30)  # Initial delay
+    while True:
+        try:
+            async with async_engine.begin() as conn:
+                await conn.execute(sa_text("REFRESH MATERIALIZED VIEW CONCURRENTLY metrics_hourly"))
+                await conn.execute(sa_text("REFRESH MATERIALIZED VIEW CONCURRENTLY metrics_daily"))
+                print("[AggRefresh] Refreshed metrics_hourly + metrics_daily")
+        except Exception as e:
+            # CONCURRENTLY requires a unique index; fall back to non-concurrent
+            try:
+                async with async_engine.begin() as conn:
+                    await conn.execute(sa_text("REFRESH MATERIALIZED VIEW metrics_hourly"))
+                    await conn.execute(sa_text("REFRESH MATERIALIZED VIEW metrics_daily"))
+                    print("[AggRefresh] Refreshed metrics_hourly + metrics_daily (non-concurrent)")
+            except Exception as e2:
+                print(f"[AggRefresh] Error: {e2}")
+        await asyncio.sleep(3600)  # Every hour
+
+
 @app.on_event("startup")
 async def startup():
     asyncio.create_task(dead_collector_watcher())
     asyncio.create_task(downtime_expiry_watcher())
     asyncio.create_task(dead_agent_watcher())
+    asyncio.create_task(refresh_aggregate_views())
