@@ -734,8 +734,75 @@ export interface DashboardTimeSettings {
 export interface DashboardWidget {
   type: string
   title: string
-  dataSource: Record<string, unknown>
-  options: Record<string, unknown>
+  dataSource: WidgetDataSource
+  options: WidgetDisplayOptions
+}
+
+export interface WidgetDataSource {
+  type?: 'query' | 'summary' | 'status_table'
+  service_ids?: string[]
+  host_ids?: string[]
+  check_types?: string[]
+  aggregation?: 'avg' | 'min' | 'max' | 'last' | 'sum'
+  field?: string  // for summary widgets (ok, warning, critical, total_hosts, etc.)
+}
+
+export interface WidgetDisplayOptions {
+  color?: string
+  unit?: string
+  decimals?: number
+  thresholds?: WidgetThreshold[]
+  showSparkline?: boolean
+  min?: number
+  max?: number
+  stacked?: boolean
+  fill?: boolean
+  columns?: string[]
+}
+
+export interface WidgetThreshold {
+  value: number
+  color: string
+}
+
+// ── Dashboard Query API ──
+
+export interface DashboardQueryRequest {
+  service_ids?: string[]
+  host_ids?: string[]
+  check_types?: string[]
+  from: string
+  to: string
+  aggregation: string
+  interval?: string
+}
+
+export interface DashboardQueryResponse {
+  series: DashboardSeries[]
+}
+
+export interface DashboardSeries {
+  service_id: string
+  metric: string
+  check_type: string
+  host: string
+  unit: string
+  value?: number | null
+  data?: { time: string; value: number | null }[]
+}
+
+export interface MetaService {
+  id: string
+  name: string
+  check_type: string
+  host_id: string
+  host: string
+}
+
+export interface MetaHost {
+  id: string
+  hostname: string
+  display_name: string
 }
 
 export interface DashboardLayoutItem {

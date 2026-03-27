@@ -14,6 +14,8 @@ import type {
   AuditLog, User, ApiKeyCreateResponse,
   AiAnalysisResponse, AiQueryRequest, AiQueryResponse,
   DashboardSummary, DashboardFull, DashboardVersion,
+  DashboardQueryRequest, DashboardQueryResponse,
+  MetaHost, MetaService,
 } from '../types'
 
 // ── Status ───────────────────────────────────────────────────────────────────
@@ -687,5 +689,47 @@ export function useRestoreDashboardVersion() {
       qc.invalidateQueries({ queryKey: ['dashboard', vars.id] })
       qc.invalidateQueries({ queryKey: ['dashboard-versions', vars.id] })
     },
+  })
+}
+
+// ── Dashboard Query + Meta ──────────────────────────────────────────────────
+
+export function useDashboardQuery(
+  query: DashboardQueryRequest | null,
+  options?: { refetchInterval?: number; enabled?: boolean },
+) {
+  return useQuery<DashboardQueryResponse>({
+    queryKey: ['dashboard-query', query],
+    queryFn: () => api.post('/api/v1/dashboards/query', query).then(r => r.data),
+    enabled: options?.enabled !== false && !!query,
+    refetchInterval: options?.refetchInterval,
+    staleTime: 10_000,
+    placeholderData: (prev) => prev,
+  })
+}
+
+export function useDashboardMetaHosts() {
+  return useQuery<MetaHost[]>({
+    queryKey: ['dashboard-meta-hosts'],
+    queryFn: () => api.get('/api/v1/dashboards/meta/hosts').then(r => r.data),
+    staleTime: 60_000,
+  })
+}
+
+export function useDashboardMetaServices(hostId?: string) {
+  return useQuery<MetaService[]>({
+    queryKey: ['dashboard-meta-services', hostId],
+    queryFn: () => api.get('/api/v1/dashboards/meta/services', {
+      params: hostId ? { host_id: hostId } : {},
+    }).then(r => r.data),
+    staleTime: 60_000,
+  })
+}
+
+export function useDashboardMetaCheckTypes() {
+  return useQuery<string[]>({
+    queryKey: ['dashboard-meta-check-types'],
+    queryFn: () => api.get('/api/v1/dashboards/meta/check-types').then(r => r.data),
+    staleTime: 60_000,
   })
 }

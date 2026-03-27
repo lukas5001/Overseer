@@ -5,13 +5,13 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
-from sqlalchemy import select, func, delete
+from sqlalchemy import select, func, delete, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.app.core.database import get_db
 from api.app.core.auth import get_current_user, require_role, tenant_scope, apply_tenant_filter
 from api.app.routers.audit import write_audit
-from api.app.models.models import Dashboard, DashboardVersion
+from api.app.models.models import Dashboard, DashboardVersion, Service, Host, CurrentStatus
 
 router = APIRouter()
 
@@ -489,3 +489,308 @@ async def get_public_dashboard(
         raise HTTPException(status_code=410, detail="Share link has expired")
 
     return _dashboard_full(dashboard)
+
+
+# ── Dashboard Query API ─────────────────────────────────────────────────────
+
+VALID_AGGREGATIONS = {"avg", "min", "max", "last", "sum"}
+VALID_INTERVALS = {"1m", "5m", "10m", "15m", "30m", "1h", "3h", "6h", "12h", "1d"}
+
+INTERVAL_TO_PG = {
+    "1m": "1 minute", "5m": "5 minutes", "10m": "10 minutes",
+    "15m": "15 minutes", "30m": "30 minutes", "1h": "1 hour",
+    "3h": "3 hours", "6h": "6 hours", "12h": "12 hours", "1d": "1 day",
+}
+
+
+class DashboardQuery(BaseModel):
+    service_ids: list[UUID] | None = None
+    host_ids: list[UUID] | None = None
+    check_types: list[str] | None = None
+    time_from: str = Field(alias="from")
+    time_to: str = Field(default="now", alias="to")
+    aggregation: str = "avg"
+    interval: str | None = None
+
+    model_config = {"populate_by_name": True}
+
+
+def _parse_relative_time(value: str) -> datetime:
+    """Parse 'now-1h', 'now-30m', 'now-7d', 'now' or ISO datetime."""
+    if value == "now":
+        return datetime.now(timezone.utc)
+    if value.startswith("now-"):
+        suffix = value[4:]
+        amount = int(suffix[:-1])
+        unit = suffix[-1]
+        if unit == "m":
+            return datetime.now(timezone.utc) - timedelta(minutes=amount)
+        elif unit == "h":
+            return datetime.now(timezone.utc) - timedelta(hours=amount)
+        elif unit == "d":
+            return datetime.now(timezone.utc) - timedelta(days=amount)
+    return datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+
+@router.post("/query")
+async def dashboard_query(
+    body: DashboardQuery,
+    db: AsyncSession = Depends(get_db),
+    _user: dict = Depends(get_current_user),
+    _scope=Depends(tenant_scope),
+):
+    """Query metrics data for dashboard widgets."""
+    if body.aggregation not in VALID_AGGREGATIONS:
+        raise HTTPException(400, f"Invalid aggregation. Must be one of: {VALID_AGGREGATIONS}")
+    if body.interval and body.interval not in VALID_INTERVALS:
+        raise HTTPException(400, f"Invalid interval. Must be one of: {VALID_INTERVALS}")
+
+    time_from = _parse_relative_time(body.time_from)
+    time_to = _parse_relative_time(body.time_to)
+
+    # Resolve service_ids from filters
+    service_ids = body.service_ids or []
+
+    if not service_ids and (body.host_ids or body.check_types):
+        sq = select(Service.id).where(Service.active == True)
+        sq = apply_tenant_filter(sq, Service.tenant_id, _scope)
+        if body.host_ids:
+            sq = sq.where(Service.host_id.in_(body.host_ids))
+        if body.check_types:
+            sq = sq.where(Service.check_type.in_(body.check_types))
+        result = await db.execute(sq)
+        service_ids = [row[0] for row in result.all()]
+
+    if not service_ids:
+        return {"series": []}
+
+    # Tenant security: verify all service_ids belong to accessible tenants
+    if _scope is not None:
+        check_q = select(Service.id).where(
+            Service.id.in_(service_ids),
+            Service.tenant_id.in_(_scope),
+        )
+        result = await db.execute(check_q)
+        allowed = {row[0] for row in result.all()}
+        service_ids = [sid for sid in service_ids if sid in allowed]
+        if not service_ids:
+            return {"series": []}
+
+    # Fetch service metadata for labels
+    svc_q = (
+        select(Service.id, Service.name, Service.check_type, Host.hostname, Host.display_name)
+        .join(Host, Service.host_id == Host.id)
+        .where(Service.id.in_(service_ids))
+    )
+    svc_result = await db.execute(svc_q)
+    svc_meta = {
+        row.id: {
+            "service_name": row.name,
+            "check_type": row.check_type,
+            "host": row.display_name or row.hostname,
+        }
+        for row in svc_result.all()
+    }
+
+    pg_agg = {
+        "avg": "AVG(cr.value)",
+        "min": "MIN(cr.value)",
+        "max": "MAX(cr.value)",
+        "sum": "SUM(cr.value)",
+    }
+
+    series = []
+
+    if body.interval:
+        pg_interval = INTERVAL_TO_PG[body.interval]
+
+        if body.aggregation == "last":
+            sql = text("""
+                WITH buckets AS (
+                    SELECT
+                        time_bucket(:interval, cr.time) AS bucket,
+                        cr.service_id,
+                        cr.value,
+                        cr.unit,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY cr.service_id, time_bucket(:interval, cr.time)
+                            ORDER BY cr.time DESC
+                        ) AS rn
+                    FROM check_results cr
+                    WHERE cr.service_id = ANY(:sids)
+                      AND cr.time >= :t_from AND cr.time <= :t_to
+                      AND cr.value IS NOT NULL
+                )
+                SELECT bucket AS time, service_id, value, unit
+                FROM buckets WHERE rn = 1
+                ORDER BY service_id, bucket
+            """)
+        else:
+            agg_expr = pg_agg[body.aggregation]
+            sql = text(f"""
+                SELECT
+                    time_bucket(:interval, cr.time) AS time,
+                    cr.service_id,
+                    {agg_expr} AS value,
+                    MAX(cr.unit) AS unit
+                FROM check_results cr
+                WHERE cr.service_id = ANY(:sids)
+                  AND cr.time >= :t_from AND cr.time <= :t_to
+                  AND cr.value IS NOT NULL
+                GROUP BY time_bucket(:interval, cr.time), cr.service_id
+                ORDER BY cr.service_id, time
+            """)
+
+        rows = await db.execute(sql, {
+            "interval": pg_interval,
+            "sids": service_ids,
+            "t_from": time_from,
+            "t_to": time_to,
+        })
+
+        by_service: dict = {}
+        unit_by_service: dict = {}
+        for row in rows.fetchall():
+            sid = row.service_id
+            if sid not in by_service:
+                by_service[sid] = []
+                unit_by_service[sid] = row.unit or ""
+            by_service[sid].append({
+                "time": row.time.isoformat(),
+                "value": round(row.value, 3) if row.value is not None else None,
+            })
+
+        for sid, data in by_service.items():
+            meta = svc_meta.get(sid, {})
+            series.append({
+                "service_id": str(sid),
+                "metric": meta.get("service_name", "Unknown"),
+                "check_type": meta.get("check_type", ""),
+                "host": meta.get("host", ""),
+                "unit": unit_by_service.get(sid, ""),
+                "data": data,
+            })
+    else:
+        if body.aggregation == "last":
+            sql = text("""
+                SELECT DISTINCT ON (cr.service_id)
+                    cr.service_id, cr.value, cr.unit, cr.status, cr.time
+                FROM check_results cr
+                WHERE cr.service_id = ANY(:sids)
+                  AND cr.time >= :t_from AND cr.time <= :t_to
+                  AND cr.value IS NOT NULL
+                ORDER BY cr.service_id, cr.time DESC
+            """)
+        else:
+            agg_expr = pg_agg[body.aggregation]
+            sql = text(f"""
+                SELECT
+                    cr.service_id,
+                    {agg_expr} AS value,
+                    MAX(cr.unit) AS unit
+                FROM check_results cr
+                WHERE cr.service_id = ANY(:sids)
+                  AND cr.time >= :t_from AND cr.time <= :t_to
+                  AND cr.value IS NOT NULL
+                GROUP BY cr.service_id
+            """)
+
+        rows = await db.execute(sql, {
+            "sids": service_ids,
+            "t_from": time_from,
+            "t_to": time_to,
+        })
+
+        for row in rows.fetchall():
+            meta = svc_meta.get(row.service_id, {})
+            series.append({
+                "service_id": str(row.service_id),
+                "metric": meta.get("service_name", "Unknown"),
+                "check_type": meta.get("check_type", ""),
+                "host": meta.get("host", ""),
+                "unit": row.unit or "",
+                "value": round(row.value, 3) if row.value is not None else None,
+            })
+
+    return {"series": series}
+
+
+# ── Dashboard Meta (for widget config dropdowns) ────────────────────────────
+
+@router.get("/meta/services")
+async def list_available_services(
+    host_id: UUID | None = None,
+    check_type: str | None = None,
+    db: AsyncSession = Depends(get_db),
+    _user: dict = Depends(get_current_user),
+    _scope=Depends(tenant_scope),
+):
+    """List services available for widget data sources."""
+    q = (
+        select(
+            Service.id,
+            Service.name,
+            Service.check_type,
+            Host.hostname,
+            Host.display_name,
+            Host.id.label("host_id"),
+        )
+        .join(Host, Service.host_id == Host.id)
+        .where(Service.active == True)
+        .order_by(Host.hostname, Service.name)
+    )
+    q = apply_tenant_filter(q, Service.tenant_id, _scope)
+    if host_id:
+        q = q.where(Service.host_id == host_id)
+    if check_type:
+        q = q.where(Service.check_type == check_type)
+
+    result = await db.execute(q)
+    return [
+        {
+            "id": str(row.id),
+            "name": row.name,
+            "check_type": row.check_type,
+            "host_id": str(row.host_id),
+            "host": row.display_name or row.hostname,
+        }
+        for row in result.all()
+    ]
+
+
+@router.get("/meta/hosts")
+async def list_available_hosts(
+    db: AsyncSession = Depends(get_db),
+    _user: dict = Depends(get_current_user),
+    _scope=Depends(tenant_scope),
+):
+    """List hosts available for widget filtering."""
+    q = (
+        select(Host.id, Host.hostname, Host.display_name)
+        .where(Host.active == True)
+        .order_by(Host.hostname)
+    )
+    q = apply_tenant_filter(q, Host.tenant_id, _scope)
+
+    result = await db.execute(q)
+    return [
+        {
+            "id": str(row.id),
+            "hostname": row.hostname,
+            "display_name": row.display_name or row.hostname,
+        }
+        for row in result.all()
+    ]
+
+
+@router.get("/meta/check-types")
+async def list_check_types(
+    db: AsyncSession = Depends(get_db),
+    _user: dict = Depends(get_current_user),
+    _scope=Depends(tenant_scope),
+):
+    """List distinct check types in use."""
+    q = select(Service.check_type).distinct().where(Service.active == True)
+    q = apply_tenant_filter(q, Service.tenant_id, _scope)
+    result = await db.execute(q)
+    return sorted([row[0] for row in result.all()])

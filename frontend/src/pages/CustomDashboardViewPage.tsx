@@ -1,15 +1,19 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useCallback } from 'react'
 import { useParams, useSearchParams, Link } from 'react-router-dom'
 import { ResponsiveGridLayout, useContainerWidth, type Layout, type ResponsiveLayouts } from 'react-grid-layout'
 import { verticalCompactor } from 'react-grid-layout/core'
 import {
   Pencil, Save, X, Plus, ArrowLeft, Settings,
-  RefreshCw, History,
+  RefreshCw, History, Wrench,
 } from 'lucide-react'
 import clsx from 'clsx'
 import { useDashboard, useUpdateDashboard, useDashboardVersions, useRestoreDashboardVersion } from '../api/hooks'
 import LoadingSpinner from '../components/LoadingSpinner'
-import type { DashboardConfig, DashboardLayoutItem } from '../types'
+import WidgetRenderer from '../components/widgets/WidgetRenderer'
+import WidgetPicker from '../components/widgets/WidgetPicker'
+import WidgetConfigDialog from '../components/widgets/WidgetConfigDialog'
+import { type WidgetTypeDefinition } from '../components/widgets/registry'
+import type { DashboardConfig, DashboardLayoutItem, DashboardWidget } from '../types'
 
 import 'react-grid-layout/css/styles.css'
 
@@ -34,20 +38,6 @@ const REFRESH_OPTIONS = [
   { label: '5min', value: 300 },
 ]
 
-function WidgetPlaceholder({ title, type }: { title: string; type: string }) {
-  return (
-    <div className="h-full flex flex-col bg-gray-800 border border-gray-700 rounded-lg overflow-hidden">
-      <div className="px-3 py-2 border-b border-gray-700 flex items-center justify-between">
-        <span className="text-sm font-medium text-gray-200 truncate">{title}</span>
-        <span className="text-[10px] text-gray-500 uppercase">{type}</span>
-      </div>
-      <div className="flex-1 flex items-center justify-center text-gray-500 text-sm">
-        Widget-Daten (Block 2.2)
-      </div>
-    </div>
-  )
-}
-
 export default function CustomDashboardViewPage() {
   const { dashboardId } = useParams<{ dashboardId: string }>()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -63,25 +53,16 @@ export default function CustomDashboardViewPage() {
   const [editConfig, setEditConfig] = useState<DashboardConfig | null>(null)
   const [showVersions, setShowVersions] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  const [showWidgetPicker, setShowWidgetPicker] = useState(false)
+  const [configWidgetId, setConfigWidgetId] = useState<string | null>(null)
   const [editTitle, setEditTitle] = useState('')
   const [editDesc, setEditDesc] = useState('')
 
   // Time range from URL
   const timeFrom = searchParams.get('from') || dashboard?.config?.timeSettings?.from || 'now-1h'
+  const timeTo = searchParams.get('to') || 'now'
   const refreshInterval = dashboard?.config?.timeSettings?.refreshInterval ?? 30
   const [autoRefresh, setAutoRefresh] = useState(refreshInterval)
-  const refreshRef = useRef<ReturnType<typeof setInterval> | null>(null)
-
-  // Auto-refresh timer
-  useEffect(() => {
-    if (refreshRef.current) clearInterval(refreshRef.current)
-    if (autoRefresh > 0 && !isEditing) {
-      refreshRef.current = setInterval(() => {
-        // In Block 2.2 this will trigger data refetch
-      }, autoRefresh * 1000)
-    }
-    return () => { if (refreshRef.current) clearInterval(refreshRef.current) }
-  }, [autoRefresh, isEditing])
 
   const config = isEditing && editConfig ? editConfig : dashboard?.config
   const widgets = config?.widgets || {}
@@ -98,6 +79,7 @@ export default function CustomDashboardViewPage() {
   function discardEdit() {
     setEditConfig(null)
     setIsEditing(false)
+    setConfigWidgetId(null)
   }
 
   async function saveEdit() {
@@ -111,6 +93,7 @@ export default function CustomDashboardViewPage() {
       })
       setIsEditing(false)
       setEditConfig(null)
+      setConfigWidgetId(null)
     } catch {
       // handled by mutation
     }
@@ -125,22 +108,32 @@ export default function CustomDashboardViewPage() {
     setSearchParams({ from, to: 'now' })
   }
 
-  function addWidget() {
+  function addWidgetFromPicker(typeDef: WidgetTypeDefinition) {
     if (!editConfig) return
     const id = `widget-${Date.now()}`
     const newConfig = structuredClone(editConfig)
     newConfig.widgets[id] = {
-      type: 'stat',
-      title: 'Neues Widget',
-      dataSource: {},
-      options: {},
+      type: typeDef.type,
+      title: typeDef.displayName,
+      dataSource: { ...typeDef.defaultDataSource },
+      options: { ...typeDef.defaultOptions },
     }
     // Add to layout at bottom
     const lgLayout = [...(newConfig.layout.lg || [])]
     const maxY = lgLayout.reduce((max, item) => Math.max(max, item.y + item.h), 0)
-    lgLayout.push({ i: id, x: 0, y: maxY, w: 6, h: 4, minW: 3, minH: 3 })
+    lgLayout.push({
+      i: id,
+      x: 0,
+      y: maxY,
+      w: typeDef.defaultSize.w,
+      h: typeDef.defaultSize.h,
+      minW: typeDef.minSize.w,
+      minH: typeDef.minSize.h,
+    })
     newConfig.layout.lg = lgLayout
     setEditConfig(newConfig)
+    // Auto-open config dialog for the new widget
+    setConfigWidgetId(id)
   }
 
   function removeWidget(widgetId: string) {
@@ -150,6 +143,14 @@ export default function CustomDashboardViewPage() {
     for (const bp of Object.keys(newConfig.layout)) {
       newConfig.layout[bp] = newConfig.layout[bp].filter(item => item.i !== widgetId)
     }
+    setEditConfig(newConfig)
+    if (configWidgetId === widgetId) setConfigWidgetId(null)
+  }
+
+  function updateWidgetConfig(widgetId: string, widget: DashboardWidget) {
+    if (!editConfig) return
+    const newConfig = structuredClone(editConfig)
+    newConfig.widgets[widgetId] = widget
     setEditConfig(newConfig)
   }
 
@@ -163,6 +164,7 @@ export default function CustomDashboardViewPage() {
   if (!dashboard) return <div className="p-6 text-gray-400">Dashboard nicht gefunden</div>
 
   const widgetEntries = Object.entries(widgets)
+  const configWidget = configWidgetId ? widgets[configWidgetId] : null
 
   return (
     <div className="flex flex-col h-full">
@@ -227,7 +229,7 @@ export default function CustomDashboardViewPage() {
           {isEditing ? (
             <>
               <button
-                onClick={addWidget}
+                onClick={() => setShowWidgetPicker(true)}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-gray-700 text-gray-200 rounded-lg hover:bg-gray-600 transition-colors"
               >
                 <Plus className="w-4 h-4" /> Widget
@@ -281,7 +283,7 @@ export default function CustomDashboardViewPage() {
         {widgetEntries.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-500">
             <p className="text-lg mb-2">Keine Widgets</p>
-            <p className="text-sm mb-4">Klicke auf "Bearbeiten" um Widgets hinzuzufugen.</p>
+            <p className="text-sm mb-4">Klicke auf "Bearbeiten" um Widgets hinzuzufügen.</p>
           </div>
         ) : mounted ? (
           <ResponsiveGridLayout
@@ -302,21 +304,54 @@ export default function CustomDashboardViewPage() {
                 {isEditing && (
                   <div className="widget-drag-handle absolute inset-x-0 top-0 h-8 cursor-grab z-10" />
                 )}
-                <WidgetPlaceholder title={widget.title} type={widget.type} />
+                <WidgetRenderer
+                  widget={widget}
+                  timeRange={{ from: timeFrom, to: timeTo }}
+                  refreshInterval={autoRefresh}
+                  isEditing={isEditing}
+                  onConfigChange={w => updateWidgetConfig(id, w)}
+                />
                 {isEditing && (
-                  <button
-                    onClick={() => removeWidget(id)}
-                    className="absolute -top-2 -right-2 w-6 h-6 bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20 hover:bg-red-500"
-                    title="Widget entfernen"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
+                  <>
+                    <button
+                      onClick={() => setConfigWidgetId(id)}
+                      className="absolute top-1 right-8 w-6 h-6 bg-gray-700 text-gray-300 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20 hover:bg-gray-600"
+                      title="Widget konfigurieren"
+                    >
+                      <Wrench className="w-3 h-3" />
+                    </button>
+                    <button
+                      onClick={() => removeWidget(id)}
+                      className="absolute -top-2 -right-2 w-6 h-6 bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20 hover:bg-red-500"
+                      title="Widget entfernen"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </>
                 )}
               </div>
             ))}
           </ResponsiveGridLayout>
         ) : null}
       </div>
+
+      {/* Widget Picker */}
+      <WidgetPicker
+        open={showWidgetPicker}
+        onClose={() => setShowWidgetPicker(false)}
+        onSelect={addWidgetFromPicker}
+      />
+
+      {/* Widget Config Dialog */}
+      {configWidgetId && configWidget && (
+        <WidgetConfigDialog
+          widgetId={configWidgetId}
+          widget={configWidget}
+          open={true}
+          onClose={() => setConfigWidgetId(null)}
+          onChange={w => updateWidgetConfig(configWidgetId, w)}
+        />
+      )}
 
       {/* Versions side panel */}
       {showVersions && (
