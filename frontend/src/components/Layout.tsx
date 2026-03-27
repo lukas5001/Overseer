@@ -4,7 +4,7 @@ import {
   LayoutDashboard, AlertTriangle, Monitor, Building2, Shield, ShieldCheck,
   LogOut, Users, Clock, ScrollText, Bell, Layers, Menu, X,
   ChevronLeft, ChevronRight, Wifi, BarChart3, Mail, ShieldAlert, Settings,
-  FileCode2, Globe, Boxes,
+  FileCode2, Globe, Boxes, LayoutGrid,
 } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -44,6 +44,7 @@ export default function Layout() {
   // ── Navigation structure with groups ──
   const mainNav = [
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/custom-dashboards', label: 'Dashboards', icon: LayoutGrid },
     { to: '/errors', label: 'Fehlerübersicht', icon: AlertTriangle },
     { to: '/hosts', label: 'Hosts', icon: Monitor },
     { to: '/collectors', label: 'Collectors', icon: Wifi },

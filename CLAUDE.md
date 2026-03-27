@@ -224,5 +224,5 @@ One-Command-Installer: `wget -qO- SERVER/agent/install.sh | bash -s -- TOKEN SER
 - Frontend: Vite-Build nach `/opt/overseer/frontend/dist`, nginx reverse proxy
 - Deploy: `git pull` → `npm run build` → `systemctl restart overseer-*`
 - Migration: `DATABASE_URL_SYNC="postgresql://overseer:overseer_prod_2026@localhost/overseer" python3 scripts/migrate.py`
-- Aktuelle Migration: 029 (alert_grouping)
+- Aktuelle Migration: 030 (dashboards)
 - Agent überwacht den eigenen Server (DailyCrust VPS) mit CPU, RAM, Disk, Services, Ping, Ports

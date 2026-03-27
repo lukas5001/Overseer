@@ -21,6 +21,8 @@ import ServiceTemplatesPage from './pages/ServiceTemplatesPage'
 import ScriptsPage from './pages/ScriptsPage'
 import GlobalPoliciesPage from './pages/GlobalPoliciesPage'
 import HostTypesPage from './pages/HostTypesPage'
+import CustomDashboardsPage from './pages/CustomDashboardsPage'
+import CustomDashboardViewPage from './pages/CustomDashboardViewPage'
 import TvPage from './pages/TvPage'
 import LoginPage from './pages/LoginPage'
 import AiChatWidget from './components/AiChatWidget'
@@ -50,6 +52,8 @@ export default function App() {
           <Route path="/errors" element={<ErrorOverviewPage />} />
           <Route path="/hosts" element={<HostsPage />} />
           <Route path="/hosts/:hostId" element={<HostDetailPage />} />
+          <Route path="/custom-dashboards" element={<CustomDashboardsPage />} />
+          <Route path="/custom-dashboards/:dashboardId" element={<CustomDashboardViewPage />} />
           <Route path="/collectors" element={<CollectorsPage />} />
           <Route path="/tenants" element={<TenantsPage />} />
           <Route path="/users" element={<UsersPage />} />

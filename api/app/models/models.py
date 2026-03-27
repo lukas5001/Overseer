@@ -375,3 +375,35 @@ class GlobalCheckPolicy(Base):
     priority = Column(Integer, nullable=False, default=0)
     created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+
+class Dashboard(Base):
+    __tablename__ = "dashboards"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
+    title = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    config = Column(JSONB, nullable=False, default=dict)
+    is_default = Column(Boolean, nullable=False, default=False)
+    is_shared = Column(Boolean, nullable=False, default=False)
+    share_token = Column(String(64), unique=True, nullable=True)
+    share_expires_at = Column(DateTime(timezone=True), nullable=True)
+    created_by = Column(UUID(as_uuid=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+    versions = relationship("DashboardVersion", back_populates="dashboard", passive_deletes=True)
+
+
+class DashboardVersion(Base):
+    __tablename__ = "dashboard_versions"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    dashboard_id = Column(UUID(as_uuid=True), ForeignKey("dashboards.id", ondelete="CASCADE"), nullable=False)
+    version = Column(Integer, nullable=False)
+    config = Column(JSONB, nullable=False)
+    changed_by = Column(UUID(as_uuid=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+    dashboard = relationship("Dashboard", back_populates="versions")

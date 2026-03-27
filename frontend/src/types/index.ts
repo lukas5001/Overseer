@@ -697,3 +697,60 @@ export interface TokenResponse {
   token_type: string
   expires_in: number
 }
+
+// ── Dashboard ─────────────────────────────────────────────────────────────────
+
+export interface DashboardSummary {
+  id: string
+  tenant_id: string
+  title: string
+  description: string | null
+  is_default: boolean
+  is_shared: boolean
+  created_by: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface DashboardFull extends DashboardSummary {
+  config: DashboardConfig
+  share_token: string | null
+  share_expires_at: string | null
+}
+
+export interface DashboardConfig {
+  schemaVersion: number
+  timeSettings: DashboardTimeSettings
+  widgets: Record<string, DashboardWidget>
+  layout: Record<string, DashboardLayoutItem[]>
+}
+
+export interface DashboardTimeSettings {
+  from: string
+  to: string
+  refreshInterval: number
+}
+
+export interface DashboardWidget {
+  type: string
+  title: string
+  dataSource: Record<string, unknown>
+  options: Record<string, unknown>
+}
+
+export interface DashboardLayoutItem {
+  i: string
+  x: number
+  y: number
+  w: number
+  h: number
+  minW?: number
+  minH?: number
+}
+
+export interface DashboardVersion {
+  id: number
+  version: number
+  changed_by: string | null
+  created_at: string
+}

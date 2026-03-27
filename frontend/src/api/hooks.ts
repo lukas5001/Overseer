@@ -13,6 +13,7 @@ import type {
   HistoryBucket, HistoryPoint, HistorySummary, ServiceSla, TenantSlaReport,
   AuditLog, User, ApiKeyCreateResponse,
   AiAnalysisResponse, AiQueryRequest, AiQueryResponse,
+  DashboardSummary, DashboardFull, DashboardVersion,
 } from '../types'
 
 // ── Status ───────────────────────────────────────────────────────────────────
@@ -621,4 +622,70 @@ export function getTenantId(): string | null {
   } catch {
     return null
   }
+}
+
+// ── Dashboards ──────────────────────────────────────────────────────────────
+
+export function useDashboards(tenantId?: string) {
+  return useQuery<DashboardSummary[]>({
+    queryKey: ['dashboards', tenantId],
+    queryFn: () => api.get('/api/v1/dashboards/', { params: tenantId ? { tenant_id: tenantId } : {} }).then(r => r.data),
+  })
+}
+
+export function useDashboard(id?: string) {
+  return useQuery<DashboardFull>({
+    queryKey: ['dashboard', id],
+    queryFn: () => api.get(`/api/v1/dashboards/${id}`).then(r => r.data),
+    enabled: !!id,
+  })
+}
+
+export function useCreateDashboard() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body: { tenant_id: string; title: string; description?: string }) =>
+      api.post('/api/v1/dashboards/', body).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['dashboards'] }),
+  })
+}
+
+export function useUpdateDashboard() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...body }: { id: string; title?: string; description?: string; config?: Record<string, unknown> }) =>
+      api.put(`/api/v1/dashboards/${id}`, body).then(r => r.data),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ['dashboards'] })
+      qc.invalidateQueries({ queryKey: ['dashboard', vars.id] })
+    },
+  })
+}
+
+export function useDeleteDashboard() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/api/v1/dashboards/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['dashboards'] }),
+  })
+}
+
+export function useDashboardVersions(id?: string) {
+  return useQuery<DashboardVersion[]>({
+    queryKey: ['dashboard-versions', id],
+    queryFn: () => api.get(`/api/v1/dashboards/${id}/versions`).then(r => r.data),
+    enabled: !!id,
+  })
+}
+
+export function useRestoreDashboardVersion() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, version }: { id: string; version: number }) =>
+      api.post(`/api/v1/dashboards/${id}/restore/${version}`).then(r => r.data),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ['dashboard', vars.id] })
+      qc.invalidateQueries({ queryKey: ['dashboard-versions', vars.id] })
+    },
+  })
 }
