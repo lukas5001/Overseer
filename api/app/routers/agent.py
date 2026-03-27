@@ -369,6 +369,60 @@ async def get_agent_config(
     )
 
 
+@router.post("/agent/discovery", status_code=202)
+async def agent_discovery(
+    body: dict,
+    agent: dict = Depends(get_agent_auth),
+    db: AsyncSession = Depends(get_db),
+):
+    """Receive service discovery data from an agent."""
+    now = datetime.now(timezone.utc)
+    services = body.get("services", [])
+    hostname = body.get("hostname", agent["hostname"])
+
+    # Collect all suggested checks from services
+    all_suggested = set()
+    for svc in services:
+        for c in svc.get("suggested_checks", []):
+            all_suggested.add(c)
+
+    # Collect all ports from services
+    all_ports = []
+    for svc in services:
+        for port in svc.get("ports", []):
+            all_ports.append({"port": port, "protocol": "tcp", "service": svc.get("name", "")})
+
+    # Upsert discovery result for this agent host
+    await db.execute(
+        text("""
+            INSERT INTO discovery_results
+                (tenant_id, source, hostname, device_type, services,
+                 suggested_checks, open_ports, matched_host_id, status, first_seen_at, last_seen_at)
+            VALUES
+                (:tid, 'agent_discovery', :hostname, 'server', :services,
+                 :suggested_checks, :open_ports, CAST(:host_id AS uuid), 'known', :now, :now)
+            ON CONFLICT (tenant_id, source, hostname)
+            DO UPDATE SET
+                services = EXCLUDED.services,
+                suggested_checks = EXCLUDED.suggested_checks,
+                open_ports = EXCLUDED.open_ports,
+                last_seen_at = EXCLUDED.last_seen_at
+        """),
+        {
+            "tid": agent["tenant_id"],
+            "hostname": hostname,
+            "services": services,
+            "suggested_checks": list(all_suggested),
+            "open_ports": all_ports,
+            "host_id": agent["host_id"],
+            "now": now,
+        },
+    )
+    await db.commit()
+
+    return {"status": "accepted", "services_received": len(services)}
+
+
 @router.post("/agent/heartbeat", status_code=200)
 async def agent_heartbeat(
     body: HeartbeatRequest,

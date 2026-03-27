@@ -1036,3 +1036,85 @@ export function usePublicDashboardMetaServices(shareToken?: string, hostId?: str
     staleTime: 60_000,
   })
 }
+
+// ── Discovery ────────────────────────────────────────────────────────────────
+
+import type { DiscoveryResult, DiscoveryScan, NetworkScanRequest, DiscoveryAddHostRequest, DiscoveryBulkAddRequest } from '../types'
+
+export function useDiscoveryResults(params?: { status?: string; source?: string; device_type?: string; scan_id?: string; limit?: number; offset?: number }) {
+  return useQuery<DiscoveryResult[]>({
+    queryKey: ['discovery-results', params],
+    queryFn: () => api.get('/api/v1/discovery/results', { params }).then(r => r.data),
+  })
+}
+
+export function useDiscoveryScans(limit = 20) {
+  return useQuery<DiscoveryScan[]>({
+    queryKey: ['discovery-scans', limit],
+    queryFn: () => api.get('/api/v1/discovery/scans', { params: { limit } }).then(r => r.data),
+  })
+}
+
+export function useStartNetworkScan() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: NetworkScanRequest) =>
+      api.post('/api/v1/discovery/network-scan', data).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['discovery-scans'] })
+      qc.invalidateQueries({ queryKey: ['discovery-results'] })
+    },
+  })
+}
+
+export function useAddDiscoveryHost() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ resultId, data }: { resultId: string; data: DiscoveryAddHostRequest }) =>
+      api.post(`/api/v1/discovery/results/${resultId}/add`, data).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['discovery-results'] })
+      qc.invalidateQueries({ queryKey: ['hosts'] })
+    },
+  })
+}
+
+export function useIgnoreDiscoveryResult() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (resultId: string) =>
+      api.post(`/api/v1/discovery/results/${resultId}/ignore`).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['discovery-results'] }),
+  })
+}
+
+export function useBulkAddDiscovery() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: DiscoveryBulkAddRequest) =>
+      api.post('/api/v1/discovery/results/bulk-add', data).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['discovery-results'] })
+      qc.invalidateQueries({ queryKey: ['hosts'] })
+    },
+  })
+}
+
+export function useDiscoveryIgnored(params?: { limit?: number; offset?: number }) {
+  return useQuery({
+    queryKey: ['discovery-ignored', params],
+    queryFn: () => api.get('/api/v1/discovery/ignored', { params }).then(r => r.data),
+  })
+}
+
+export function useUnignoreDiscoveryResult() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (resultId: string) =>
+      api.delete(`/api/v1/discovery/ignored/${resultId}`).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['discovery-results'] })
+      qc.invalidateQueries({ queryKey: ['discovery-ignored'] })
+    },
+  })
+}

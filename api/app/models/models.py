@@ -569,3 +569,42 @@ class StatusPageSubscriber(Base):
     confirmation_token = Column(UUID(as_uuid=True), default=uuid.uuid4)
     component_ids = Column(ARRAY(UUID(as_uuid=True)), nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+
+class DiscoveryResult(Base):
+    __tablename__ = "discovery_results"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
+    scan_id = Column(UUID(as_uuid=True), nullable=True)
+    source = Column(String(30), nullable=False)
+    ip_address = Column(INET, nullable=True)
+    hostname = Column(String(255), nullable=True)
+    mac_address = Column(String(17), nullable=True)
+    vendor = Column(String(255), nullable=True)
+    device_type = Column(String(50), nullable=True)
+    os_guess = Column(String(255), nullable=True)
+    open_ports = Column(JSONB, nullable=False, default=list)
+    snmp_data = Column(JSONB, nullable=True)
+    services = Column(JSONB, nullable=False, default=list)
+    suggested_checks = Column(JSONB, nullable=False, default=list)
+    matched_host_id = Column(UUID(as_uuid=True), ForeignKey("hosts.id", ondelete="SET NULL"), nullable=True)
+    status = Column(String(20), nullable=False, default="new")
+    first_seen_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    last_seen_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+
+class DiscoveryScan(Base):
+    __tablename__ = "discovery_scans"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
+    collector_id = Column(UUID(as_uuid=True), ForeignKey("collectors.id", ondelete="SET NULL"), nullable=True)
+    target = Column(String(255), nullable=False)
+    ports = Column(String(500), nullable=True)
+    status = Column(String(20), nullable=False, default="pending")
+    hosts_found = Column(Integer, nullable=False, default=0)
+    error_message = Column(Text, nullable=True)
+    started_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    completed_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))

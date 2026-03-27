@@ -4,7 +4,7 @@ import {
   LayoutDashboard, AlertTriangle, Monitor, Building2, Shield, ShieldCheck,
   LogOut, Users, Clock, ScrollText, Bell, Layers, Menu, X,
   ChevronLeft, ChevronRight, Wifi, BarChart3, Mail, ShieldAlert, Settings,
-  FileCode2, Globe, Boxes, LayoutGrid, FileText, Radio,
+  FileCode2, Globe, Boxes, LayoutGrid, FileText, Radio, Radar,
 } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -47,6 +47,7 @@ export default function Layout() {
     { to: '/custom-dashboards', label: 'Dashboards', icon: LayoutGrid },
     { to: '/errors', label: 'Fehlerübersicht', icon: AlertTriangle },
     { to: '/hosts', label: 'Hosts', icon: Monitor },
+    { to: '/discovery', label: 'Discovery', icon: Radar },
     { to: '/collectors', label: 'Collectors', icon: Wifi },
     { to: '/downtimes', label: 'Downtimes', icon: Clock },
     { to: '/sla', label: 'SLA Reports', icon: BarChart3 },

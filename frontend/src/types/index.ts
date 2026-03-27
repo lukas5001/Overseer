@@ -1036,3 +1036,64 @@ export interface PublicStatusPageData {
   past_incidents: StatusPageIncident[]
   scheduled_maintenances: StatusPageIncident[]
 }
+
+// ── Discovery ────────────────────────────────────────────────────────────────
+
+export interface DiscoveryResult {
+  id: string
+  tenant_id: string
+  scan_id: string | null
+  source: string
+  ip_address: string | null
+  hostname: string | null
+  mac_address: string | null
+  vendor: string | null
+  device_type: string | null
+  os_guess: string | null
+  open_ports: { port: number; protocol: string; service?: string; version?: string }[]
+  snmp_data: Record<string, unknown> | null
+  services: { name: string; type: string; status: string; ports?: number[]; suggested_checks?: string[] }[]
+  suggested_checks: string[]
+  matched_host_id: string | null
+  matched_hostname: string | null
+  status: string
+  first_seen_at: string
+  last_seen_at: string
+}
+
+export interface DiscoveryScan {
+  id: string
+  tenant_id: string
+  collector_id: string | null
+  target: string
+  ports: string | null
+  status: string
+  hosts_found: number
+  error_message: string | null
+  started_at: string | null
+  completed_at: string | null
+  created_at: string
+}
+
+export interface NetworkScanRequest {
+  target: string
+  ports?: string
+  collector_id: string
+}
+
+export interface DiscoveryAddHostRequest {
+  hostname: string
+  display_name?: string
+  ip_address?: string
+  host_type_id: string
+  tags?: string[]
+  checks?: { check_type: string; name: string; config?: Record<string, unknown>; interval_seconds?: number }[]
+  collector_id?: string
+}
+
+export interface DiscoveryBulkAddRequest {
+  ids: string[]
+  tags?: string[]
+  host_type_id: string
+  collector_id?: string
+}
