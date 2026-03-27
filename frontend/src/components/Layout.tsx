@@ -54,6 +54,7 @@ export default function Layout() {
   const configNav = [
     ...(isAdmin ? [{ to: '/alert-rules', label: 'Alert-Regeln', icon: Bell }] : []),
     ...(isAdmin ? [{ to: '/notifications', label: 'Benachrichtigungen', icon: Mail }] : []),
+    ...(isAdmin ? [{ to: '/notification-log', label: 'Notification Log', icon: ScrollText }] : []),
     ...(isAdmin ? [{ to: '/templates', label: 'Templates', icon: Layers }] : []),
     ...(isAdmin ? [{ to: '/scripts', label: 'Scripts', icon: FileCode2 }] : []),
     ...(isSuperAdmin ? [{ to: '/host-types', label: 'Host-Typen', icon: Boxes }] : []),

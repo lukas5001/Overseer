@@ -99,6 +99,7 @@ class TelegramChannel(NotificationChannel):
                     "type": "string",
                     "title": "Bot Token",
                     "description": "Telegram Bot Token from @BotFather",
+                    "format": "password",
                 },
                 "chat_id": {
                     "type": "string",

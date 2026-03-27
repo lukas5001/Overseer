@@ -13,6 +13,7 @@ import SecurityPage from './pages/SecurityPage'
 import CollectorsPage from './pages/CollectorsPage'
 import AlertRulesPage from './pages/AlertRulesPage'
 import NotificationChannelsPage from './pages/NotificationChannelsPage'
+import NotificationLogPage from './pages/NotificationLogPage'
 import SettingsPage from './pages/SettingsPage'
 import AdminPage from './pages/AdminPage'
 import SlaReportsPage from './pages/SlaReportsPage'
@@ -55,6 +56,7 @@ export default function App() {
           <Route path="/downtimes" element={<DowntimesPage />} />
           <Route path="/alert-rules" element={<AlertRulesPage />} />
           <Route path="/notifications" element={<NotificationChannelsPage />} />
+          <Route path="/notification-log" element={<NotificationLogPage />} />
           <Route path="/webhooks" element={<NotificationsPage />} />
           <Route path="/templates" element={<ServiceTemplatesPage />} />
           <Route path="/scripts" element={<ScriptsPage />} />

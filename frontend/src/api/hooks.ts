@@ -7,7 +7,7 @@ import type {
   Tenant, TenantCreate, TenantUpdate, TenantStat, TenantDetail, TenantUsage,
   Collector, CollectorCreate,
   AlertRule, AlertRuleCreate, AlertRuleUpdate, EscalationPolicy, EscalationPolicyCreate,
-  NotificationChannel, ChannelCreate, ChannelUpdate,
+  NotificationChannel, ChannelCreate, ChannelUpdate, NotificationChannelTypeInfo, NotificationLogEntry,
   Downtime, DowntimeCreate,
   ServiceTemplate, ServiceTemplateCreate, ServiceTemplateUpdate, TemplateApplyRequest, TemplateApplyResponse,
   HistoryBucket, HistoryPoint, HistorySummary, ServiceSla, TenantSlaReport,
@@ -393,6 +393,24 @@ export function useNotificationChannels() {
   return useQuery<NotificationChannel[]>({
     queryKey: ['notification-channels'],
     queryFn: () => api.get('/api/v1/notifications/').then(r => r.data),
+  })
+}
+
+export function useChannelTypes() {
+  return useQuery<NotificationChannelTypeInfo[]>({
+    queryKey: ['notification-channel-types'],
+    queryFn: () => api.get('/api/v1/notifications/types').then(r => r.data),
+    staleTime: 300_000,
+  })
+}
+
+export function useNotificationLog(params?: {
+  channel_id?: string; success?: boolean; limit?: number; offset?: number
+}) {
+  return useQuery<NotificationLogEntry[]>({
+    queryKey: ['notification-log', params],
+    queryFn: () => api.get('/api/v1/notifications/log', { params }).then(r => r.data),
+    refetchInterval: false,
   })
 }
 

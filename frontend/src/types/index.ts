@@ -3,7 +3,7 @@
 export type CheckStatus = 'OK' | 'WARNING' | 'CRITICAL' | 'UNKNOWN' | 'NO_DATA'
 export type StateType = 'SOFT' | 'HARD'
 export type UserRole = 'super_admin' | 'tenant_admin' | 'tenant_operator' | 'tenant_viewer'
-export type ChannelType = 'email' | 'webhook'
+export type ChannelType = string
 export type TwoFAMethod = 'none' | 'totp' | 'email'
 
 // ── Tenant ───────────────────────────────────────────────────────────────────
@@ -453,8 +453,41 @@ export interface NotificationChannel {
   config: Record<string, unknown>
   events: string[]
   active: boolean
+  consecutive_failures: number
+  last_failure_at: string | null
+  last_failure_reason: string | null
   created_at: string
   updated_at: string
+}
+
+export interface NotificationChannelTypeInfo {
+  channel_type: string
+  display_name: string
+  config_schema: {
+    type: string
+    properties: Record<string, {
+      type: string
+      title?: string
+      description?: string
+      format?: string
+      default?: unknown
+    }>
+    required?: string[]
+  }
+}
+
+export interface NotificationLogEntry {
+  id: string
+  tenant_id: string
+  channel_id: string | null
+  channel_type: string
+  notification_type: string
+  host_name: string | null
+  service_name: string | null
+  status: string
+  success: boolean
+  error_message: string | null
+  sent_at: string
 }
 
 export interface ChannelCreate {

@@ -31,13 +31,40 @@ class ChannelUpdate(BaseModel):
     active: bool | None = None
 
 
+PASSWORD_MASK = "••••••••"
+
+
+def _get_password_fields(channel_type: str) -> set[str]:
+    """Return config field names that have format: 'password' in the channel's config_schema."""
+    from shared.notifications.registry import ChannelRegistry
+    registry = ChannelRegistry.get()
+    impl = registry.get_channel(channel_type)
+    if not impl:
+        return set()
+    schema = impl.config_schema
+    props = schema.get("properties", {})
+    return {k for k, v in props.items() if v.get("format") == "password"}
+
+
+def _mask_config(config: dict, channel_type: str) -> dict:
+    """Replace password fields with a mask for API output."""
+    pw_fields = _get_password_fields(channel_type)
+    if not pw_fields:
+        return config
+    masked = dict(config)
+    for field in pw_fields:
+        if field in masked and masked[field]:
+            masked[field] = PASSWORD_MASK
+    return masked
+
+
 def _channel_out(ch: NotificationChannel) -> dict:
     return {
         "id": str(ch.id),
         "tenant_id": str(ch.tenant_id),
         "name": ch.name,
         "channel_type": ch.channel_type,
-        "config": ch.config,
+        "config": _mask_config(ch.config or {}, ch.channel_type),
         "events": ch.events,
         "active": ch.active,
         "consecutive_failures": ch.consecutive_failures,
@@ -117,7 +144,20 @@ async def update_channel(
     if not channel:
         raise HTTPException(status_code=404, detail="Channel not found")
 
-    for field, value in body.model_dump(exclude_none=True).items():
+    updates = body.model_dump(exclude_none=True)
+
+    # If config is being updated, strip out masked password placeholders
+    # so the original secret values are preserved
+    if "config" in updates and updates["config"]:
+        pw_fields = _get_password_fields(channel.channel_type)
+        old_config = dict(channel.config or {})
+        new_config = dict(updates["config"])
+        for pf in pw_fields:
+            if new_config.get(pf) == PASSWORD_MASK:
+                new_config[pf] = old_config.get(pf, "")
+        updates["config"] = new_config
+
+    for field, value in updates.items():
         setattr(channel, field, value)
     channel.updated_at = datetime.now(timezone.utc)
 
