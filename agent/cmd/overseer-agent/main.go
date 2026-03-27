@@ -13,6 +13,7 @@ import (
 
 	"github.com/lukas5001/overseer-agent/internal/client"
 	"github.com/lukas5001/overseer-agent/internal/config"
+	"github.com/lukas5001/overseer-agent/internal/discovery"
 	"github.com/lukas5001/overseer-agent/internal/heartbeat"
 	"github.com/lukas5001/overseer-agent/internal/scheduler"
 	"github.com/lukas5001/overseer-agent/internal/sender"
@@ -20,6 +21,15 @@ import (
 	"github.com/lukas5001/overseer-agent/internal/types"
 	"github.com/lukas5001/overseer-agent/internal/version"
 )
+
+// discoveryAdapter adapts client.Client to the discovery.Sender interface.
+type discoveryAdapter struct {
+	client *client.Client
+}
+
+func (a *discoveryAdapter) SendDiscovery(payload *discovery.Payload) error {
+	return a.client.SendDiscovery(payload)
+}
 
 func main() {
 	configPath := flag.String("config", config.DefaultConfigPath(), "Path to config file")
@@ -136,6 +146,7 @@ func run(configPath string) error {
 	go sched.Run(ctx)
 	go snd.Run(ctx)
 	go heartbeat.Run(ctx, httpClient, logger)
+	go discovery.Run(ctx, remoteCfg.Hostname, &discoveryAdapter{client: httpClient}, 10*time.Minute, logger)
 
 	// 8. Config refresh goroutine
 	configRefreshInterval := time.Duration(remoteCfg.ConfigIntervalSeconds) * time.Second

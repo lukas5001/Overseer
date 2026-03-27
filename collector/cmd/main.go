@@ -34,10 +34,19 @@ import (
 // ==================== API Config Response ====================
 
 type RemoteConfig struct {
-	CollectorID     string       `json:"collector_id"`
-	TenantID        string       `json:"tenant_id"`
-	IntervalSeconds int          `json:"interval_seconds"`
-	Hosts           []HostConfig `json:"hosts"`
+	CollectorID     string         `json:"collector_id"`
+	TenantID        string         `json:"tenant_id"`
+	IntervalSeconds int            `json:"interval_seconds"`
+	Hosts           []HostConfig   `json:"hosts"`
+	PendingScans    []PendingScan  `json:"pending_scans,omitempty"`
+}
+
+// PendingScan represents a network discovery scan requested by the backend.
+type PendingScan struct {
+	ScanID        string `json:"scan_id"`
+	Target        string `json:"target"`          // CIDR notation, e.g. "192.168.1.0/24"
+	Ports         string `json:"ports"`           // Comma-separated, e.g. "22,80,443,161"
+	SNMPCommunity string `json:"snmp_community"`  // Optional SNMP community string
 }
 
 type HostConfig struct {
@@ -128,6 +137,7 @@ func main() {
 
 	// Run immediately, then on ticker
 	runChecks(cfg)
+	processPendingScans(cfg)
 
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
@@ -140,6 +150,7 @@ func main() {
 			slog.Warn("config refresh failed, using last known config", "error", err)
 		}
 		runChecks(cfg)
+		processPendingScans(cfg)
 	}
 }
 
@@ -372,6 +383,75 @@ func sendResults(payload Payload) error {
 	}
 
 	slog.Info("results sent", "count", len(payload.Checks), "status", "202 Accepted")
+	return nil
+}
+
+// ==================== Network Discovery ====================
+
+// processPendingScans executes any pending network discovery scans from the config.
+func processPendingScans(cfg RemoteConfig) {
+	for _, scan := range cfg.PendingScans {
+		slog.Info("executing pending network scan",
+			"scan_id", scan.ScanID,
+			"target", scan.Target,
+			"ports", scan.Ports,
+		)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+		result, err := NetworkScan(ctx, scan.Target, scan.Ports, scan.SNMPCommunity)
+		cancel()
+
+		if err != nil {
+			slog.Error("network scan failed",
+				"scan_id", scan.ScanID,
+				"error", err,
+			)
+			continue
+		}
+
+		result.ScanID = scan.ScanID
+		result.CollectorID = cfg.CollectorID
+
+		if err := sendDiscoveryResults(result); err != nil {
+			slog.Error("failed to send discovery results",
+				"scan_id", scan.ScanID,
+				"error", err,
+			)
+		} else {
+			slog.Info("discovery results sent",
+				"scan_id", scan.ScanID,
+				"hosts_found", len(result.HostsFound),
+			)
+		}
+	}
+}
+
+// sendDiscoveryResults posts network discovery results to the API.
+func sendDiscoveryResults(result *DiscoveryResult) error {
+	body, err := json.Marshal(result)
+	if err != nil {
+		return fmt.Errorf("marshal discovery results: %w", err)
+	}
+
+	url := fmt.Sprintf("%s/api/v1/discovery/results", apiURL)
+	req, err := http.NewRequest("POST", url, bytes.NewReader(body))
+	if err != nil {
+		return fmt.Errorf("create request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-API-Key", apiKey)
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("send request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
+		respBody, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("unexpected status %d: %s", resp.StatusCode, string(respBody))
+	}
+
 	return nil
 }
 

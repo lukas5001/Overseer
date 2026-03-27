@@ -157,3 +157,20 @@ func (c *Client) SendHeartbeat(info *types.HeartbeatInfo) error {
 
 	return nil
 }
+
+// SendDiscovery sends service discovery results to the server.
+// Accepts any JSON-serializable payload (discovery.Payload).
+func (c *Client) SendDiscovery(payload any) error {
+	resp, err := c.doWithRetry("POST", "/api/v1/agent/discovery", payload)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 && resp.StatusCode != 202 {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("discovery: HTTP %d: %s", resp.StatusCode, string(body))
+	}
+
+	return nil
+}
