@@ -39,6 +39,18 @@ class ShareCreate(BaseModel):
     fixed_variable_values: dict[str, str | list[str]] = {}
 
 
+class DashboardQuery(BaseModel):
+    service_ids: list[UUID] | None = None
+    host_ids: list[UUID] | None = None
+    check_types: list[str] | None = None
+    time_from: str = Field(alias="from")
+    time_to: str = Field(default="now", alias="to")
+    aggregation: str = "avg"
+    interval: str | None = None
+
+    model_config = {"populate_by_name": True}
+
+
 # ── Default Dashboard Config ─────────────────────────────────────────────────
 
 DEFAULT_DASHBOARD_CONFIG = {
@@ -726,18 +738,6 @@ INTERVAL_TO_PG = {
     "15m": "15 minutes", "30m": "30 minutes", "1h": "1 hour",
     "3h": "3 hours", "6h": "6 hours", "12h": "12 hours", "1d": "1 day",
 }
-
-
-class DashboardQuery(BaseModel):
-    service_ids: list[UUID] | None = None
-    host_ids: list[UUID] | None = None
-    check_types: list[str] | None = None
-    time_from: str = Field(alias="from")
-    time_to: str = Field(default="now", alias="to")
-    aggregation: str = "avg"
-    interval: str | None = None
-
-    model_config = {"populate_by_name": True}
 
 
 def _parse_relative_time(value: str) -> datetime:
