@@ -21,6 +21,7 @@ var registry = map[string]CheckFunc{
 	"agent_custom":        checkCustom,
 	"agent_script":        checkScript,
 	"agent_services_auto": checkServicesAuto,
+	"ssl_certificate":     checkSSLCertificate,
 }
 
 // Execute runs a check by type with timeout and panic recovery

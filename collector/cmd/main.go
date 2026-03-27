@@ -63,14 +63,15 @@ type CheckConfig struct {
 // ==================== Check Result ====================
 
 type CheckResult struct {
-	Host       string   `json:"host"`
-	Name       string   `json:"name"`
-	Status     string   `json:"status"` // OK, WARNING, CRITICAL, UNKNOWN
-	Value      *float64 `json:"value,omitempty"`
-	Unit       string   `json:"unit,omitempty"`
-	Message    string   `json:"message,omitempty"`
-	CheckType  string   `json:"check_type"`
-	DurationMs *int     `json:"check_duration_ms,omitempty"`
+	Host       string         `json:"host"`
+	Name       string         `json:"name"`
+	Status     string         `json:"status"` // OK, WARNING, CRITICAL, UNKNOWN
+	Value      *float64       `json:"value,omitempty"`
+	Unit       string         `json:"unit,omitempty"`
+	Message    string         `json:"message,omitempty"`
+	CheckType  string         `json:"check_type"`
+	DurationMs *int           `json:"check_duration_ms,omitempty"`
+	Metadata   map[string]any `json:"metadata,omitempty"`
 }
 
 type Payload struct {
@@ -288,6 +289,8 @@ func executeCheck(host HostConfig, target string, check CheckConfig) CheckResult
 		result = doSSHServiceCheck(host, check)
 	case "ssh_custom":
 		result = doSSHCustomCheck(host, check)
+	case "ssl_certificate":
+		result = doSSLCertificateCheck(host, check)
 	default:
 		// script – not yet implemented
 		result = unknownResult(host.Hostname, check.Name, check.Type,

@@ -32,14 +32,15 @@ type ResultPayload struct {
 
 // CheckResult is a single check execution result
 type CheckResult struct {
-	Host            string   `json:"host"`
-	Name            string   `json:"name"`
-	Status          string   `json:"status"` // OK, WARNING, CRITICAL, UNKNOWN
-	Value           *float64 `json:"value,omitempty"`
-	Unit            string   `json:"unit,omitempty"`
-	Message         string   `json:"message,omitempty"`
-	CheckType       string   `json:"check_type"`
-	CheckDurationMs int      `json:"check_duration_ms,omitempty"`
+	Host            string         `json:"host"`
+	Name            string         `json:"name"`
+	Status          string         `json:"status"` // OK, WARNING, CRITICAL, UNKNOWN
+	Value           *float64       `json:"value,omitempty"`
+	Unit            string         `json:"unit,omitempty"`
+	Message         string         `json:"message,omitempty"`
+	CheckType       string         `json:"check_type"`
+	CheckDurationMs int            `json:"check_duration_ms,omitempty"`
+	Metadata        map[string]any `json:"metadata,omitempty"`
 }
 
 // HeartbeatInfo is sent to POST /api/v1/agent/heartbeat
