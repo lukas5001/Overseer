@@ -18,6 +18,10 @@ STATUS_EMOJI = {
 
 def _build_blocks(notification: Notification) -> list[dict]:
     """Build Slack Block Kit blocks for a notification."""
+    extra = notification.extra_data or {}
+    if extra.get("grouped"):
+        return _build_grouped_blocks(notification, extra)
+
     emoji = STATUS_EMOJI.get(notification.status, "\u2753")
     is_recovery = notification.status == "OK"
     is_test = notification.type == "test"
@@ -63,6 +67,58 @@ def _build_blocks(notification: Notification) -> list[dict]:
     })
 
     # Dashboard link button
+    if notification.dashboard_url:
+        blocks.append({
+            "type": "actions",
+            "elements": [{
+                "type": "button",
+                "text": {"type": "plain_text", "text": "View in Overseer", "emoji": True},
+                "url": notification.dashboard_url,
+            }],
+        })
+
+    return blocks
+
+
+def _build_grouped_blocks(notification: Notification, extra: dict) -> list[dict]:
+    """Build Slack Block Kit blocks for a grouped notification."""
+    alerts = extra.get("alerts", [])
+    total = extra.get("total_alert_count", len(alerts))
+    overflow = extra.get("overflow_count", 0)
+    is_recovery = notification.type == "recovery"
+
+    worst_emoji = STATUS_EMOJI.get(notification.status, "\u2753")
+    if is_recovery:
+        header = f"\u2705 All problems resolved on {notification.host_name}"
+    else:
+        header = f"{worst_emoji} {total} problems on {notification.host_name}"
+
+    blocks: list[dict] = [
+        {"type": "header", "text": {"type": "plain_text", "text": header[:150], "emoji": True}},
+    ]
+
+    # Alert table
+    lines = []
+    for a in alerts:
+        emoji = STATUS_EMOJI.get(a.get("status", ""), "\u2753")
+        svc = a.get("service", "?")
+        msg = a.get("message", "")[:80]
+        ts = a.get("timestamp", "")
+        if ts and "T" in ts:
+            ts = ts.split("T")[1][:5]
+        lines.append(f"{emoji} `{a.get('status', '?'):8s}` *{svc}*  {msg}  _{ts}_")
+
+    if overflow > 0:
+        lines.append(f"_... and {overflow} more alerts._")
+
+    if notification.message:
+        lines.insert(0, f"_{notification.message}_\n")
+
+    blocks.append({
+        "type": "section",
+        "text": {"type": "mrkdwn", "text": "\n".join(lines)},
+    })
+
     if notification.dashboard_url:
         blocks.append({
             "type": "actions",

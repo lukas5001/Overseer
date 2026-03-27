@@ -18,6 +18,10 @@ STATUS_EMOJI = {
 
 def _build_adaptive_card(notification: Notification, title_prefix: str = "") -> dict:
     """Build a Teams Adaptive Card payload."""
+    extra = notification.extra_data or {}
+    if extra.get("grouped"):
+        return _build_grouped_adaptive_card(notification, extra, title_prefix)
+
     emoji = STATUS_EMOJI.get(notification.status, "\u2753")
     is_recovery = notification.status == "OK"
     is_test = notification.type == "test"
@@ -85,6 +89,62 @@ def _build_adaptive_card(notification: Notification, title_prefix: str = "") -> 
             "contentType": "application/vnd.microsoft.card.adaptive",
             "content": card_content,
         }],
+    }
+
+
+def _build_grouped_adaptive_card(notification: Notification, extra: dict, title_prefix: str = "") -> dict:
+    """Build a Teams Adaptive Card for a grouped notification."""
+    alerts = extra.get("alerts", [])
+    total = extra.get("total_alert_count", len(alerts))
+    overflow = extra.get("overflow_count", 0)
+    is_recovery = notification.type == "recovery"
+
+    if is_recovery:
+        emoji = STATUS_EMOJI.get("OK", "\u2705")
+        title = f"{emoji} All problems resolved on {notification.host_name}"
+    else:
+        emoji = STATUS_EMOJI.get(notification.status, "\u2753")
+        title = f"{emoji} {total} problems on {notification.host_name}"
+
+    if title_prefix:
+        title = f"{title_prefix} {title}"
+
+    body: list[dict] = [
+        {"type": "TextBlock", "text": title, "size": "medium", "weight": "bolder", "wrap": True},
+    ]
+
+    if notification.message:
+        body.append({"type": "TextBlock", "text": notification.message, "isSubtle": True, "wrap": True})
+
+    # Alert table as facts
+    for a in alerts:
+        s = a.get("status", "UNKNOWN")
+        s_emoji = STATUS_EMOJI.get(s, "\u2753")
+        facts = [
+            {"title": "Status", "value": f"{s_emoji} {s}"},
+            {"title": "Service", "value": a.get("service", "?")},
+            {"title": "Message", "value": a.get("message", "")[:80]},
+        ]
+        body.append({"type": "FactSet", "facts": facts})
+
+    if overflow > 0:
+        body.append({"type": "TextBlock", "text": f"... and {overflow} more alerts.", "isSubtle": True})
+
+    actions = []
+    if notification.dashboard_url:
+        actions.append({"type": "Action.OpenUrl", "title": "View in Overseer", "url": notification.dashboard_url})
+
+    card_content: dict = {
+        "type": "AdaptiveCard", "version": "1.4",
+        "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+        "body": body,
+    }
+    if actions:
+        card_content["actions"] = actions
+
+    return {
+        "type": "message",
+        "attachments": [{"contentType": "application/vnd.microsoft.card.adaptive", "content": card_content}],
     }
 
 

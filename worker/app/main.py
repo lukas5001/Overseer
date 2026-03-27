@@ -30,6 +30,7 @@ from shared.ssl_notification import (
 )
 from shared.notifications.base import Notification
 from shared.notifications.dispatcher import Dispatcher
+from shared.notifications.grouper import AlertGrouper
 
 # ==================== Config ====================
 
@@ -148,10 +149,13 @@ class Worker:
         self.running = False
         self.cache = cache
         self.checks_total = 0
+        self.grouper: AlertGrouper | None = None
+        self._tenant_settings_cache: dict[str, tuple[float, dict]] = {}  # tenant_id → (loaded_at, settings)
 
     async def start(self):
         self.redis = redis.from_url(REDIS_URL, decode_responses=True)
         self.running = True
+        self.grouper = AlertGrouper(self.redis, AsyncSessionLocal)
 
         try:
             await self.redis.xgroup_create(STREAM_NAME, GROUP_NAME, id="0", mkstream=True)
@@ -159,7 +163,13 @@ class Worker:
             if "BUSYGROUP" not in str(e):
                 raise
 
-        logger.info("Worker %s started (batch mode, cache enabled)", self.consumer_name)
+        # Recover alert groups from Redis (pending/active timers)
+        try:
+            await self.grouper.recover_groups()
+        except Exception as e:
+            logger.warning("Group recovery error: %s", e)
+
+        logger.info("Worker %s started (batch mode, cache enabled, grouper active)", self.consumer_name)
 
         while self.running:
             try:
@@ -346,40 +356,30 @@ class Worker:
 
         return len(resolved)
 
-    async def _fire_notifications(self, tenant_id, events: list[dict]):
-        """Fire notifications via all active channels (best-effort, non-blocking)."""
+    async def _get_tenant_settings(self, tenant_id) -> dict:
+        """Get tenant settings with 60s cache."""
+        key = str(tenant_id)
+        cached = self._tenant_settings_cache.get(key)
+        if cached and (time.time() - cached[0]) < 60:
+            return cached[1]
         try:
             async with AsyncSessionLocal() as db:
                 result = await db.execute(
-                    text("""SELECT id, channel_type, config, name FROM notification_channels
-                            WHERE tenant_id = :tid AND active = true"""),
+                    text("SELECT settings FROM tenants WHERE id = :tid"),
                     {"tid": tenant_id},
                 )
-                channels = [
-                    {
-                        "id": row.id, "channel_type": row.channel_type,
-                        "config": row.config if isinstance(row.config, dict) else json.loads(row.config),
-                        "name": row.name,
-                    }
-                    for row in result.fetchall()
-                ]
-                if not channels:
-                    return
+                row = result.fetchone()
+                settings = (row.settings if row else None) or {}
+                self._tenant_settings_cache[key] = (time.time(), settings)
+                return settings
+        except Exception:
+            return cached[1] if cached else {}
 
-            dispatcher = Dispatcher(AsyncSessionLocal)
-            for event in events:
-                notification = Notification(
-                    type="recovery" if event.get("event") == "recovery" else "alert",
-                    host_name=event.get("host", ""),
-                    host_ip="",
-                    service_name=event.get("service", ""),
-                    status=event.get("status", "UNKNOWN"),
-                    previous_status=event.get("previous_status", ""),
-                    message=event.get("message", ""),
-                    triggered_at=datetime.now(timezone.utc),
-                    extra_data=event,
-                )
-                await dispatcher.dispatch(notification, channels, tenant_id)
+    async def _fire_notifications(self, tenant_id, events: list[dict]):
+        """Fire notifications via AlertGrouper (best-effort, non-blocking)."""
+        try:
+            tenant_settings = await self._get_tenant_settings(tenant_id)
+            await self.grouper.handle_events(tenant_id, events, tenant_settings)
         except Exception as e:
             logger.warning("Notification dispatch error: %s", e)
 

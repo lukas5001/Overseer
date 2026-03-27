@@ -360,3 +360,75 @@ async def get_tenant_usage(
         "collectors": {"current": col_count, "max": quotas["max_collectors"]},
         "check_results_count": cr_count,
     }
+
+
+# ── Alert Grouping Settings ─────────────────────────────────────────────────
+
+DEFAULT_GROUPING_SETTINGS = {
+    "enabled": True,
+    "group_by": "host",
+    "group_wait_seconds": 30,
+    "group_interval_seconds": 300,
+    "repeat_interval_seconds": 14400,
+}
+
+
+class GroupingSettingsUpdate(BaseModel):
+    enabled: bool | None = None
+    group_by: str | None = None        # 'host', 'host_severity', 'service_template'
+    group_wait_seconds: int | None = None
+    group_interval_seconds: int | None = None
+    repeat_interval_seconds: int | None = None
+
+
+@router.get("/{tenant_id}/grouping-settings")
+async def get_grouping_settings(
+    tenant_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    _user: dict = Depends(get_current_user),
+    _scope=Depends(tenant_scope),
+):
+    """Return alert grouping settings for a tenant."""
+    if _scope is not None and tenant_id not in _scope:
+        raise HTTPException(status_code=403, detail="Access denied")
+    tenant = await db.get(Tenant, tenant_id)
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    settings = tenant.settings or {}
+    return {**DEFAULT_GROUPING_SETTINGS, **settings.get("alert_grouping", {})}
+
+
+@router.put("/{tenant_id}/grouping-settings")
+async def update_grouping_settings(
+    tenant_id: UUID,
+    body: GroupingSettingsUpdate,
+    db: AsyncSession = Depends(get_db),
+    _user: dict = Depends(require_role("super_admin", "tenant_admin")),
+    _scope=Depends(tenant_scope),
+):
+    """Update alert grouping settings for a tenant."""
+    if _scope is not None and tenant_id not in _scope:
+        raise HTTPException(status_code=403, detail="Access denied")
+    tenant = await db.get(Tenant, tenant_id)
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+
+    # Validate
+    updates = body.model_dump(exclude_none=True)
+    if "group_by" in updates and updates["group_by"] not in ("host", "host_severity", "service_template"):
+        raise HTTPException(status_code=422, detail="group_by must be 'host', 'host_severity', or 'service_template'")
+    if "group_wait_seconds" in updates and not (5 <= updates["group_wait_seconds"] <= 600):
+        raise HTTPException(status_code=422, detail="group_wait_seconds must be between 5 and 600")
+    if "group_interval_seconds" in updates and not (30 <= updates["group_interval_seconds"] <= 86400):
+        raise HTTPException(status_code=422, detail="group_interval_seconds must be between 30 and 86400")
+    if "repeat_interval_seconds" in updates and not (300 <= updates["repeat_interval_seconds"] <= 86400):
+        raise HTTPException(status_code=422, detail="repeat_interval_seconds must be between 300 and 86400")
+
+    settings = dict(tenant.settings or {})
+    current_grouping = {**DEFAULT_GROUPING_SETTINGS, **settings.get("alert_grouping", {})}
+    current_grouping.update(updates)
+    settings["alert_grouping"] = current_grouping
+    tenant.settings = settings
+    tenant.updated_at = datetime.now(timezone.utc)
+    await db.commit()
+    return current_grouping

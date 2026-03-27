@@ -412,6 +412,16 @@ export interface AlertRuleUpdate {
   enabled?: boolean
 }
 
+// ── Alert Grouping ──────────────────────────────────────────────────────
+
+export interface GroupingSettings {
+  enabled: boolean
+  group_by: 'host' | 'host_severity' | 'service_template'
+  group_wait_seconds: number
+  group_interval_seconds: number
+  repeat_interval_seconds: number
+}
+
 // ── Active Alerts ────────────────────────────────────────────────────────────
 
 export interface ActiveAlert {

@@ -27,6 +27,10 @@ def escape_markdown_v2(text: str) -> str:
 
 def _build_message(notification: Notification) -> str:
     """Build a MarkdownV2-formatted message."""
+    extra = notification.extra_data or {}
+    if extra.get("grouped"):
+        return _build_grouped_message(notification, extra)
+
     emoji = STATUS_EMOJI.get(notification.status, "\u2753")
     is_recovery = notification.status == "OK"
     is_test = notification.type == "test"
@@ -75,6 +79,47 @@ def _build_message(notification: Notification) -> str:
         url = notification.dashboard_url
         lines.append("")
         lines.append(f"[View in Overseer]({url})")
+
+    return "\n".join(lines)
+
+
+def _build_grouped_message(notification: Notification, extra: dict) -> str:
+    """Build a MarkdownV2-formatted grouped notification message."""
+    alerts = extra.get("alerts", [])
+    total = extra.get("total_alert_count", len(alerts))
+    overflow = extra.get("overflow_count", 0)
+    is_recovery = notification.type == "recovery"
+
+    host = escape_markdown_v2(notification.host_name)
+
+    if is_recovery:
+        header = f"\u2705 *All problems resolved on {host}*"
+    else:
+        worst_emoji = STATUS_EMOJI.get(notification.status, "\u2753")
+        header = f"{worst_emoji} *{escape_markdown_v2(str(total))} problems on {host}*"
+
+    lines = [header, ""]
+
+    if notification.message:
+        lines.append(f"_{escape_markdown_v2(notification.message)}_")
+        lines.append("")
+
+    for a in alerts:
+        s = a.get("status", "UNKNOWN")
+        s_emoji = STATUS_EMOJI.get(s, "\u2753")
+        svc = escape_markdown_v2(a.get("service", "?"))
+        msg = escape_markdown_v2(a.get("message", "")[:60])
+        ts = a.get("timestamp", "")
+        if ts and "T" in ts:
+            ts = escape_markdown_v2(ts.split("T")[1][:5])
+        lines.append(f"{s_emoji} `{s}` *{svc}*  {msg}  _{ts}_")
+
+    if overflow > 0:
+        lines.append(f"\n_\\.\\.\\. and {escape_markdown_v2(str(overflow))} more alerts\\._")
+
+    if notification.dashboard_url:
+        lines.append("")
+        lines.append(f"[View in Overseer]({notification.dashboard_url})")
 
     return "\n".join(lines)
 

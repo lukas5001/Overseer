@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Bell, Plus, X, Trash2, ChevronUp, ChevronDown, Zap, TestTube2 } from 'lucide-react'
+import { Bell, Plus, X, Trash2, ChevronUp, ChevronDown, Zap, TestTube2, Layers } from 'lucide-react'
 import clsx from 'clsx'
 import { api } from '../api/client'
 import type {
   AlertRule, AlertRuleCreate, NotificationChannel,
-  Tenant, EscalationStep, CheckStatus,
+  Tenant, EscalationStep, CheckStatus, GroupingSettings,
 } from '../types'
 import ConfirmDialog from '../components/ConfirmDialog'
 
@@ -234,6 +234,149 @@ function RuleModal({ onClose, channels, tenants, existing }: RuleModalProps) {
   )
 }
 
+// ── Grouping Settings Panel ──────────────────────────────────────────────────
+
+const GROUP_BY_OPTIONS = [
+  { value: 'host', label: 'Host', desc: 'Alle Alerts desselben Hosts werden gebündelt.' },
+  { value: 'host_severity', label: 'Host + Severity', desc: 'Getrennt nach Host und Severity (Critical/Warning).' },
+  { value: 'service_template', label: 'Service-Typ', desc: 'Alle Alerts des gleichen Check-Typs über alle Hosts.' },
+]
+
+function GroupingSettingsPanel({ tenants }: { tenants: Tenant[] }) {
+  const qc = useQueryClient()
+  const [tenantId, setTenantId] = useState(tenants[0]?.id ?? '')
+  const [settings, setSettings] = useState<GroupingSettings | null>(null)
+  const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null)
+
+  const { data, isLoading } = useQuery<GroupingSettings>({
+    queryKey: ['grouping-settings', tenantId],
+    queryFn: () => api.get(`/api/v1/tenants/${tenantId}/grouping-settings`).then(r => r.data),
+    enabled: !!tenantId,
+  })
+
+  useEffect(() => {
+    if (data) setSettings(data)
+  }, [data])
+
+  const saveMutation = useMutation({
+    mutationFn: () => api.put(`/api/v1/tenants/${tenantId}/grouping-settings`, settings),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['grouping-settings', tenantId] })
+      setMessage({ text: 'Gespeichert', ok: true })
+      setTimeout(() => setMessage(null), 3000)
+    },
+    onError: (e: any) => setMessage({ text: e.response?.data?.detail ?? 'Fehler', ok: false }),
+  })
+
+  if (!settings) return isLoading ? <div className="text-gray-400 text-sm">Lade…</div> : null
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+      <div className="flex items-center gap-2 mb-4">
+        <Layers className="w-5 h-5 text-overseer-600" />
+        <h2 className="text-base font-semibold text-gray-900">Alert Grouping</h2>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl">
+        {/* Tenant selector */}
+        {tenants.length > 1 && (
+          <div className="md:col-span-2">
+            <label className="block text-xs font-medium text-gray-600 mb-1">Tenant</label>
+            <select value={tenantId} onChange={e => setTenantId(e.target.value)}
+              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500 max-w-xs">
+              {tenants.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+            </select>
+          </div>
+        )}
+
+        {/* Enabled toggle */}
+        <div className="md:col-span-2 flex items-center gap-3">
+          <button
+            onClick={() => setSettings({ ...settings, enabled: !settings.enabled })}
+            className={clsx('w-10 h-5 rounded-full relative transition-colors',
+              settings.enabled ? 'bg-overseer-600' : 'bg-gray-300')}>
+            <span className={clsx('absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform',
+              settings.enabled ? 'left-5' : 'left-0.5')} />
+          </button>
+          <span className="text-sm text-gray-700">Grouping {settings.enabled ? 'aktiv' : 'deaktiviert'}</span>
+        </div>
+
+        {settings.enabled && (
+          <>
+            {/* Group By */}
+            <div className="md:col-span-2">
+              <label className="block text-xs font-medium text-gray-600 mb-1">Group By</label>
+              <div className="flex gap-2 flex-wrap">
+                {GROUP_BY_OPTIONS.map(opt => (
+                  <button key={opt.value} onClick={() => setSettings({ ...settings, group_by: opt.value as GroupingSettings['group_by'] })}
+                    className={clsx('px-3 py-2 rounded-lg text-sm border transition-colors text-left',
+                      settings.group_by === opt.value
+                        ? 'border-overseer-500 bg-overseer-50 text-overseer-700'
+                        : 'border-gray-200 text-gray-600 hover:border-gray-300')}>
+                    <div className="font-medium">{opt.label}</div>
+                    <div className="text-xs text-gray-500 mt-0.5">{opt.desc}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Group Wait */}
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Group Wait: {settings.group_wait_seconds}s
+              </label>
+              <input type="range" min={5} max={120} step={5} value={settings.group_wait_seconds}
+                onChange={e => setSettings({ ...settings, group_wait_seconds: parseInt(e.target.value) })}
+                className="w-full accent-overseer-600" />
+              <p className="text-xs text-gray-400 mt-0.5">
+                Wartezeit nach dem ersten Alert bevor die erste Notification gesendet wird.
+              </p>
+            </div>
+
+            {/* Group Interval */}
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Group Interval: {settings.group_interval_seconds >= 60 ? `${Math.floor(settings.group_interval_seconds / 60)}m` : `${settings.group_interval_seconds}s`}
+              </label>
+              <input type="range" min={30} max={3600} step={30} value={settings.group_interval_seconds}
+                onChange={e => setSettings({ ...settings, group_interval_seconds: parseInt(e.target.value) })}
+                className="w-full accent-overseer-600" />
+              <p className="text-xs text-gray-400 mt-0.5">
+                Minimale Zeit zwischen zwei Updates für dieselbe Gruppe.
+              </p>
+            </div>
+
+            {/* Repeat Interval */}
+            <div className="md:col-span-2">
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Repeat Interval: {settings.repeat_interval_seconds >= 3600 ? `${Math.floor(settings.repeat_interval_seconds / 3600)}h` : `${Math.floor(settings.repeat_interval_seconds / 60)}m`}
+              </label>
+              <input type="range" min={300} max={86400} step={300} value={settings.repeat_interval_seconds}
+                onChange={e => setSettings({ ...settings, repeat_interval_seconds: parseInt(e.target.value) })}
+                className="w-full accent-overseer-600" />
+              <p className="text-xs text-gray-400 mt-0.5">
+                Erneute Benachrichtigung wenn Alerts noch aktiv und nicht bestätigt sind.
+              </p>
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="flex items-center gap-3 mt-4">
+        <button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}
+          className="px-4 py-2 bg-overseer-600 text-white text-sm rounded-lg hover:bg-overseer-700 disabled:opacity-60">
+          {saveMutation.isPending ? 'Speichern…' : 'Speichern'}
+        </button>
+        {message && (
+          <span className={clsx('text-sm', message.ok ? 'text-emerald-600' : 'text-red-600')}>
+            {message.text}
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ── Main Page ────────────────────────────────────────────────────────────────
 
 export default function AlertRulesPage() {
@@ -298,6 +441,9 @@ export default function AlertRulesPage() {
           <Plus className="w-4 h-4" /> Neue Regel
         </button>
       </div>
+
+      {/* Alert Grouping Settings */}
+      {tenants.length > 0 && <GroupingSettingsPanel tenants={tenants} />}
 
       {isLoading && <div className="text-gray-400 text-sm">Lade…</div>}
 

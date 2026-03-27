@@ -271,3 +271,54 @@ async def list_notification_log(
         for log in result.scalars().all()
     ]
     return JSONResponse(content=data, headers={"X-Total-Count": str(total)})
+
+
+# ── Active Alert Groups ──────────────────────────────────────────────────────
+
+@router.get("/alert-groups")
+async def list_active_alert_groups(
+    _user: dict = Depends(get_current_user),
+    _scope=Depends(tenant_scope),
+):
+    """Return active alert groups from Redis."""
+    import json
+    import os
+    import redis.asyncio as aioredis
+
+    redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
+    r = aioredis.from_url(redis_url, decode_responses=True)
+
+    try:
+        groups = []
+        cursor = 0
+        while True:
+            cursor, keys = await r.scan(cursor=cursor, match="overseer:alert_group:*", count=100)
+            for key in keys:
+                # Skip timer/lock keys
+                if ":lock:" in key or ":timer:" in key:
+                    continue
+                group_data = await r.hgetall(key)
+                if not group_data or group_data.get("status") == "resolved":
+                    continue
+                tenant_id = group_data.get("tenant_id", "")
+                # Apply tenant scope
+                if _scope is not None and tenant_id not in [str(s) for s in _scope]:
+                    continue
+                try:
+                    alerts = json.loads(group_data.get("alerts", "[]"))
+                except json.JSONDecodeError:
+                    alerts = []
+                groups.append({
+                    "group_key": group_data.get("group_key", ""),
+                    "group_by": group_data.get("group_by", "host"),
+                    "tenant_id": tenant_id,
+                    "alert_count": int(group_data.get("alert_count", "0")),
+                    "status": group_data.get("status", "pending"),
+                    "alerts": alerts,
+                    "created_at": group_data.get("created_at"),
+                    "last_alert_at": group_data.get("last_alert_at"),
+                    "last_notified_at": group_data.get("last_notified_at"),
+                })
+        return groups
+    finally:
+        await r.close()
