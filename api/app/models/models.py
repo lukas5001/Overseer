@@ -389,6 +389,7 @@ class Dashboard(Base):
     is_shared = Column(Boolean, nullable=False, default=False)
     share_token = Column(String(64), unique=True, nullable=True)
     share_expires_at = Column(DateTime(timezone=True), nullable=True)
+    share_config = Column(JSONB, nullable=False, default=dict)
     created_by = Column(UUID(as_uuid=True), nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))

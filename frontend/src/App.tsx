@@ -24,6 +24,8 @@ import HostTypesPage from './pages/HostTypesPage'
 import CustomDashboardsPage from './pages/CustomDashboardsPage'
 import CustomDashboardViewPage from './pages/CustomDashboardViewPage'
 import TvPage from './pages/TvPage'
+import TvDashboardPage from './pages/TvDashboardPage'
+import PublicDashboardPage from './pages/PublicDashboardPage'
 import LoginPage from './pages/LoginPage'
 import AiChatWidget from './components/AiChatWidget'
 
@@ -34,6 +36,8 @@ export default function App() {
     return (
       <Routes>
         <Route path="/tv" element={<TvPage />} />
+        <Route path="/tv/dashboards" element={<TvDashboardPage />} />
+        <Route path="/public/d/:token" element={<PublicDashboardPage />} />
         <Route path="*" element={<LoginPage onLogin={() => window.location.reload()} />} />
       </Routes>
     )
@@ -44,6 +48,8 @@ export default function App() {
       <Routes>
         {/* TV mode: no sidebar */}
         <Route path="/tv" element={<TvPage />} />
+        <Route path="/tv/dashboards" element={<TvDashboardPage />} />
+        <Route path="/public/d/:token" element={<PublicDashboardPage />} />
 
         {/* Main layout */}
         <Route element={<Layout />}>

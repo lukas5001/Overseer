@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { X, Plus, Trash2 } from 'lucide-react'
 import clsx from 'clsx'
 import { useDashboardMetaHosts, useDashboardMetaServices } from '../../api/hooks'
-import type { DashboardWidget, WidgetDataSource, WidgetDisplayOptions, WidgetThreshold } from '../../types'
+import type { DashboardWidget, DashboardVariable, WidgetDataSource, WidgetDisplayOptions, WidgetThreshold } from '../../types'
 
 interface WidgetConfigDialogProps {
   widget: DashboardWidget
@@ -10,6 +10,7 @@ interface WidgetConfigDialogProps {
   open: boolean
   onClose: () => void
   onChange: (widget: DashboardWidget) => void
+  variables?: DashboardVariable[]
 }
 
 type Tab = 'data' | 'display'
@@ -33,7 +34,7 @@ const UNITS = [
   { label: 'Anzahl', value: '' },
 ]
 
-export default function WidgetConfigDialog({ widget, open, onClose, onChange }: WidgetConfigDialogProps) {
+export default function WidgetConfigDialog({ widget, open, onClose, onChange, variables = [] }: WidgetConfigDialogProps) {
   const [tab, setTab] = useState<Tab>('data')
   const [localWidget, setLocalWidget] = useState<DashboardWidget>(widget)
   const [selectedHostId, setSelectedHostId] = useState<string>('')
@@ -182,12 +183,20 @@ export default function WidgetConfigDialog({ widget, open, onClose, onChange }: 
                 <select
                   value={selectedHostId}
                   onChange={e => {
-                    setSelectedHostId(e.target.value)
-                    updateDataSource({ service_ids: [], host_ids: e.target.value ? [e.target.value] : [] })
+                    const val = e.target.value
+                    setSelectedHostId(val)
+                    if (val.startsWith('$')) {
+                      updateDataSource({ service_ids: [], host_ids: [val] })
+                    } else {
+                      updateDataSource({ service_ids: [], host_ids: val ? [val] : [] })
+                    }
                   }}
                   className="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-1.5 text-sm text-gray-200"
                 >
                   <option value="">Alle Hosts</option>
+                  {variables.filter(v => v.query === 'all_hosts' || v.type === 'custom').map(v => (
+                    <option key={`$${v.name}`} value={`$${v.name}`}>$ {v.label || v.name}</option>
+                  ))}
                   {hosts?.map(h => (
                     <option key={h.id} value={h.id}>{h.display_name}</option>
                   ))}

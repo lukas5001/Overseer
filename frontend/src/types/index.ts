@@ -716,13 +716,33 @@ export interface DashboardFull extends DashboardSummary {
   config: DashboardConfig
   share_token: string | null
   share_expires_at: string | null
+  share_config: DashboardShareConfig
+}
+
+export interface DashboardShareConfig {
+  fixed_variables?: string[]
+  fixed_variable_values?: Record<string, string | string[]>
 }
 
 export interface DashboardConfig {
   schemaVersion: number
   timeSettings: DashboardTimeSettings
+  variables?: DashboardVariable[]
   widgets: Record<string, DashboardWidget>
   layout: Record<string, DashboardLayoutItem[]>
+}
+
+export interface DashboardVariable {
+  name: string
+  label: string
+  type: 'query' | 'custom'
+  query?: 'all_hosts' | 'all_services' | 'hosts_with_tag'
+  queryParam?: string
+  customValues?: string
+  multiSelect: boolean
+  includeAll: boolean
+  defaultValue: string
+  dependsOn?: string
 }
 
 export interface DashboardTimeSettings {

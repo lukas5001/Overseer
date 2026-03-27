@@ -1,10 +1,10 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useParams, useSearchParams, Link } from 'react-router-dom'
 import { ResponsiveGridLayout, useContainerWidth, type Layout, type ResponsiveLayouts } from 'react-grid-layout'
 import { verticalCompactor } from 'react-grid-layout/core'
 import {
   Pencil, Save, X, Plus, ArrowLeft, Settings,
-  RefreshCw, History, Wrench,
+  RefreshCw, History, Wrench, Share2, Monitor,
 } from 'lucide-react'
 import clsx from 'clsx'
 import { useDashboard, useUpdateDashboard, useDashboardVersions, useRestoreDashboardVersion } from '../api/hooks'
@@ -12,8 +12,11 @@ import LoadingSpinner from '../components/LoadingSpinner'
 import WidgetRenderer from '../components/widgets/WidgetRenderer'
 import WidgetPicker from '../components/widgets/WidgetPicker'
 import WidgetConfigDialog from '../components/widgets/WidgetConfigDialog'
+import VariableBar from '../components/dashboard/VariableBar'
+import VariableSettings from '../components/dashboard/VariableSettings'
+import ShareDialog from '../components/dashboard/ShareDialog'
 import { type WidgetTypeDefinition } from '../components/widgets/registry'
-import type { DashboardConfig, DashboardLayoutItem, DashboardWidget } from '../types'
+import type { DashboardConfig, DashboardLayoutItem, DashboardWidget, DashboardVariable } from '../types'
 
 import 'react-grid-layout/css/styles.css'
 
@@ -53,10 +56,15 @@ export default function CustomDashboardViewPage() {
   const [editConfig, setEditConfig] = useState<DashboardConfig | null>(null)
   const [showVersions, setShowVersions] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  const [settingsTab, setSettingsTab] = useState<'general' | 'variables'>('general')
   const [showWidgetPicker, setShowWidgetPicker] = useState(false)
   const [configWidgetId, setConfigWidgetId] = useState<string | null>(null)
+  const [showShareDialog, setShowShareDialog] = useState(false)
   const [editTitle, setEditTitle] = useState('')
   const [editDesc, setEditDesc] = useState('')
+
+  // Variable values from URL params
+  const [variableValues, setVariableValues] = useState<Record<string, string | string[]>>({})
 
   // Time range from URL
   const timeFrom = searchParams.get('from') || dashboard?.config?.timeSettings?.from || 'now-1h'
@@ -67,6 +75,42 @@ export default function CustomDashboardViewPage() {
   const config = isEditing && editConfig ? editConfig : dashboard?.config
   const widgets = config?.widgets || {}
   const layouts = config?.layout || {}
+  const variables = config?.variables || []
+
+  // Initialize variable values from URL on load
+  useEffect(() => {
+    if (!variables.length) return
+    const vals: Record<string, string | string[]> = {}
+    for (const v of variables) {
+      const urlVal = searchParams.get(`var-${v.name}`)
+      if (urlVal) {
+        vals[v.name] = v.multiSelect ? urlVal.split(',') : urlVal
+      } else {
+        vals[v.name] = v.defaultValue || '__all__'
+      }
+    }
+    setVariableValues(vals)
+  }, [dashboard?.config?.variables]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const effectiveVariableValues = useMemo(() => {
+    const vals: Record<string, string | string[]> = {}
+    for (const v of variables) {
+      vals[v.name] = variableValues[v.name] ?? v.defaultValue ?? '__all__'
+    }
+    return vals
+  }, [variables, variableValues])
+
+  function handleVariableChange(name: string, value: string | string[]) {
+    setVariableValues(prev => ({ ...prev, [name]: value }))
+    // Sync to URL
+    const params = new URLSearchParams(searchParams)
+    if (value === '__all__' || (Array.isArray(value) && value.includes('__all__'))) {
+      params.delete(`var-${name}`)
+    } else {
+      params.set(`var-${name}`, Array.isArray(value) ? value.join(',') : value)
+    }
+    setSearchParams(params, { replace: true })
+  }
 
   function enterEdit() {
     if (!dashboard) return
@@ -105,7 +149,10 @@ export default function CustomDashboardViewPage() {
   }, [isEditing, editConfig])
 
   function setTimeRange(from: string) {
-    setSearchParams({ from, to: 'now' })
+    const params = new URLSearchParams(searchParams)
+    params.set('from', from)
+    params.set('to', 'now')
+    setSearchParams(params, { replace: true })
   }
 
   function addWidgetFromPicker(typeDef: WidgetTypeDefinition) {
@@ -118,7 +165,6 @@ export default function CustomDashboardViewPage() {
       dataSource: { ...typeDef.defaultDataSource },
       options: { ...typeDef.defaultOptions },
     }
-    // Add to layout at bottom
     const lgLayout = [...(newConfig.layout.lg || [])]
     const maxY = lgLayout.reduce((max, item) => Math.max(max, item.y + item.h), 0)
     lgLayout.push({
@@ -132,7 +178,6 @@ export default function CustomDashboardViewPage() {
     })
     newConfig.layout.lg = lgLayout
     setEditConfig(newConfig)
-    // Auto-open config dialog for the new widget
     setConfigWidgetId(id)
   }
 
@@ -154,10 +199,22 @@ export default function CustomDashboardViewPage() {
     setEditConfig(newConfig)
   }
 
+  function updateVariables(vars: DashboardVariable[]) {
+    if (!editConfig) return
+    setEditConfig({ ...editConfig, variables: vars })
+  }
+
   async function handleRestore(version: number) {
     if (!dashboardId) return
     await restoreMut.mutateAsync({ id: dashboardId, version })
     setShowVersions(false)
+  }
+
+  function openTvMode() {
+    if (!dashboardId) return
+    const token = localStorage.getItem('overseer_token')
+    const url = `/tv/dashboards?id=${dashboardId}${token ? `&token=${token}` : ''}`
+    window.open(url, '_blank')
   }
 
   if (isLoading) return <div className="p-6"><LoadingSpinner /></div>
@@ -235,7 +292,7 @@ export default function CustomDashboardViewPage() {
                 <Plus className="w-4 h-4" /> Widget
               </button>
               <button
-                onClick={() => setShowSettings(true)}
+                onClick={() => { setShowSettings(true); setSettingsTab('general') }}
                 className="p-1.5 text-gray-400 hover:text-white transition-colors"
                 title="Einstellungen"
               >
@@ -258,6 +315,20 @@ export default function CustomDashboardViewPage() {
           ) : (
             <>
               <button
+                onClick={() => setShowShareDialog(true)}
+                className="p-1.5 text-gray-400 hover:text-white transition-colors"
+                title="Teilen"
+              >
+                <Share2 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={openTvMode}
+                className="p-1.5 text-gray-400 hover:text-white transition-colors"
+                title="TV Modus"
+              >
+                <Monitor className="w-4 h-4" />
+              </button>
+              <button
                 onClick={() => setShowVersions(true)}
                 className="p-1.5 text-gray-400 hover:text-white transition-colors"
                 title="Versionen"
@@ -274,6 +345,15 @@ export default function CustomDashboardViewPage() {
           )}
         </div>
       </div>
+
+      {/* Variable Bar */}
+      {variables.length > 0 && !isEditing && (
+        <VariableBar
+          variables={variables}
+          values={effectiveVariableValues}
+          onChange={handleVariableChange}
+        />
+      )}
 
       {/* Grid */}
       <div
@@ -310,6 +390,7 @@ export default function CustomDashboardViewPage() {
                   refreshInterval={autoRefresh}
                   isEditing={isEditing}
                   onConfigChange={w => updateWidgetConfig(id, w)}
+                  variableValues={effectiveVariableValues}
                 />
                 {isEditing && (
                   <>
@@ -350,6 +431,18 @@ export default function CustomDashboardViewPage() {
           open={true}
           onClose={() => setConfigWidgetId(null)}
           onChange={w => updateWidgetConfig(configWidgetId, w)}
+          variables={variables}
+        />
+      )}
+
+      {/* Share Dialog */}
+      {showShareDialog && dashboard && (
+        <ShareDialog
+          dashboard={dashboard}
+          open={true}
+          onClose={() => setShowShareDialog(false)}
+          variables={variables}
+          variableValues={effectiveVariableValues}
         />
       )}
 
@@ -390,30 +483,68 @@ export default function CustomDashboardViewPage() {
         </div>
       )}
 
-      {/* Settings modal */}
+      {/* Settings modal with tabs */}
       {showSettings && isEditing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setShowSettings(false)}>
-          <div className="bg-gray-800 border border-gray-700 rounded-xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <h2 className="text-lg font-semibold text-white mb-4">Dashboard-Einstellungen</h2>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">Titel</label>
-                <input
-                  value={editTitle}
-                  onChange={e => setEditTitle(e.target.value)}
-                  className="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">Beschreibung</label>
-                <input
-                  value={editDesc}
-                  onChange={e => setEditDesc(e.target.value)}
-                  className="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"
-                />
-              </div>
+          <div className="bg-gray-800 border border-gray-700 rounded-xl w-full max-w-lg max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-gray-700">
+              <h2 className="text-base font-semibold text-white">Dashboard-Einstellungen</h2>
+              <button onClick={() => setShowSettings(false)} className="text-gray-400 hover:text-white">
+                <X className="w-4 h-4" />
+              </button>
             </div>
-            <div className="flex justify-end mt-5">
+
+            {/* Settings tabs */}
+            <div className="flex px-4 pt-3 gap-1">
+              <button
+                onClick={() => setSettingsTab('general')}
+                className={clsx(
+                  'px-3 py-1.5 text-xs rounded-md transition-colors',
+                  settingsTab === 'general' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white bg-gray-700'
+                )}
+              >
+                Allgemein
+              </button>
+              <button
+                onClick={() => setSettingsTab('variables')}
+                className={clsx(
+                  'px-3 py-1.5 text-xs rounded-md transition-colors',
+                  settingsTab === 'variables' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white bg-gray-700'
+                )}
+              >
+                Variablen
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4">
+              {settingsTab === 'general' ? (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-1">Titel</label>
+                    <input
+                      value={editTitle}
+                      onChange={e => setEditTitle(e.target.value)}
+                      className="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-1">Beschreibung</label>
+                    <input
+                      value={editDesc}
+                      onChange={e => setEditDesc(e.target.value)}
+                      className="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <VariableSettings
+                  variables={editConfig?.variables || []}
+                  onChange={updateVariables}
+                />
+              )}
+            </div>
+
+            <div className="flex justify-end p-4 border-t border-gray-700">
               <button
                 onClick={() => setShowSettings(false)}
                 className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors"

@@ -13,10 +13,14 @@ import type {
   HistoryBucket, HistoryPoint, HistorySummary, ServiceSla, TenantSlaReport,
   AuditLog, User, ApiKeyCreateResponse,
   AiAnalysisResponse, AiQueryRequest, AiQueryResponse,
-  DashboardSummary, DashboardFull, DashboardVersion,
+  DashboardSummary, DashboardFull, DashboardVersion, DashboardShareConfig,
   DashboardQueryRequest, DashboardQueryResponse,
   MetaHost, MetaService,
 } from '../types'
+import axios from 'axios'
+
+// Unauthenticated client for public endpoints
+const publicApi = axios.create({ baseURL: '', headers: { 'Content-Type': 'application/json' } })
 
 // ── Status ───────────────────────────────────────────────────────────────────
 
@@ -730,6 +734,87 @@ export function useDashboardMetaCheckTypes() {
   return useQuery<string[]>({
     queryKey: ['dashboard-meta-check-types'],
     queryFn: () => api.get('/api/v1/dashboards/meta/check-types').then(r => r.data),
+    staleTime: 60_000,
+  })
+}
+
+// ── Dashboard Sharing ──────────────────────────────────────────────────────
+
+export function useShareDashboard() {
+  const qc = useQueryClient()
+  return useMutation<
+    { share_token: string; share_expires_at: string; share_config: DashboardShareConfig },
+    unknown,
+    { id: string; expires_in_days: number; fixed_variables?: string[]; fixed_variable_values?: Record<string, string | string[]> }
+  >({
+    mutationFn: ({ id, ...body }) =>
+      api.post(`/api/v1/dashboards/${id}/share`, body).then(r => r.data),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ['dashboard', vars.id] })
+    },
+  })
+}
+
+export function useRevokeDashboardShare() {
+  const qc = useQueryClient()
+  return useMutation<void, unknown, string>({
+    mutationFn: (id) => api.delete(`/api/v1/dashboards/${id}/share`),
+    onSuccess: (_data, id) => {
+      qc.invalidateQueries({ queryKey: ['dashboard', id] })
+    },
+  })
+}
+
+// ── Public Dashboard (no auth) ─────────────────────────────────────────────
+
+export function usePublicDashboard(shareToken?: string) {
+  return useQuery<DashboardFull>({
+    queryKey: ['public-dashboard', shareToken],
+    queryFn: () => publicApi.get(`/api/v1/public/dashboards/${shareToken}`).then(r => r.data),
+    enabled: !!shareToken,
+  })
+}
+
+export function usePublicDashboardQuery(
+  shareToken: string | undefined,
+  query: DashboardQueryRequest | null,
+  options?: { refetchInterval?: number; enabled?: boolean },
+) {
+  return useQuery<DashboardQueryResponse>({
+    queryKey: ['public-dashboard-query', shareToken, query],
+    queryFn: () => publicApi.post(`/api/v1/public/dashboards/${shareToken}/query`, query).then(r => r.data),
+    enabled: options?.enabled !== false && !!shareToken && !!query,
+    refetchInterval: options?.refetchInterval,
+    staleTime: 10_000,
+    placeholderData: (prev) => prev,
+  })
+}
+
+export function usePublicStatusSummary(shareToken?: string) {
+  return useQuery<StatusSummary>({
+    queryKey: ['public-summary', shareToken],
+    queryFn: () => publicApi.get(`/api/v1/public/dashboards/${shareToken}/summary`).then(r => r.data),
+    enabled: !!shareToken,
+    refetchInterval: 30_000,
+  })
+}
+
+export function usePublicDashboardMetaHosts(shareToken?: string) {
+  return useQuery<MetaHost[]>({
+    queryKey: ['public-meta-hosts', shareToken],
+    queryFn: () => publicApi.get(`/api/v1/public/dashboards/${shareToken}/meta/hosts`).then(r => r.data),
+    enabled: !!shareToken,
+    staleTime: 60_000,
+  })
+}
+
+export function usePublicDashboardMetaServices(shareToken?: string, hostId?: string) {
+  return useQuery<MetaService[]>({
+    queryKey: ['public-meta-services', shareToken, hostId],
+    queryFn: () => publicApi.get(`/api/v1/public/dashboards/${shareToken}/meta/services`, {
+      params: hostId ? { host_id: hostId } : {},
+    }).then(r => r.data),
+    enabled: !!shareToken,
     staleTime: 60_000,
   })
 }
