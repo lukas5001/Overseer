@@ -14,7 +14,6 @@ from sqlalchemy import select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.app.core.database import AsyncSessionLocal
-from reports.engine import ReportEngine, ReportRequest, Branding
 
 logger = logging.getLogger("overseer.reports")
 
@@ -22,7 +21,15 @@ PDF_OUTPUT_DIR = Path(os.getenv("REPORT_PDF_DIR", "/opt/overseer/reports"))
 LOGO_UPLOAD_DIR = Path(os.getenv("REPORT_LOGO_DIR", "/opt/overseer/reports/logos"))
 
 scheduler = AsyncIOScheduler()
-_engine = ReportEngine()
+_engine = None
+
+
+def _get_engine():
+    global _engine
+    if _engine is None:
+        from reports.engine import ReportEngine
+        _engine = ReportEngine()
+    return _engine
 
 # Retry config: 3 attempts with backoff
 RETRY_DELAYS = [5, 30, 60]
@@ -59,6 +66,8 @@ async def generate_and_send_report(schedule_id: str) -> None:
     """Generate a report for a schedule and send it via email."""
     from api.app.models.models import ReportSchedule, ReportDelivery
     from shared.email import send_email_with_attachment
+
+    from reports.engine import ReportRequest, Branding
 
     async with AsyncSessionLocal() as db:
         sched = await db.get(ReportSchedule, UUID(schedule_id))
@@ -106,7 +115,7 @@ async def generate_and_send_report(schedule_id: str) -> None:
             )
 
             # Generate PDF
-            pdf_path = await _engine.generate(db, request)
+            pdf_path = await _get_engine().generate(db, request)
             pdf_size = pdf_path.stat().st_size
 
             delivery.pdf_path = str(pdf_path)
@@ -198,6 +207,7 @@ async def generate_on_demand(
 ) -> UUID:
     """Generate an on-demand report (no schedule). Returns the delivery ID."""
     from api.app.models.models import ReportDelivery
+    from reports.engine import ReportRequest, Branding
 
     branding_data = branding_data or {}
     branding = Branding(
