@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowLeft, Play, Search,
-  CheckCircle, Clock, Plus, X, Trash2, TrendingUp, Pencil, Settings2, Power, Copy,
+  CheckCircle, Clock, Plus, X, Trash2, TrendingUp, Pencil, Power, Copy,
   Monitor, ClipboardCopy, KeyRound, Download, Shield, ShieldX,
   AlertTriangle, CheckCircle2,
 } from 'lucide-react'
@@ -2502,8 +2502,12 @@ export default function HostDetailPage() {
                 return (
                   <React.Fragment key={svc.service_id}>
                   <tr
-                    className={clsx('hover:bg-gray-50', isInactive && 'opacity-50', isSslCheck && 'cursor-pointer')}
-                    onClick={isSslCheck ? () => setExpandedSslService(prev => prev === svc.service_id ? null : svc.service_id) : undefined}
+                    className={clsx('hover:bg-gray-50 cursor-pointer', isInactive && 'opacity-50')}
+                    onClick={() => {
+                      if (isSslCheck) setExpandedSslService(prev => prev === svc.service_id ? null : svc.service_id)
+                      const svcItem = serviceList.find(s => s.id === svc.service_id)
+                      if (svcItem) setEditService(svcItem)
+                    }}
                   >
                     <td className="px-6 py-3 whitespace-nowrap">
                       {isInactive ? (
@@ -2549,7 +2553,7 @@ export default function HostDetailPage() {
                         )}
                       </span>
                     </td>
-                    <td className="px-6 py-3 text-gray-500">
+                    <td className="px-6 py-3 text-gray-500" onClick={e => e.stopPropagation()}>
                       <span
                         className="block break-words cursor-pointer hover:text-gray-800"
                         onClick={() => svc.status_message && navigator.clipboard.writeText(svc.status_message)}
@@ -2560,7 +2564,7 @@ export default function HostDetailPage() {
                     <td className="px-6 py-3 text-right font-mono text-xs text-gray-700 whitespace-nowrap">
                       {svc.value !== null ? `${svc.value}${svc.unit ?? ''}` : '–'}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                       <SparklineCell serviceId={svc.service_id} onClick={() =>
                         setHistoryTarget({ id: svc.service_id, name: meta?.name ?? svc.service_id, warn: meta?.threshold_warn ?? null, crit: meta?.threshold_crit ?? null })
                       } />
@@ -2573,43 +2577,34 @@ export default function HostDetailPage() {
                           : '–'}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5 justify-end">
+                    <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                      <div className="flex items-center gap-2 justify-end">
                         <button
                           onClick={() => runCheckNow(svc.service_id)}
                           disabled={checkingNow[svc.service_id] === 'pending'}
                           className={clsx(
-                            'transition-colors',
+                            'p-1 rounded transition-colors',
                             checkingNow[svc.service_id] === 'pending' ? 'text-overseer-400 animate-pulse' :
                             checkingNow[svc.service_id] === 'done' ? 'text-emerald-500' :
                             checkingNow[svc.service_id] === 'error' ? 'text-red-500' :
-                            'text-gray-300 hover:text-overseer-500',
+                            'text-gray-400 hover:text-overseer-600 hover:bg-overseer-50',
                           )}
                           title="Jetzt prüfen"
                         >
-                          <Play className="w-3.5 h-3.5" />
+                          <Play className="w-4 h-4" />
                         </button>
                         {meta && (
                           <button
                             onClick={() => toggleServiceActiveMutation.mutate({ id: svc.service_id, active: !meta.active })}
                             className={clsx(
-                              'transition-colors',
+                              'p-1 rounded transition-colors',
                               meta.active
-                                ? 'text-gray-300 hover:text-red-500'
-                                : 'text-emerald-500 hover:text-emerald-700',
+                                ? 'text-gray-400 hover:text-red-500 hover:bg-red-50'
+                                : 'text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50',
                             )}
                             title={meta.active ? 'Deaktivieren' : 'Aktivieren'}
                           >
-                            <Power className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                        {meta?.active !== false && serviceList.find(s => s.id === svc.service_id) && (
-                          <button
-                            onClick={() => setEditService(serviceList.find(s => s.id === svc.service_id)!)}
-                            className="text-gray-300 hover:text-overseer-500 transition-colors"
-                            title="Service bearbeiten"
-                          >
-                            <Settings2 className="w-3.5 h-3.5" />
+                            <Power className="w-4 h-4" />
                           </button>
                         )}
                         {confirmDelete === svc.service_id ? (
@@ -2619,26 +2614,26 @@ export default function HostDetailPage() {
                                 deleteServiceMutation.mutate(svc.service_id)
                                 setConfirmDelete(null)
                               }}
-                              className="text-red-500 hover:text-red-700 transition-colors text-xs font-medium"
+                              className="p-1 rounded text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors"
                               title="Löschen bestätigen"
                             >
-                              <CheckCircle className="w-3.5 h-3.5" />
+                              <CheckCircle className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => setConfirmDelete(null)}
-                              className="text-gray-400 hover:text-gray-600 transition-colors"
+                              className="p-1 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
                               title="Abbrechen"
                             >
-                              <X className="w-3.5 h-3.5" />
+                              <X className="w-4 h-4" />
                             </button>
                           </span>
                         ) : (
                           <button
                             onClick={() => setConfirmDelete(svc.service_id)}
-                            className="text-gray-300 hover:text-red-500 transition-colors"
+                            className="p-1 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
                             title="Check löschen"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         )}
                       </div>
