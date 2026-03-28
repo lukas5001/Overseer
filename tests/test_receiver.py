@@ -10,6 +10,16 @@ def anyio_backend():
     return "asyncio"
 
 
+@pytest.fixture(autouse=True)
+def _reset_receiver_engine():
+    """Reset the receiver's SQLAlchemy engine before each test to avoid event loop conflicts."""
+    import receiver.app.main as mod
+    from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+    mod.engine = create_async_engine(mod.DATABASE_URL, echo=False, pool_pre_ping=True)
+    mod.AsyncSessionLocal = async_sessionmaker(mod.engine, class_=AsyncSession, expire_on_commit=False)
+    yield
+
+
 @pytest.mark.anyio
 async def test_health_endpoint():
     """Health endpoint should respond."""
@@ -21,7 +31,7 @@ async def test_health_endpoint():
 
 @pytest.mark.anyio
 async def test_receive_requires_api_key():
-    """Posting results without API key should return 422."""
+    """Posting results without API key should return 401."""
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         response = await client.post(
