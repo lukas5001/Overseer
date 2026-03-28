@@ -59,7 +59,7 @@ export default function AiAnalysisPanel({ serviceId, serviceName, onClose }: Pro
         )}
 
         {analyze.isError && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-4">
             <p className="text-sm text-red-700">
               Fehler bei der Analyse: {(analyze.error as Error)?.message ?? 'Unbekannter Fehler'}
             </p>

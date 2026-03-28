@@ -219,7 +219,7 @@ function RuleModal({ onClose, channels, tenants, existing }: RuleModalProps) {
             </div>
           </div>
 
-          {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}
+          {error && <p className="text-sm text-red-600 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">{error}</p>}
         </div>
 
         <div className="flex gap-3 mt-6">
@@ -311,7 +311,7 @@ function GroupingSettingsPanel({ tenants }: { tenants: Tenant[] }) {
                   <button key={opt.value} onClick={() => setSettings({ ...settings, group_by: opt.value as GroupingSettings['group_by'] })}
                     className={clsx('px-3 py-2 rounded-lg text-sm border transition-colors text-left',
                       settings.group_by === opt.value
-                        ? 'border-overseer-500 bg-overseer-50 text-overseer-700'
+                        ? 'border-overseer-500 bg-overseer-50 dark:bg-overseer-900/30 text-overseer-700 dark:text-overseer-400'
                         : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-500')}>
                     <div className="font-medium">{opt.label}</div>
                     <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{opt.desc}</div>
@@ -489,7 +489,7 @@ function LogRuleModal({ onClose, channels, existing }: LogRuleModalProps) {
                 <button key={ct.value} onClick={() => setConditionType(ct.value)}
                   className={clsx('w-full text-left px-3 py-2 rounded-lg text-sm border transition-colors',
                     conditionType === ct.value
-                      ? 'border-overseer-500 bg-overseer-50 text-overseer-700'
+                      ? 'border-overseer-500 bg-overseer-50 dark:bg-overseer-900/30 text-overseer-700 dark:text-overseer-400'
                       : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-500')}>
                   <div className="font-medium">{ct.label}</div>
                   <div className="text-xs text-gray-500 dark:text-gray-400">{ct.desc}</div>
@@ -602,7 +602,7 @@ function LogRuleModal({ onClose, channels, existing }: LogRuleModalProps) {
             </div>
           </div>
 
-          {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}
+          {error && <p className="text-sm text-red-600 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">{error}</p>}
         </div>
 
         <div className="flex gap-3 mt-6">

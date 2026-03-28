@@ -523,7 +523,7 @@ export default function DiscoveryPage() {
                   <td className="px-3 py-2">
                     <div className="flex flex-wrap gap-1">
                       {r.suggested_checks.map(c => (
-                        <span key={c} className="px-1.5 py-0.5 bg-overseer-50 text-overseer-700 rounded text-xs">
+                        <span key={c} className="px-1.5 py-0.5 bg-overseer-50 dark:bg-overseer-900/30 text-overseer-700 dark:text-overseer-400 rounded text-xs">
                           {c}
                         </span>
                       ))}

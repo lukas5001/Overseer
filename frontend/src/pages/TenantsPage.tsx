@@ -90,7 +90,7 @@ function AddCollectorModal({ tenantId, tenantName, onClose, onSaved }: AddCollec
               </div>
             </div>
             {error && (
-              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-4">{error}</p>
+              <p className="text-sm text-red-600 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2 mb-4">{error}</p>
             )}
             <div className="flex gap-3">
               <button onClick={onClose}
@@ -189,7 +189,7 @@ function AddTenantModal({ onClose, onSaved }: AddTenantModalProps) {
             />
           </div>
           {error && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>
+            <p className="text-sm text-red-600 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">{error}</p>
           )}
         </div>
 
@@ -265,7 +265,7 @@ function GenerateKeyModal({ tenantId, tenantName, onClose, onSaved }: GenerateKe
               />
             </div>
             {error && (
-              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-4">{error}</p>
+              <p className="text-sm text-red-600 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2 mb-4">{error}</p>
             )}
             <div className="flex gap-3">
               <button onClick={onClose}
@@ -435,7 +435,7 @@ export default function TenantsPage() {
                 />
               </div>
             </div>
-            {copyError && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-4">{copyError}</p>}
+            {copyError && <p className="text-sm text-red-600 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2 mb-4">{copyError}</p>}
             <div className="flex gap-3">
               <button onClick={() => setCopyTarget(null)}
                 className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Abbrechen</button>

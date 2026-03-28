@@ -70,11 +70,11 @@ function FieldRenderer({ field, config, onChange, tenantId, osFamily, diskConfig
   if (field.type === 'select' && field.options) {
     return (
       <div>
-        <label className="block text-xs font-medium text-gray-600 mb-1">{field.label}</label>
+        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{field.label}</label>
         <select
           value={config[field.key] ?? field.default ?? ''}
           onChange={e => onChange(field.key, e.target.value)}
-          className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none"
+          className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none dark:bg-gray-700 dark:text-gray-200"
         >
           {field.options.map(o => (
             <option key={o.value} value={o.value}>{o.label}</option>
@@ -91,9 +91,9 @@ function FieldRenderer({ field, config, onChange, tenantId, osFamily, diskConfig
           type="checkbox"
           checked={config[field.key] === 'true'}
           onChange={e => onChange(field.key, e.target.checked ? 'true' : '')}
-          className="w-4 h-4 rounded border-gray-300 text-overseer-600 focus:ring-overseer-500"
+          className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-overseer-600 focus:ring-overseer-500"
         />
-        <span className="text-sm text-gray-700">{field.label}</span>
+        <span className="text-sm text-gray-700 dark:text-gray-300">{field.label}</span>
       </label>
     )
   }
@@ -101,13 +101,13 @@ function FieldRenderer({ field, config, onChange, tenantId, osFamily, diskConfig
   // text / number / password
   return (
     <div>
-      <label className="block text-xs font-medium text-gray-600 mb-1">{field.label}</label>
+      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{field.label}</label>
       <input
         type={field.type}
         value={config[field.key] ?? ''}
         onChange={e => onChange(field.key, e.target.value)}
         placeholder={field.placeholder}
-        className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none"
+        className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none dark:bg-gray-700 dark:text-gray-200"
       />
     </div>
   )

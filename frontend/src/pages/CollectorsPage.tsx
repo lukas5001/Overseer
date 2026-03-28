@@ -42,8 +42,8 @@ function NewCollectorModal({ onClose, tenants }: { onClose: () => void; tenants:
 
         {createdApiKey ? (
           <div>
-            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg mb-4">
-              <p className="text-xs font-medium text-emerald-800 mb-1">API-Key (wird nur einmal angezeigt!):</p>
+            <div className="p-3 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 rounded-lg mb-4">
+              <p className="text-xs font-medium text-emerald-800 dark:text-emerald-300 mb-1">API-Key (wird nur einmal angezeigt!):</p>
               <code className="text-xs bg-white dark:bg-gray-700 px-2 py-1 rounded border border-emerald-200 block break-all">{createdApiKey}</code>
             </div>
             <button onClick={onClose} className="w-full py-2 rounded-lg bg-overseer-600 text-white text-sm font-medium hover:bg-overseer-700">
@@ -67,7 +67,7 @@ function NewCollectorModal({ onClose, tenants }: { onClose: () => void; tenants:
                   </select>
                 </div>
               )}
-              {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}
+              {error && <p className="text-sm text-red-600 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">{error}</p>}
             </div>
             <div className="flex gap-3 mt-6">
               <button onClick={onClose} className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Abbrechen</button>
@@ -115,12 +115,12 @@ function InstallerModal({ collectorId, onClose }: { collectorId: string; onClose
           <div className="flex gap-3">
             <button onClick={() => setOs('linux')}
               className={clsx('flex-1 py-2 rounded-lg text-sm font-medium border transition-colors',
-                os === 'linux' ? 'border-overseer-600 bg-overseer-50 text-overseer-700' : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700')}>
+                os === 'linux' ? 'border-overseer-600 bg-overseer-50 dark:bg-overseer-900/30 text-overseer-700 dark:text-overseer-400' : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700')}>
               Linux
             </button>
             <button onClick={() => setOs('windows')}
               className={clsx('flex-1 py-2 rounded-lg text-sm font-medium border transition-colors',
-                os === 'windows' ? 'border-overseer-600 bg-overseer-50 text-overseer-700' : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700')}>
+                os === 'windows' ? 'border-overseer-600 bg-overseer-50 dark:bg-overseer-900/30 text-overseer-700 dark:text-overseer-400' : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700')}>
               Windows
             </button>
           </div>

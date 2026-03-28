@@ -202,12 +202,12 @@ function PolicyModal({ onClose, tenants, existing }: ModalProps) {
 
           {/* Scope */}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-2">Geltungsbereich</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Geltungsbereich</label>
             <div className="flex gap-2 mb-3">
               {(['all', 'include_tenants', 'exclude_tenants'] as const).map(mode => (
                 <button key={mode} onClick={() => set('scope_mode', mode)}
                   className={clsx('px-3 py-1.5 rounded text-xs font-semibold transition-all',
-                    form.scope_mode === mode ? 'bg-overseer-100 text-overseer-700' : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500')}>
+                    form.scope_mode === mode ? 'bg-overseer-100 dark:bg-overseer-900/30 text-overseer-700 dark:text-overseer-400' : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500')}>
                   {mode === 'all' ? 'Alle Tenants' : mode === 'include_tenants' ? 'Nur diese' : 'Alle außer'}
                 </button>
               ))}
@@ -233,7 +233,7 @@ function PolicyModal({ onClose, tenants, existing }: ModalProps) {
             <span className="text-gray-700 dark:text-gray-300">Aktiviert</span>
           </label>
 
-          {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}
+          {error && <p className="text-sm text-red-600 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">{error}</p>}
         </div>
 
         <div className="flex gap-3 mt-6">
@@ -302,10 +302,10 @@ export default function GlobalPoliciesPage() {
       </div>
 
       {/* Info box */}
-      <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
-        Globale Policies mergen Config-Werte in die <code className="font-mono bg-blue-100 px-1 rounded">check_config</code> aller
-        Services eines Check-Typs. Beispiel: Services global von <code className="font-mono bg-blue-100 px-1 rounded">agent_services_auto</code> ausschließen.
-        Bei Arrays (z.B. <code className="font-mono bg-blue-100 px-1 rounded">exclude</code>) werden die Werte vereint.
+      <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg text-sm text-blue-800 dark:text-blue-300">
+        Globale Policies mergen Config-Werte in die <code className="font-mono bg-blue-100 dark:bg-blue-900/50 px-1 rounded">check_config</code> aller
+        Services eines Check-Typs. Beispiel: Services global von <code className="font-mono bg-blue-100 dark:bg-blue-900/50 px-1 rounded">agent_services_auto</code> ausschließen.
+        Bei Arrays (z.B. <code className="font-mono bg-blue-100 dark:bg-blue-900/50 px-1 rounded">exclude</code>) werden die Werte vereint.
       </div>
 
       {isLoading && <div className="text-gray-400 dark:text-gray-500 text-sm">Lade...</div>}

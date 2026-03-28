@@ -29,11 +29,11 @@ function SystemTab() {
   return (
     <div className="grid grid-cols-3 gap-4">
       {cards.map(c => (
-        <div key={c.label} className={clsx('rounded-xl p-5 border', c.ok ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200')}>
+        <div key={c.label} className={clsx('rounded-xl p-5 border', c.ok ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-800' : 'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800')}>
           <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{c.label}</p>
           <div className="flex items-center gap-2 mt-2">
             {c.ok ? <Check className="w-5 h-5 text-emerald-600" /> : <AlertCircle className="w-5 h-5 text-red-500" />}
-            <span className={clsx('text-lg font-bold', c.ok ? 'text-emerald-700' : 'text-red-700')}>{c.value}</span>
+            <span className={clsx('text-lg font-bold', c.ok ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-700 dark:text-red-300')}>{c.value}</span>
           </div>
         </div>
       ))}
@@ -102,13 +102,13 @@ function UsersTab() {
                   </td>
                   <td className="px-6 py-3 text-center">
                     <span className={clsx('px-2 py-0.5 rounded text-xs font-medium',
-                      u.active ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-red-100 text-red-700')}>
+                      u.active ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300')}>
                       {u.active ? 'Aktiv' : 'Deaktiviert'}
                     </span>
                   </td>
                   <td className="px-6 py-3 text-right">
                     <button onClick={() => toggleActive.mutate({ id: u.id, active: !u.active })}
-                      className={clsx('text-xs px-3 py-1 rounded border', u.active ? 'border-red-300 text-red-600 hover:bg-red-50' : 'border-emerald-300 text-emerald-600 hover:bg-emerald-50')}>
+                      className={clsx('text-xs px-3 py-1 rounded border', u.active ? 'border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30' : 'border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30')}>
                       {u.active ? 'Deaktivieren' : 'Aktivieren'}
                     </button>
                   </td>
@@ -140,7 +140,7 @@ function NewUserModal({ onClose }: { onClose: () => void }) {
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Neuer User</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 dark:text-gray-600"><X className="w-5 h-5" /></button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"><X className="w-5 h-5" /></button>
         </div>
         <div className="space-y-4">
           <div>
@@ -163,10 +163,10 @@ function NewUserModal({ onClose }: { onClose: () => void }) {
               <option value="tenant_viewer">Viewer</option>
             </select>
           </div>
-          {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}
+          {error && <p className="text-sm text-red-600 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">{error}</p>}
         </div>
         <div className="flex gap-3 mt-6">
-          <button onClick={onClose} className="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">Abbrechen</button>
+          <button onClick={onClose} className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Abbrechen</button>
           <button onClick={() => mutation.mutate()} disabled={mutation.isPending || !email || !password}
             className="flex-1 py-2 rounded-lg bg-overseer-600 text-white text-sm font-medium hover:bg-overseer-700 disabled:opacity-60">
             {mutation.isPending ? 'Erstellen…' : 'User erstellen'}
@@ -279,10 +279,10 @@ function AuditTab() {
                 </td>
                 <td className="px-6 py-3 text-gray-700 dark:text-gray-300 text-xs">{log.actor_email ?? '–'}</td>
                 <td className="px-6 py-3">
-                  <span className="px-2 py-0.5 bg-gray-100 rounded text-xs font-medium text-gray-700 dark:text-gray-300 dark:text-gray-600">{log.action}</span>
+                  <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-xs font-medium text-gray-700 dark:text-gray-300">{log.action}</span>
                 </td>
                 <td className="px-6 py-3 text-xs text-gray-500 dark:text-gray-400">{log.target_type ?? '–'}</td>
-                <td className="px-6 py-3 text-xs text-gray-400 dark:text-gray-500 dark:text-gray-400 max-w-xs truncate">
+                <td className="px-6 py-3 text-xs text-gray-400 dark:text-gray-500 max-w-xs truncate">
                   {log.detail ? JSON.stringify(log.detail).slice(0, 80) : '–'}
                 </td>
               </tr>
@@ -517,7 +517,7 @@ function IdpModal({ config, onClose }: { config: IdpConfig | null; onClose: () =
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-lg mx-4 p-6">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{isEdit ? 'IdP bearbeiten' : 'Neuer IdP'}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 dark:text-gray-600"><X className="w-5 h-5" /></button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"><X className="w-5 h-5" /></button>
         </div>
         <div className="space-y-4 max-h-[65vh] overflow-y-auto pr-1">
           <div>
@@ -648,10 +648,10 @@ function IdpModal({ config, onClose }: { config: IdpConfig | null; onClose: () =
             </label>
           </div>
 
-          {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}
+          {error && <p className="text-sm text-red-600 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">{error}</p>}
         </div>
         <div className="flex gap-3 mt-6">
-          <button onClick={onClose} className="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">Abbrechen</button>
+          <button onClick={onClose} className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Abbrechen</button>
           <button onClick={handleSubmit} disabled={pending || (!isEdit && !tenantId)}
             className="flex-1 py-2 rounded-lg bg-overseer-600 text-white text-sm font-medium hover:bg-overseer-700 disabled:opacity-60">
             {pending ? 'Speichern…' : isEdit ? 'Speichern' : 'IdP erstellen'}

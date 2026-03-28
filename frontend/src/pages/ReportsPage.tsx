@@ -40,10 +40,10 @@ function cronToLabel(cron: string): string {
 function statusBadge(status: string) {
   const map: Record<string, { bg: string; text: string; label: string }> = {
     pending: { bg: 'bg-gray-100 dark:bg-gray-700', text: 'text-gray-800 dark:text-gray-300', label: 'Pending' },
-    generating: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Generating...' },
-    sending: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Sending...' },
-    sent: { bg: 'bg-emerald-100', text: 'text-emerald-800', label: 'Sent' },
-    failed: { bg: 'bg-red-100', text: 'text-red-800', label: 'Failed' },
+    generating: { bg: 'bg-blue-100 dark:bg-blue-900/40', text: 'text-blue-800 dark:text-blue-300', label: 'Generating...' },
+    sending: { bg: 'bg-blue-100 dark:bg-blue-900/40', text: 'text-blue-800 dark:text-blue-300', label: 'Sending...' },
+    sent: { bg: 'bg-emerald-100 dark:bg-emerald-900/40', text: 'text-emerald-800 dark:text-emerald-300', label: 'Sent' },
+    failed: { bg: 'bg-red-100 dark:bg-red-900/40', text: 'text-red-800 dark:text-red-300', label: 'Failed' },
   }
   const s = map[status] || map.pending
   return (
@@ -129,7 +129,7 @@ export default function ReportsPage() {
         {isAdmin && (
           <div className="flex items-center gap-2">
             <button onClick={() => setShowGenerateDialog(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
               <Play className="w-4 h-4" /> Jetzt generieren
             </button>
             <button onClick={() => { setEditSchedule(null); setShowCreateDialog(true) }}

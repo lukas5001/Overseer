@@ -133,7 +133,7 @@ function AddHostModal({ onClose, onSaved }: AddHostModalProps) {
                           className={clsx(
                             'flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all',
                             isSelected
-                              ? 'border-overseer-500 bg-overseer-50 text-overseer-700 ring-1 ring-overseer-500'
+                              ? 'border-overseer-500 bg-overseer-50 dark:bg-overseer-900/30 text-overseer-700 dark:text-overseer-400 ring-1 ring-overseer-500'
                               : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
                           )}
                         >
@@ -221,13 +221,13 @@ function AddHostModal({ onClose, onSaved }: AddHostModalProps) {
 
           {/* Agent hint */}
           {selectedType?.agent_capable && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-xs text-blue-700">
+            <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-xs text-blue-700 dark:text-blue-300">
               Agent kann nach dem Erstellen des Hosts eingerichtet werden.
             </div>
           )}
 
           {error && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>
+            <p className="text-sm text-red-600 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">{error}</p>
           )}
         </div>
 
@@ -451,7 +451,7 @@ export default function HostsPage() {
                 </select>
               </div>
             </div>
-            {copyHostError && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-4">{copyHostError}</p>}
+            {copyHostError && <p className="text-sm text-red-600 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2 mb-4">{copyHostError}</p>}
             <div className="flex gap-3">
               <button onClick={() => setCopyHostTarget(null)}
                 className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Abbrechen</button>
@@ -657,15 +657,15 @@ export default function HostsPage() {
                             </td>
                             <td className="px-6 py-2.5">
                               {host.agent_managed ? (
-                                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded">
+                                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-violet-600 dark:text-violet-300 bg-violet-50 dark:bg-violet-900/40 px-1.5 py-0.5 rounded">
                                   Agent
                                 </span>
                               ) : host.ip_address ? (
-                                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
+                                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/40 px-1.5 py-0.5 rounded">
                                   Netzwerk
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded">
+                                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-800 px-1.5 py-0.5 rounded">
                                   Nicht konfiguriert
                                 </span>
                               )}

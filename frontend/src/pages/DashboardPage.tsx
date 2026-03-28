@@ -27,11 +27,11 @@ interface TenantSummary {
 }
 
 const statusCards = [
-  { key: 'critical' as const, label: 'Critical', icon: XCircle,       textColor: 'text-red-600',     bgLight: 'bg-red-50',     iconBg: 'bg-red-500' },
-  { key: 'warning'  as const, label: 'Warning',  icon: AlertTriangle,  textColor: 'text-amber-600',   bgLight: 'bg-amber-50',   iconBg: 'bg-amber-500' },
-  { key: 'no_data'  as const, label: 'No Data',  icon: CircleDashed,   textColor: 'text-orange-600',  bgLight: 'bg-orange-50',  iconBg: 'bg-orange-500' },
+  { key: 'critical' as const, label: 'Critical', icon: XCircle,       textColor: 'text-red-600',     bgLight: 'bg-red-50 dark:bg-red-900/30',     iconBg: 'bg-red-500' },
+  { key: 'warning'  as const, label: 'Warning',  icon: AlertTriangle,  textColor: 'text-amber-600',   bgLight: 'bg-amber-50 dark:bg-amber-900/30',   iconBg: 'bg-amber-500' },
+  { key: 'no_data'  as const, label: 'No Data',  icon: CircleDashed,   textColor: 'text-orange-600',  bgLight: 'bg-orange-50 dark:bg-orange-900/30',  iconBg: 'bg-orange-500' },
   { key: 'unknown'  as const, label: 'Unknown',  icon: HelpCircle,     textColor: 'text-gray-600 dark:text-gray-400',    bgLight: 'bg-gray-100 dark:bg-gray-700',   iconBg: 'bg-gray-500' },
-  { key: 'ok'       as const, label: 'OK',       icon: CheckCircle,    textColor: 'text-emerald-600', bgLight: 'bg-emerald-50', iconBg: 'bg-emerald-500' },
+  { key: 'ok'       as const, label: 'OK',       icon: CheckCircle,    textColor: 'text-emerald-600', bgLight: 'bg-emerald-50 dark:bg-emerald-900/30', iconBg: 'bg-emerald-500' },
 ]
 
 function TenantBar({ ok, warning, critical, unknown, no_data, total }: Omit<TenantSummary, 'tenant_id' | 'tenant_name'>) {

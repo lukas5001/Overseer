@@ -88,7 +88,7 @@ function ProfileTab({ user }: { user: User }) {
       </div>
 
       {message && (
-        <p className={clsx('text-sm px-3 py-2 rounded-lg', message.ok ? 'bg-emerald-50 text-emerald-800' : 'bg-red-50 text-red-800')}>
+        <p className={clsx('text-sm px-3 py-2 rounded-lg', message.ok ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300' : 'bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-300')}>
           {message.text}
         </p>
       )}
@@ -128,7 +128,7 @@ function TwoFATab({ user }: { user: User }) {
   })
 
   const statusLabel = user.two_fa_method === 'totp' ? 'TOTP aktiv' : user.two_fa_method === 'email' ? 'Email-2FA aktiv' : 'Deaktiviert'
-  const statusColor = user.two_fa_method !== 'none' ? 'text-emerald-800 bg-emerald-100' : 'text-gray-600 bg-gray-100'
+  const statusColor = user.two_fa_method !== 'none' ? 'text-emerald-800 bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-300' : 'text-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-gray-400'
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
@@ -176,7 +176,7 @@ function TwoFATab({ user }: { user: User }) {
       {/* Disable */}
       {user.two_fa_method !== 'none' && (
         <button onClick={() => setShowDisable2fa(true)}
-          className="mt-4 px-4 py-2 border border-red-300 text-red-600 text-sm rounded-lg hover:bg-red-50">
+          className="mt-4 px-4 py-2 border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 text-sm rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30">
           2FA deaktivieren
         </button>
       )}
@@ -193,7 +193,7 @@ function TwoFATab({ user }: { user: User }) {
       />
 
       {message && (
-        <p className={clsx('mt-4 text-sm px-3 py-2 rounded-lg', message.ok ? 'bg-emerald-50 text-emerald-800' : 'bg-red-50 text-red-800')}>
+        <p className={clsx('mt-4 text-sm px-3 py-2 rounded-lg', message.ok ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300' : 'bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-300')}>
           {message.text}
         </p>
       )}

@@ -124,7 +124,7 @@ function AckModal({ error, onClose, onSaved }: AckModalProps) {
             />
           </div>
           {error_ && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error_}</p>
+            <p className="text-sm text-red-600 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">{error_}</p>
           )}
         </div>
 
@@ -193,7 +193,7 @@ function BulkAckModal({ serviceIds, onClose, onSaved }: BulkAckModalProps) {
               autoFocus
             />
           </div>
-          {error_ && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error_}</p>}
+          {error_ && <p className="text-sm text-red-600 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">{error_}</p>}
         </div>
 
         <div className="flex gap-3 mt-6">
@@ -281,7 +281,7 @@ function DowntimeModal({ error, onClose, onSaved }: DowntimeModalProps) {
               placeholder="z.B. Geplante Wartung – Switch-Update"
               className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 focus:border-transparent outline-none resize-none" />
           </div>
-          {error_ && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error_}</p>}
+          {error_ && <p className="text-sm text-red-600 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">{error_}</p>}
         </div>
 
         <div className="flex gap-3 mt-6">
@@ -359,7 +359,7 @@ function BulkDowntimeModal({ serviceIds, onClose, onSaved }: BulkDowntimeModalPr
               placeholder="z.B. Geplante Wartung"
               className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none resize-none" />
           </div>
-          {error_ && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error_}</p>}
+          {error_ && <p className="text-sm text-red-600 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">{error_}</p>}
         </div>
 
         <div className="flex gap-3 mt-6">
@@ -453,7 +453,7 @@ function SaveFilterModal({ onClose, onSaved, hiddenTenants, activeStatuses, sear
             <p>Sortierung: {sortOptions.find(o => o.key === sortKey)?.label} {sortAsc ? '↑' : '↓'}</p>
           </div>
 
-          {error_ && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error_}</p>}
+          {error_ && <p className="text-sm text-red-600 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">{error_}</p>}
         </div>
 
         <div className="flex gap-3 mt-5">
@@ -885,18 +885,18 @@ export default function ErrorOverviewPage() {
 
       {/* Hidden tenants banner */}
       {hiddenTenantCount > 0 && (
-        <div className="mb-4 flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
-          <EyeOff className="w-4 h-4 text-amber-600 flex-shrink-0" />
-          <span className="text-sm text-amber-800 flex-1">
+        <div className="mb-4 flex items-center gap-3 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-lg px-4 py-3">
+          <EyeOff className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+          <span className="text-sm text-amber-800 dark:text-amber-300 flex-1">
             <strong>{hiddenTenantCount} Tenant(s) ausgeblendet</strong>
-            <span className="text-amber-600"> — {hiddenTenantNames.join(', ')}</span>
+            <span className="text-amber-600 dark:text-amber-400"> — {hiddenTenantNames.join(', ')}</span>
             {hiddenErrorCount > 0 && (
-              <span className="text-amber-700 font-medium"> ({hiddenErrorCount} Probleme versteckt)</span>
+              <span className="text-amber-700 dark:text-amber-300 font-medium"> ({hiddenErrorCount} Probleme versteckt)</span>
             )}
           </span>
           <button
             onClick={() => setHiddenTenants(new Set())}
-            className="text-xs px-2.5 py-1 rounded border border-amber-300 text-amber-700 hover:bg-amber-100 font-medium"
+            className="text-xs px-2.5 py-1 rounded border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40 font-medium"
           >
             Alle einblenden
           </button>
@@ -905,12 +905,12 @@ export default function ErrorOverviewPage() {
 
       {/* Bulk action bar */}
       {selected.size > 0 && (
-        <div className="mb-4 flex items-center gap-3 bg-overseer-50 border border-overseer-200 rounded-lg px-4 py-3">
-          <span className="text-sm font-medium text-overseer-800">
+        <div className="mb-4 flex items-center gap-3 bg-overseer-50 dark:bg-overseer-900/30 border border-overseer-200 dark:border-overseer-800 rounded-lg px-4 py-3">
+          <span className="text-sm font-medium text-overseer-800 dark:text-overseer-300">
             {selected.size} ausgewählt
           </span>
           <button onClick={() => setBulkAck(true)}
-            className="text-xs px-3 py-1.5 rounded border border-blue-300 text-blue-600 hover:bg-blue-50 transition-colors font-medium">
+            className="text-xs px-3 py-1.5 rounded border border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors font-medium">
             Alle ACK ({selected.size})
           </button>
           <button onClick={() => setBulkDowntime(true)}
@@ -1029,9 +1029,9 @@ export default function ErrorOverviewPage() {
             className={clsx(
               'flex items-center gap-1.5 text-sm px-3 py-2 rounded-l-lg border border-r-0 transition-colors',
               onlyAck
-                ? 'border-blue-500 bg-blue-100 text-blue-800'
+                ? 'border-blue-500 dark:border-blue-600 bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300'
                 : showAcknowledged
-                  ? 'border-blue-300 bg-blue-50 text-blue-800'
+                  ? 'border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300'
                   : 'border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700',
             )}
           >
@@ -1044,8 +1044,8 @@ export default function ErrorOverviewPage() {
             className={clsx(
               'text-xs px-2 py-2 rounded-r-lg border transition-colors',
               onlyAck
-                ? 'border-blue-500 bg-blue-600 text-white'
-                : 'border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500 hover:text-blue-600 hover:bg-gray-50 dark:hover:bg-gray-700',
+                ? 'border-blue-500 dark:border-blue-600 bg-blue-600 text-white'
+                : 'border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700',
             )}
             title={onlyAck ? 'Show only aufheben' : 'Nur acknowledged anzeigen'}
           >
@@ -1059,9 +1059,9 @@ export default function ErrorOverviewPage() {
             className={clsx(
               'flex items-center gap-1.5 text-sm px-3 py-2 rounded-l-lg border border-r-0 transition-colors',
               onlyDowntime
-                ? 'border-purple-500 bg-purple-100 text-purple-800'
+                ? 'border-purple-500 dark:border-purple-600 bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300'
                 : showDowntime
-                  ? 'border-purple-300 bg-purple-50 text-purple-700'
+                  ? 'border-purple-300 dark:border-purple-700 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300'
                   : 'border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700',
             )}
           >
@@ -1074,8 +1074,8 @@ export default function ErrorOverviewPage() {
             className={clsx(
               'text-xs px-2 py-2 rounded-r-lg border transition-colors',
               onlyDowntime
-                ? 'border-purple-500 bg-purple-600 text-white'
-                : 'border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500 hover:text-purple-600 hover:bg-gray-50 dark:hover:bg-gray-700',
+                ? 'border-purple-500 dark:border-purple-600 bg-purple-600 text-white'
+                : 'border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-gray-50 dark:hover:bg-gray-700',
             )}
             title={onlyDowntime ? 'Show only aufheben' : 'Nur Downtimes anzeigen'}
           >
@@ -1090,7 +1090,7 @@ export default function ErrorOverviewPage() {
             className={clsx(
               'flex items-center gap-1.5 text-sm px-3 py-2 rounded-lg border transition-colors',
               hiddenTenantCount > 0
-                ? 'border-amber-300 bg-amber-50 text-amber-700'
+                ? 'border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300'
                 : 'border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700',
             )}
           >
