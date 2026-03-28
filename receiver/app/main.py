@@ -65,6 +65,8 @@ async def check_rate_limit(key_prefix: str) -> None:
     even if the full key is rotated the prefix-based bucket is consistent.
     Raises HTTP 429 if the limit is exceeded.
     """
+    if redis_pool is None:
+        return
     bucket = f"ratelimit:{key_prefix}:{int(datetime.now(timezone.utc).timestamp()) // RATE_LIMIT_WINDOW}"
     count = await redis_pool.incr(bucket)
     if count == 1:

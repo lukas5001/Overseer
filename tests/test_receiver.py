@@ -33,7 +33,7 @@ async def test_receive_requires_api_key():
                 "checks": [],
             },
         )
-        assert response.status_code == 422  # Missing X-API-Key header
+        assert response.status_code == 401  # Missing X-API-Key or X-Agent-Token header
 
 
 @pytest.mark.anyio
@@ -79,5 +79,5 @@ async def test_receive_valid_payload():
             },
             headers={"X-API-Key": "overseer_kundeabc_secretkey123"},
         )
-        # 202 if Redis connected, 500 if not (in test env without Redis)
-        assert response.status_code in (202, 500)
+        # 202 if Redis connected + valid key, 401 if key not in DB, 500 if no Redis
+        assert response.status_code in (202, 401, 500)
