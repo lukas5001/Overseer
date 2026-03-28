@@ -386,9 +386,9 @@ function SsoTab() {
                   <td className="px-6 py-3 font-medium text-gray-900">{c.name}</td>
                   <td className="px-6 py-3">
                     <span className={clsx('px-2 py-0.5 rounded text-xs font-medium',
-                      c.auth_type === 'oidc' ? 'bg-blue-100 text-blue-700' :
-                      c.auth_type === 'saml' ? 'bg-purple-100 text-purple-700' :
-                      'bg-amber-100 text-amber-700')}>
+                      c.auth_type === 'oidc' ? 'bg-blue-100 text-blue-800' :
+                      c.auth_type === 'saml' ? 'bg-purple-100 text-purple-800' :
+                      'bg-amber-100 text-amber-800')}>
                       {authTypeLabel[c.auth_type] || c.auth_type}
                     </span>
                   </td>
@@ -401,7 +401,7 @@ function SsoTab() {
                   <td className="px-6 py-3 text-center">
                     <button onClick={() => toggleActive.mutate({ id: c.id, is_active: !c.is_active })}
                       className={clsx('px-2 py-0.5 rounded text-xs font-medium cursor-pointer',
-                        c.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700')}>
+                        c.is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800')}>
                       {c.is_active ? 'Aktiv' : 'Inaktiv'}
                     </button>
                   </td>

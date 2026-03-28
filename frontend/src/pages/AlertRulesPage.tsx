@@ -12,7 +12,7 @@ import ConfirmDialog from '../components/ConfirmDialog'
 const STATUS_OPTIONS: { value: CheckStatus; label: string; color: string }[] = [
   { value: 'CRITICAL', label: 'Critical', color: 'bg-red-100 text-red-800' },
   { value: 'WARNING', label: 'Warning', color: 'bg-amber-100 text-amber-800' },
-  { value: 'UNKNOWN', label: 'Unknown', color: 'bg-gray-100 text-gray-700' },
+  { value: 'UNKNOWN', label: 'Unknown', color: 'bg-gray-100 text-gray-800' },
 ]
 
 // ── New/Edit Rule Modal ──────────────────────────────────────────────────────
@@ -727,7 +727,7 @@ export default function AlertRulesPage() {
                   <div className="flex gap-1 flex-wrap">
                     {rule.conditions.statuses.map(s => (
                       <span key={s} className={clsx('px-1.5 py-0.5 rounded text-xs font-semibold',
-                        s === 'CRITICAL' ? 'bg-red-100 text-red-800' : s === 'WARNING' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-700')}>
+                        s === 'CRITICAL' ? 'bg-red-100 text-red-800' : s === 'WARNING' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-800')}>
                         {s}
                       </span>
                     ))}

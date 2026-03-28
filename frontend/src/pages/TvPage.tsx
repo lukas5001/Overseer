@@ -72,15 +72,15 @@ export default function TvPage() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-5 gap-4 mb-8">
-        <div className="rounded-xl p-5 bg-red-900/30 border border-red-800">
+        <div className="rounded-xl p-5 bg-red-900/50 border border-red-700">
           <p className="text-sm text-red-400">Critical</p>
           <p className="text-5xl font-bold text-red-400 mt-2">{criticalCount}</p>
         </div>
-        <div className="rounded-xl p-5 bg-amber-900/30 border border-amber-800">
+        <div className="rounded-xl p-5 bg-amber-900/50 border border-amber-700">
           <p className="text-sm text-amber-400">Warning</p>
           <p className="text-5xl font-bold text-amber-400 mt-2">{warningCount}</p>
         </div>
-        <div className="rounded-xl p-5 bg-orange-900/30 border border-orange-800">
+        <div className="rounded-xl p-5 bg-orange-900/50 border border-orange-700">
           <p className="text-sm text-orange-400">No Data</p>
           <p className="text-5xl font-bold text-orange-400 mt-2">{noDataCount}</p>
         </div>
@@ -88,7 +88,7 @@ export default function TvPage() {
           <p className="text-sm text-gray-400">Unknown</p>
           <p className="text-5xl font-bold text-gray-400 mt-2">{unknownCount}</p>
         </div>
-        <div className="rounded-xl p-5 bg-emerald-900/30 border border-emerald-800">
+        <div className="rounded-xl p-5 bg-emerald-900/50 border border-emerald-700">
           <p className="text-sm text-emerald-400">OK</p>
           <p className="text-5xl font-bold text-emerald-400 mt-2">{summary?.ok ?? 0}</p>
         </div>

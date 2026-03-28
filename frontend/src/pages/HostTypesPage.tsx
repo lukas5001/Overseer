@@ -157,16 +157,16 @@ export default function HostTypesPage() {
                         </div>
                         <div className="flex gap-2 mt-0.5">
                           {ht.agent_capable && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 font-medium">Agent</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 font-medium">Agent</span>
                           )}
                           {ht.snmp_enabled && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-50 text-green-600 font-medium">SNMP</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-100 text-green-800 font-medium">SNMP</span>
                           )}
                           {ht.ip_required && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-600 font-medium">IP Pflicht</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-medium">IP Pflicht</span>
                           )}
                           {ht.os_family && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-600 font-medium">{ht.os_family}</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-100 text-purple-800 font-medium">{ht.os_family}</span>
                           )}
                         </div>
                       </div>

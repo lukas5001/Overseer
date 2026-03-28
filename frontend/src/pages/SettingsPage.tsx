@@ -87,7 +87,7 @@ function ProfileTab({ user }: { user: User }) {
       </div>
 
       {message && (
-        <p className={clsx('text-sm px-3 py-2 rounded-lg', message.ok ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600')}>
+        <p className={clsx('text-sm px-3 py-2 rounded-lg', message.ok ? 'bg-emerald-50 text-emerald-800' : 'bg-red-50 text-red-800')}>
           {message.text}
         </p>
       )}
@@ -127,7 +127,7 @@ function TwoFATab({ user }: { user: User }) {
   })
 
   const statusLabel = user.two_fa_method === 'totp' ? 'TOTP aktiv' : user.two_fa_method === 'email' ? 'Email-2FA aktiv' : 'Deaktiviert'
-  const statusColor = user.two_fa_method !== 'none' ? 'text-emerald-700 bg-emerald-100' : 'text-gray-600 bg-gray-100'
+  const statusColor = user.two_fa_method !== 'none' ? 'text-emerald-800 bg-emerald-100' : 'text-gray-600 bg-gray-100'
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-6">
@@ -192,7 +192,7 @@ function TwoFATab({ user }: { user: User }) {
       />
 
       {message && (
-        <p className={clsx('mt-4 text-sm px-3 py-2 rounded-lg', message.ok ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600')}>
+        <p className={clsx('mt-4 text-sm px-3 py-2 rounded-lg', message.ok ? 'bg-emerald-50 text-emerald-800' : 'bg-red-50 text-red-800')}>
           {message.text}
         </p>
       )}

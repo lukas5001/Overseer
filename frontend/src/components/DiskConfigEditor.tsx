@@ -27,7 +27,7 @@ export default function DiskConfigEditor({ config, onChange }: DiskConfigEditorP
 
   return (
     <div className="space-y-3">
-      <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-xs text-blue-700">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-xs text-blue-800">
         Alle Partitionen werden automatisch erkannt und überwacht.
       </div>
 

@@ -39,11 +39,11 @@ function cronToLabel(cron: string): string {
 
 function statusBadge(status: string) {
   const map: Record<string, { bg: string; text: string; label: string }> = {
-    pending: { bg: 'bg-gray-100', text: 'text-gray-600', label: 'Pending' },
-    generating: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Generating...' },
-    sending: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Sending...' },
-    sent: { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Sent' },
-    failed: { bg: 'bg-red-100', text: 'text-red-700', label: 'Failed' },
+    pending: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Pending' },
+    generating: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Generating...' },
+    sending: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Sending...' },
+    sent: { bg: 'bg-emerald-100', text: 'text-emerald-800', label: 'Sent' },
+    failed: { bg: 'bg-red-100', text: 'text-red-800', label: 'Failed' },
   }
   const s = map[status] || map.pending
   return (

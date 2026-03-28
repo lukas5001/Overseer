@@ -2546,10 +2546,10 @@ export default function HostDetailPage() {
                       <span className="flex items-center gap-1.5">
                         {meta?.check_type ? getCheckTypeLabel(meta.check_type) : '–'}
                         {meta?.check_mode === 'active' && (
-                          <span className="text-[10px] font-sans font-medium bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded">aktiv</span>
+                          <span className="text-[10px] font-sans font-medium bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">aktiv</span>
                         )}
                         {meta?.check_mode === 'agent' && (
-                          <span className="text-[10px] font-sans font-medium bg-violet-100 text-violet-600 px-1.5 py-0.5 rounded">agent</span>
+                          <span className="text-[10px] font-sans font-medium bg-violet-100 text-violet-800 px-1.5 py-0.5 rounded">agent</span>
                         )}
                       </span>
                     </td>

@@ -9,13 +9,13 @@ import type { LogEntry, LogSearchParams } from '../types'
 // Syslog severity levels
 const SEVERITY_CONFIG: Record<number, { label: string; bg: string; text: string; short: string }> = {
   0: { label: 'Emergency',  bg: 'bg-purple-100',  text: 'text-purple-800',  short: 'EMERG' },
-  1: { label: 'Alert',      bg: 'bg-red-200',     text: 'text-red-900',     short: 'ALERT' },
+  1: { label: 'Alert',      bg: 'bg-red-100',     text: 'text-red-800',     short: 'ALERT' },
   2: { label: 'Critical',   bg: 'bg-red-100',     text: 'text-red-800',     short: 'CRIT' },
-  3: { label: 'Error',      bg: 'bg-red-100',     text: 'text-red-700',     short: 'ERROR' },
+  3: { label: 'Error',      bg: 'bg-red-100',     text: 'text-red-800',     short: 'ERROR' },
   4: { label: 'Warning',    bg: 'bg-amber-100',   text: 'text-amber-800',   short: 'WARN' },
   5: { label: 'Notice',     bg: 'bg-blue-100',    text: 'text-blue-800',    short: 'NOTICE' },
-  6: { label: 'Info',       bg: 'bg-sky-50',      text: 'text-sky-700',     short: 'INFO' },
-  7: { label: 'Debug',      bg: 'bg-gray-100',    text: 'text-gray-600',    short: 'DEBUG' },
+  6: { label: 'Info',       bg: 'bg-sky-100',     text: 'text-sky-800',     short: 'INFO' },
+  7: { label: 'Debug',      bg: 'bg-gray-100',    text: 'text-gray-800',    short: 'DEBUG' },
 }
 
 const TIME_RANGES = [
@@ -245,7 +245,7 @@ export default function LogsPage() {
             className={clsx(
               'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border transition-colors',
               selectedHosts.length > 0
-                ? 'bg-blue-600/20 text-blue-300 border-blue-500/50'
+                ? 'bg-blue-600/30 text-blue-200 border-blue-500/50'
                 : 'bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700'
             )}
           >
@@ -337,7 +337,7 @@ export default function LogsPage() {
 
         {/* Active filter chips */}
         {submittedQuery && (
-          <span className="flex items-center gap-1 px-2 py-1 bg-blue-600/20 text-blue-300 border border-blue-500/30 rounded-lg text-xs">
+          <span className="flex items-center gap-1 px-2 py-1 bg-blue-600/30 text-blue-200 border border-blue-500/30 rounded-lg text-xs">
             Suche: "{submittedQuery}"
             <button onClick={() => { setSearchQuery(''); setSubmittedQuery('') }}>
               <X className="w-3 h-3" />
@@ -421,7 +421,7 @@ export default function LogsPage() {
                       <span
                         className={clsx(
                           'text-sm flex-1 min-w-0',
-                          log.severity <= 3 ? 'text-red-300' : log.severity === 4 ? 'text-amber-300' : 'text-gray-300'
+                          log.severity <= 3 ? 'text-red-400' : log.severity === 4 ? 'text-amber-400' : 'text-gray-300'
                         )}
                       >
                         <span

@@ -445,7 +445,7 @@ function IncidentRow({ pageId, incident: inc }: { pageId: string; incident: { id
         <div className="flex items-center gap-2 text-sm text-gray-500">
           <span>{new Date(inc.created_at).toLocaleDateString('de')}</span>
           {inc.status !== 'resolved' && (
-            <button onClick={() => setShowUpdate(!showUpdate)} className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-300">
+            <button onClick={() => setShowUpdate(!showUpdate)} className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-300">
               Update
             </button>
           )}
@@ -565,7 +565,7 @@ function MaintenanceRow({ pageId, incident: inc }: { pageId: string; incident: {
         </div>
         <div className="flex items-center gap-2 text-sm text-gray-500">
           {inc.status !== 'resolved' && (
-            <button onClick={() => setShowUpdate(!showUpdate)} className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-300">
+            <button onClick={() => setShowUpdate(!showUpdate)} className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-300">
               Update
             </button>
           )}
@@ -698,7 +698,7 @@ function SubscribersTab({ pageId }: { pageId: string }) {
             <div key={sub.id} className="px-4 py-3 flex items-center justify-between">
               <div>
                 <span className="font-medium text-sm">{sub.email}</span>
-                <span className={`ml-2 text-xs px-2 py-0.5 rounded ${sub.confirmed ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'}`}>
+                <span className={`ml-2 text-xs px-2 py-0.5 rounded ${sub.confirmed ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300'}`}>
                   {sub.confirmed ? 'Bestätigt' : 'Ausstehend'}
                 </span>
                 {sub.component_ids.length > 0 && (

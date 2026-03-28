@@ -177,11 +177,11 @@ export default function ScriptsPage() {
 
   const interpreterBadge = (i: string) => {
     const colors: Record<string, string> = {
-      powershell: 'bg-blue-100 text-blue-700',
-      bash: 'bg-green-100 text-green-700',
-      python: 'bg-yellow-100 text-yellow-700',
+      powershell: 'bg-blue-100 text-blue-800',
+      bash: 'bg-green-100 text-green-800',
+      python: 'bg-yellow-100 text-yellow-800',
     }
-    return colors[i] ?? 'bg-gray-100 text-gray-700'
+    return colors[i] ?? 'bg-gray-100 text-gray-800'
   }
 
   return (

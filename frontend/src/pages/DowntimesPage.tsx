@@ -516,7 +516,7 @@ export default function DowntimesPage() {
                     {/* Scope badges */}
                     <div className="flex items-center gap-2 flex-wrap">
                       {dt.host_id && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-blue-50 border border-blue-200 text-xs text-blue-700">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-blue-50 border border-blue-200 text-xs text-blue-800">
                           <Server className="w-3 h-3 flex-shrink-0" />
                           {host ? (host.display_name || host.hostname) : dt.host_id.slice(0, 8) + '…'}
                           {host?.tenant_name && <span className="text-blue-400 ml-1">({host.tenant_name})</span>}

@@ -25,10 +25,10 @@ function DeviceTypeIcon({ type }: { type: string | null }) {
 
 function StatusBadge({ status }: { status: string }) {
   const colors: Record<string, string> = {
-    new: 'bg-blue-100 text-blue-700',
-    known: 'bg-green-100 text-green-700',
-    added: 'bg-emerald-100 text-emerald-700',
-    ignored: 'bg-gray-100 text-gray-500',
+    new: 'bg-blue-100 text-blue-800',
+    known: 'bg-green-100 text-green-800',
+    added: 'bg-emerald-100 text-emerald-800',
+    ignored: 'bg-gray-100 text-gray-600',
   }
   return (
     <span className={clsx('px-2 py-0.5 rounded-full text-xs font-medium', colors[status] || 'bg-gray-100 text-gray-600')}>
@@ -39,10 +39,10 @@ function StatusBadge({ status }: { status: string }) {
 
 function ScanStatusBadge({ status }: { status: string }) {
   const colors: Record<string, string> = {
-    pending: 'bg-yellow-100 text-yellow-700',
-    running: 'bg-blue-100 text-blue-700',
-    completed: 'bg-green-100 text-green-700',
-    failed: 'bg-red-100 text-red-700',
+    pending: 'bg-yellow-100 text-yellow-800',
+    running: 'bg-blue-100 text-blue-800',
+    completed: 'bg-green-100 text-green-800',
+    failed: 'bg-red-100 text-red-800',
   }
   return (
     <span className={clsx('px-2 py-0.5 rounded-full text-xs font-medium', colors[status] || 'bg-gray-100 text-gray-600')}>

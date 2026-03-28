@@ -568,19 +568,19 @@ export default function HostsPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   {statusCounts.CRITICAL > 0 && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
                       <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
                       {statusCounts.CRITICAL}
                     </span>
                   )}
                   {statusCounts.WARNING > 0 && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
                       <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                       {statusCounts.WARNING}
                     </span>
                   )}
                   {statusCounts.NO_DATA > 0 && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
                       <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
                       {statusCounts.NO_DATA}
                     </span>
@@ -592,7 +592,7 @@ export default function HostsPage() {
                     </span>
                   )}
                   {!hasProblem && statusCounts.OK > 0 && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                       OK
                     </span>
@@ -638,7 +638,7 @@ export default function HostsPage() {
                                       {host.display_name || host.hostname}
                                     </p>
                                     {host.agent_managed && (
-                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-100 text-blue-700">
+                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-100 text-blue-800">
                                         Agent
                                       </span>
                                     )}

@@ -514,7 +514,7 @@ function TenantTogglePanel({ tenants, hiddenTenants, onToggle, onClose, errorCou
                 {t.name}
               </span>
               {count > 0 && (
-                <span className="text-xs px-1.5 py-0.5 rounded-full bg-red-100 text-red-600 font-medium">{count}</span>
+                <span className="text-xs px-1.5 py-0.5 rounded-full bg-red-100 text-red-800 font-medium">{count}</span>
               )}
             </label>
           )
@@ -1031,7 +1031,7 @@ export default function ErrorOverviewPage() {
               onlyAck
                 ? 'border-blue-500 bg-blue-100 text-blue-800'
                 : showAcknowledged
-                  ? 'border-blue-300 bg-blue-50 text-blue-700'
+                  ? 'border-blue-300 bg-blue-50 text-blue-800'
                   : 'border-gray-300 text-gray-500 hover:bg-gray-50',
             )}
           >

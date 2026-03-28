@@ -343,8 +343,8 @@ export default function AnomalySection({ hostId, services }: { hostId: string; s
                           {(e.expected_mean - e.expected_std).toFixed(1)}–{(e.expected_mean + e.expected_std).toFixed(1)}
                         </td>
                         <td className="px-4 py-2 text-right">
-                          <span className={clsx('font-mono text-xs font-medium',
-                            Math.abs(e.z_score) > 4 ? 'text-red-600' : 'text-amber-600')}>
+                          <span className={clsx('font-mono text-xs font-medium px-1.5 py-0.5 rounded',
+                            Math.abs(e.z_score) > 4 ? 'bg-red-50 text-red-800' : 'bg-amber-50 text-amber-800')}>
                             {e.z_score > 0 ? '+' : ''}{e.z_score.toFixed(1)}σ
                           </span>
                         </td>

@@ -133,8 +133,8 @@ export default function NotificationLogPage() {
                   </td>
                   <td className="px-4 py-3">
                     <span className={clsx('px-1.5 py-0.5 rounded text-xs font-medium',
-                      log.notification_type === 'alert' ? 'bg-red-100 text-red-700'
-                        : log.notification_type === 'recovery' ? 'bg-emerald-100 text-emerald-700'
+                      log.notification_type === 'alert' ? 'bg-red-100 text-red-800'
+                        : log.notification_type === 'recovery' ? 'bg-emerald-100 text-emerald-800'
                         : 'bg-gray-100 text-gray-600')}>
                       {TYPE_LABELS[log.notification_type] ?? log.notification_type}
                     </span>
@@ -146,11 +146,11 @@ export default function NotificationLogPage() {
                   </td>
                   <td className="px-4 py-3 text-center">
                     {log.success ? (
-                      <span className="inline-flex items-center gap-1 text-xs text-emerald-600">
+                      <span className="inline-flex items-center gap-1 text-xs text-emerald-700">
                         <Check className="w-3.5 h-3.5" /> Gesendet
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-xs text-red-500">
+                      <span className="inline-flex items-center gap-1 text-xs text-red-600">
                         <XIcon className="w-3.5 h-3.5" /> Fehler
                       </span>
                     )}
