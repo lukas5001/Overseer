@@ -557,12 +557,11 @@ function SslCertificatePanel({ serviceId }: { serviceId: string }) {
   const sans = meta.sans as string[] | undefined
   const signatureAlg = meta.signature_algorithm as string | undefined
   const keyType = meta.key_type as string | undefined
-  const keyBits = meta.key_bits as number | undefined
+  const keyBits = meta.key_size as number | undefined
   const chainValid = meta.chain_valid as boolean | undefined
-  const chainLength = meta.chain_length as number | undefined
-  const hostnameMatch = meta.hostname_match as boolean | undefined
+  const hostnameMatch = meta.hostname_valid as boolean | undefined
   const ocspStatus = meta.ocsp_status as string | undefined
-  const selfSigned = meta.self_signed as boolean | undefined
+  const selfSigned = meta.is_self_signed as boolean | undefined
 
   // Days remaining color
   const getDaysColor = (d: number | undefined) => {
@@ -650,7 +649,7 @@ function SslCertificatePanel({ serviceId }: { serviceId: string }) {
           {keyType && (
             <Check ok={true} label={`${keyType}${keyBits ? ` ${keyBits} bit` : ''}`} />
           )}
-          <Check ok={chainValid} label={`Chain${chainLength ? ` (${chainLength} certs)` : ''}`} />
+          <Check ok={chainValid} label="Chain" />
           <Check ok={hostnameMatch} label="Hostname Match" />
           {ocspStatus && (
             <Check ok={ocspStatus.toLowerCase() === 'good'} label={`OCSP: ${ocspStatus}`} />
