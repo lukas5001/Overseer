@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import clsx from 'clsx'
 import { api } from '../api/client'
 import LoadingSpinner from '../components/LoadingSpinner'
+import { PredictionsWidget } from '../components/AnomalySection'
 
 interface StatusSummary {
   ok: number
@@ -188,6 +189,9 @@ export default function DashboardPage() {
           </table>
         )}
       </div>
+
+      {/* Predictions widget */}
+      <PredictionsWidget />
     </div>
   )
 }

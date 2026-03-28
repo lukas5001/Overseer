@@ -16,6 +16,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { de } from 'date-fns/locale'
 import { api } from '../api/client'
 import ConfirmDialog from '../components/ConfirmDialog'
+import AnomalySection from '../components/AnomalySection'
 
 // ── Copyable code block ─────────────────────────────────────────────────────
 
@@ -2658,6 +2659,21 @@ export default function HostDetailPage() {
           </table>
         )}
       </div>
+
+      {/* Anomaly Detection & Predictions */}
+      <AnomalySection
+        hostId={hostId!}
+        services={sorted
+          .filter(s => {
+            const meta = serviceNames[s.service_id]
+            return meta && (s.value !== null || ['agent_cpu', 'agent_memory', 'agent_disk', 'cpu', 'memory', 'disk', 'snmp_cpu', 'snmp_memory', 'snmp_disk'].includes(meta.check_type))
+          })
+          .map(s => ({
+            service_id: s.service_id,
+            name: serviceNames[s.service_id]?.name || s.service_name || s.service_id,
+            check_type: serviceNames[s.service_id]?.check_type || '',
+          }))}
+      />
 
       {/* Dependencies section */}
       <div className="bg-white rounded-xl border border-gray-200">
