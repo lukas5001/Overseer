@@ -105,16 +105,16 @@ export default function GaugeWidget({ config, data, isLoading }: WidgetProps) {
   }, [value, min, max, unit, decimals, sortedThresholds])
 
   return (
-    <div className="h-full flex flex-col bg-gray-800 border border-gray-700 rounded-lg overflow-hidden">
-      <div className="px-3 py-2 border-b border-gray-700 flex items-center justify-between">
-        <span className="text-sm font-medium text-gray-200 truncate">{config.title}</span>
+    <div className="h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+      <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+        <span className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">{config.title}</span>
         {series && (
-          <span className="text-[10px] text-gray-500 truncate ml-2">{series.host}</span>
+          <span className="text-[10px] text-gray-400 dark:text-gray-500 truncate ml-2">{series.host}</span>
         )}
       </div>
       <div className="flex-1 min-h-0">
         {isLoading && !data ? (
-          <div className="h-full flex items-center justify-center text-gray-500 text-sm">Laden...</div>
+          <div className="h-full flex items-center justify-center text-gray-400 dark:text-gray-500 text-sm">Laden...</div>
         ) : (
           <ReactECharts
             echarts={echarts}

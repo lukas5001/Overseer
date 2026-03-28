@@ -94,15 +94,15 @@ export default function LineChartWidget({ config, data, isLoading }: WidgetProps
   }, [allSeries, opts])
 
   return (
-    <div className="h-full flex flex-col bg-gray-800 border border-gray-700 rounded-lg overflow-hidden">
-      <div className="px-3 py-2 border-b border-gray-700">
-        <span className="text-sm font-medium text-gray-200 truncate">{config.title}</span>
+    <div className="h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+      <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-700">
+        <span className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">{config.title}</span>
       </div>
       <div className="flex-1 min-h-0">
         {isLoading && !data ? (
-          <div className="h-full flex items-center justify-center text-gray-500 text-sm">Laden...</div>
+          <div className="h-full flex items-center justify-center text-gray-400 dark:text-gray-500 text-sm">Laden...</div>
         ) : !echartsOption ? (
-          <div className="h-full flex items-center justify-center text-gray-500 text-sm">Keine Daten</div>
+          <div className="h-full flex items-center justify-center text-gray-400 dark:text-gray-500 text-sm">Keine Daten</div>
         ) : (
           <ReactECharts
             echarts={echarts}

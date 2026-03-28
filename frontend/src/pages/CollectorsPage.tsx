@@ -34,17 +34,17 @@ function NewCollectorModal({ onClose, tenants }: { onClose: () => void; tenants:
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-gray-900">Neuer Collector</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Neuer Collector</h2>
+          <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><X className="w-5 h-5" /></button>
         </div>
 
         {createdApiKey ? (
           <div>
             <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg mb-4">
               <p className="text-xs font-medium text-emerald-800 mb-1">API-Key (wird nur einmal angezeigt!):</p>
-              <code className="text-xs bg-white px-2 py-1 rounded border border-emerald-200 block break-all">{createdApiKey}</code>
+              <code className="text-xs bg-white dark:bg-gray-700 px-2 py-1 rounded border border-emerald-200 block break-all">{createdApiKey}</code>
             </div>
             <button onClick={onClose} className="w-full py-2 rounded-lg bg-overseer-600 text-white text-sm font-medium hover:bg-overseer-700">
               Schließen
@@ -54,15 +54,15 @@ function NewCollectorModal({ onClose, tenants }: { onClose: () => void; tenants:
           <>
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Name *</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Name *</label>
                 <input type="text" value={name} onChange={e => setName(e.target.value)} required placeholder="collector-01"
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+                  className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
               </div>
               {tenants.length > 1 && (
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Tenant</label>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Tenant</label>
                   <select value={tenantId} onChange={e => setTenantId(e.target.value)}
-                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500">
+                    className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500">
                     {tenants.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                   </select>
                 </div>
@@ -70,7 +70,7 @@ function NewCollectorModal({ onClose, tenants }: { onClose: () => void; tenants:
               {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}
             </div>
             <div className="flex gap-3 mt-6">
-              <button onClick={onClose} className="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">Abbrechen</button>
+              <button onClick={onClose} className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Abbrechen</button>
               <button onClick={() => mutation.mutate()} disabled={mutation.isPending || !name}
                 className="flex-1 py-2 rounded-lg bg-overseer-600 text-white text-sm font-medium hover:bg-overseer-700 disabled:opacity-60">
                 {mutation.isPending ? 'Erstellen…' : 'Collector erstellen'}
@@ -105,22 +105,22 @@ function InstallerModal({ collectorId, onClose }: { collectorId: string; onClose
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm mx-4 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-sm mx-4 p-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-gray-900">Installer herunterladen</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Installer herunterladen</h2>
+          <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><X className="w-5 h-5" /></button>
         </div>
         <div className="space-y-3 mb-6">
-          <label className="block text-xs font-medium text-gray-600 mb-1">Betriebssystem</label>
+          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Betriebssystem</label>
           <div className="flex gap-3">
             <button onClick={() => setOs('linux')}
               className={clsx('flex-1 py-2 rounded-lg text-sm font-medium border transition-colors',
-                os === 'linux' ? 'border-overseer-600 bg-overseer-50 text-overseer-700' : 'border-gray-300 text-gray-600 hover:bg-gray-50')}>
+                os === 'linux' ? 'border-overseer-600 bg-overseer-50 text-overseer-700' : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700')}>
               Linux
             </button>
             <button onClick={() => setOs('windows')}
               className={clsx('flex-1 py-2 rounded-lg text-sm font-medium border transition-colors',
-                os === 'windows' ? 'border-overseer-600 bg-overseer-50 text-overseer-700' : 'border-gray-300 text-gray-600 hover:bg-gray-50')}>
+                os === 'windows' ? 'border-overseer-600 bg-overseer-50 text-overseer-700' : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700')}>
               Windows
             </button>
           </div>
@@ -165,8 +165,8 @@ export default function CollectorsPage() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <Wifi className="w-7 h-7 text-overseer-600" />
-          <h1 className="text-2xl font-bold text-gray-900">Collectors</h1>
-          <span className="text-sm text-gray-500 ml-2">{collectors.length} Collectors</span>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Collectors</h1>
+          <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">{collectors.length} Collectors</span>
         </div>
         <button onClick={() => setShowNewModal(true)}
           className="inline-flex items-center gap-2 px-4 py-2 bg-overseer-600 text-white text-sm font-medium rounded-lg hover:bg-overseer-700">
@@ -174,11 +174,11 @@ export default function CollectorsPage() {
         </button>
       </div>
 
-      {isLoading && <div className="text-gray-400 text-sm">Lade…</div>}
+      {isLoading && <div className="text-gray-400 dark:text-gray-500 text-sm">Lade…</div>}
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
+          <thead className="bg-gray-50 dark:bg-gray-900 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
             <tr>
               <th className="px-6 py-3 text-left">Name</th>
               <th className="px-6 py-3 text-left">Status</th>
@@ -187,15 +187,15 @@ export default function CollectorsPage() {
               <th className="px-6 py-3 text-right">Aktionen</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
             {collectors.map(c => {
               const online = isOnline(c.last_seen_at)
               return (
-                <tr key={c.id} className="hover:bg-gray-50">
+                <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td className="px-6 py-3">
                     <div>
-                      <p className="font-medium text-gray-900">{c.name}</p>
-                      {c.hostname && <p className="text-xs text-gray-400">{c.hostname}</p>}
+                      <p className="font-medium text-gray-900 dark:text-gray-100">{c.name}</p>
+                      {c.hostname && <p className="text-xs text-gray-400 dark:text-gray-500">{c.hostname}</p>}
                     </div>
                   </td>
                   <td className="px-6 py-3">
@@ -205,13 +205,13 @@ export default function CollectorsPage() {
                       {online ? 'Online' : 'Offline'}
                     </span>
                   </td>
-                  <td className="px-6 py-3 text-xs text-gray-500">
+                  <td className="px-6 py-3 text-xs text-gray-500 dark:text-gray-400">
                     {c.last_seen_at
                       ? formatDistanceToNow(new Date(c.last_seen_at), { locale: de, addSuffix: true })
                       : 'Nie'}
                   </td>
                   {isSuperAdmin && (
-                    <td className="px-6 py-3 text-gray-500 text-xs">{tenantNames[c.tenant_id] ?? c.tenant_id}</td>
+                    <td className="px-6 py-3 text-gray-500 dark:text-gray-400 text-xs">{tenantNames[c.tenant_id] ?? c.tenant_id}</td>
                   )}
                   <td className="px-6 py-3 text-right">
                     <button onClick={() => setInstallerTarget(c.id)}

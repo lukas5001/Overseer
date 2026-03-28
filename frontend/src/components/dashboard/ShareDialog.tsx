@@ -75,13 +75,13 @@ export default function ShareDialog({ dashboard, open, onClose, variables = [], 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
       <div
-        className="bg-gray-800 border border-gray-700 rounded-xl w-full max-w-lg max-h-[80vh] flex flex-col"
+        className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl w-full max-w-lg max-h-[80vh] flex flex-col"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-700">
-          <h2 className="text-base font-semibold text-white">Dashboard teilen</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-white">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-base font-semibold text-gray-900 dark:text-white">Dashboard teilen</h2>
+          <button onClick={onClose} className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -96,7 +96,7 @@ export default function ShareDialog({ dashboard, open, onClose, variables = [], 
                 'flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md transition-colors',
                 tab === t.id
                   ? 'bg-blue-600 text-white'
-                  : 'text-gray-400 hover:text-white bg-gray-700'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-gray-100 dark:bg-gray-700'
               )}
             >
               <t.icon className="w-3.5 h-3.5" />
@@ -109,14 +109,14 @@ export default function ShareDialog({ dashboard, open, onClose, variables = [], 
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {tab === 'internal' && (
             <>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
                 Dieser Link funktioniert nur für eingeloggte Benutzer desselben Tenants.
               </p>
               <div className="flex items-center gap-2">
                 <input
                   value={currentUrl}
                   readOnly
-                  className="flex-1 bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-300 font-mono"
+                  className="flex-1 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-600 dark:text-gray-300 font-mono"
                 />
                 <button
                   onClick={() => copyToClipboard(currentUrl)}
@@ -133,14 +133,14 @@ export default function ShareDialog({ dashboard, open, onClose, variables = [], 
             <>
               {dashboard.is_shared && publicUrl ? (
                 <>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     Public Link ist aktiv. Jeder mit diesem Link kann das Dashboard sehen.
                   </p>
                   <div className="flex items-center gap-2">
                     <input
                       value={publicUrl}
                       readOnly
-                      className="flex-1 bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-300 font-mono"
+                      className="flex-1 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-600 dark:text-gray-300 font-mono"
                     />
                     <button
                       onClick={() => copyToClipboard(publicUrl)}
@@ -151,19 +151,19 @@ export default function ShareDialog({ dashboard, open, onClose, variables = [], 
                     </button>
                   </div>
                   {dashboard.share_expires_at && (
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-400 dark:text-gray-500">
                       Läuft ab: {new Date(dashboard.share_expires_at).toLocaleDateString('de-DE')}
                     </p>
                   )}
                   {dashboard.share_config?.fixed_variables?.length ? (
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-400 dark:text-gray-500">
                       Fixierte Variablen: {dashboard.share_config.fixed_variables.join(', ')}
                     </p>
                   ) : null}
                   <button
                     onClick={revokeLink}
                     disabled={revokeMut.isPending}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-400 border border-red-800 rounded-lg hover:bg-red-900/30 transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-500 dark:text-red-400 border border-red-300 dark:border-red-800 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     {revokeMut.isPending ? 'Widerrufe...' : 'Link widerrufen'}
@@ -171,15 +171,15 @@ export default function ShareDialog({ dashboard, open, onClose, variables = [], 
                 </>
               ) : (
                 <>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     Erstelle einen Public Link. Jeder mit diesem Link kann das Dashboard sehen (ohne Login).
                   </p>
                   <div>
-                    <label className="block text-xs text-gray-400 mb-1">Ablaufdatum</label>
+                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Ablaufdatum</label>
                     <select
                       value={expiryDays}
                       onChange={e => setExpiryDays(Number(e.target.value))}
-                      className="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-1.5 text-sm text-gray-200"
+                      className="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm text-gray-700 dark:text-gray-200"
                     >
                       <option value={1}>1 Tag</option>
                       <option value={7}>7 Tage</option>
@@ -190,15 +190,15 @@ export default function ShareDialog({ dashboard, open, onClose, variables = [], 
 
                   {variables.length > 0 && (
                     <div>
-                      <label className="block text-xs text-gray-400 mb-1">Variablen fixieren</label>
+                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Variablen fixieren</label>
                       <div className="space-y-1">
                         {variables.map(v => (
-                          <label key={v.name} className="flex items-center gap-2 text-xs text-gray-300">
+                          <label key={v.name} className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
                             <input
                               type="checkbox"
                               checked={fixedVars.has(v.name)}
                               onChange={() => toggleFixedVar(v.name)}
-                              className="rounded border-gray-600"
+                              className="rounded border-gray-300 dark:border-gray-600"
                             />
                             ${v.name} ({v.label})
                             {fixedVars.has(v.name) && (
@@ -229,11 +229,11 @@ export default function ShareDialog({ dashboard, open, onClose, variables = [], 
             <>
               {embedUrl ? (
                 <>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     Kopiere den iFrame-Code um das Dashboard in eine Website einzubetten.
                   </p>
-                  <div className="bg-gray-900 border border-gray-600 rounded-lg p-3">
-                    <code className="text-xs text-gray-300 break-all">
+                  <div className="bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg p-3">
+                    <code className="text-xs text-gray-600 dark:text-gray-300 break-all">
                       {`<iframe src="${embedUrl}" width="100%" height="600" frameborder="0"></iframe>`}
                     </code>
                   </div>
@@ -246,7 +246,7 @@ export default function ShareDialog({ dashboard, open, onClose, variables = [], 
                   </button>
                 </>
               ) : (
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
                   Erstelle zuerst einen Public Link im Tab "Public Link", um das Einbetten zu ermöglichen.
                 </p>
               )}
@@ -255,10 +255,10 @@ export default function ShareDialog({ dashboard, open, onClose, variables = [], 
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end p-4 border-t border-gray-700">
+        <div className="flex justify-end p-4 border-t border-gray-200 dark:border-gray-700">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm bg-gray-700 text-gray-200 rounded-lg hover:bg-gray-600 transition-colors"
+            className="px-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
           >
             Schließen
           </button>

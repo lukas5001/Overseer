@@ -30,7 +30,7 @@ const statusCards = [
   { key: 'critical' as const, label: 'Critical', icon: XCircle,       textColor: 'text-red-600',     bgLight: 'bg-red-50',     iconBg: 'bg-red-500' },
   { key: 'warning'  as const, label: 'Warning',  icon: AlertTriangle,  textColor: 'text-amber-600',   bgLight: 'bg-amber-50',   iconBg: 'bg-amber-500' },
   { key: 'no_data'  as const, label: 'No Data',  icon: CircleDashed,   textColor: 'text-orange-600',  bgLight: 'bg-orange-50',  iconBg: 'bg-orange-500' },
-  { key: 'unknown'  as const, label: 'Unknown',  icon: HelpCircle,     textColor: 'text-gray-600',    bgLight: 'bg-gray-100',   iconBg: 'bg-gray-500' },
+  { key: 'unknown'  as const, label: 'Unknown',  icon: HelpCircle,     textColor: 'text-gray-600 dark:text-gray-400',    bgLight: 'bg-gray-100 dark:bg-gray-700',   iconBg: 'bg-gray-500' },
   { key: 'ok'       as const, label: 'OK',       icon: CheckCircle,    textColor: 'text-emerald-600', bgLight: 'bg-emerald-50', iconBg: 'bg-emerald-500' },
 ]
 
@@ -41,7 +41,7 @@ function TenantBar({ ok, warning, critical, unknown, no_data, total }: Omit<Tena
       {critical > 0 && <div className="bg-red-500"     style={{ width: `${(critical / total) * 100}%` }} />}
       {warning  > 0 && <div className="bg-amber-400"   style={{ width: `${(warning  / total) * 100}%` }} />}
       {no_data  > 0 && <div className="bg-orange-400"  style={{ width: `${(no_data  / total) * 100}%` }} />}
-      {unknown  > 0 && <div className="bg-gray-300"    style={{ width: `${(unknown  / total) * 100}%` }} />}
+      {unknown  > 0 && <div className="bg-gray-300 dark:bg-gray-600"    style={{ width: `${(unknown  / total) * 100}%` }} />}
       {ok       > 0 && <div className="bg-emerald-400" style={{ width: `${(ok       / total) * 100}%` }} />}
     </div>
   )
@@ -71,7 +71,7 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
         <Activity className="w-7 h-7 text-overseer-600" />
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Dashboard</h1>
       </div>
 
       {/* Status Cards */}
@@ -79,10 +79,10 @@ export default function DashboardPage() {
         {statusCards.map((card) => {
           const count = summary?.[card.key] ?? 0
           return (
-            <div key={card.key} className={clsx('rounded-xl p-5 border border-gray-200', card.bgLight)}>
+            <div key={card.key} className={clsx('rounded-xl p-5 border border-gray-200 dark:border-gray-700', card.bgLight)}>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-500">{card.label}</p>
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{card.label}</p>
                   <p className={clsx('text-3xl font-bold mt-1', card.textColor)}>
                     {isLoading ? '–' : count}
                   </p>
@@ -98,88 +98,88 @@ export default function DashboardPage() {
 
       {/* Total + Agents row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500">Checks gesamt</p>
-              <p className="text-4xl font-bold text-gray-900 mt-1">
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Checks gesamt</p>
+              <p className="text-4xl font-bold text-gray-900 dark:text-gray-100 mt-1">
                 {isLoading ? '–' : summary?.total ?? 0}
               </p>
             </div>
-            <p className="text-sm text-gray-400">Aktualisiert alle 10s</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500">Aktualisiert alle 10s</p>
           </div>
         </div>
         {agentSummary && agentSummary.total > 0 && (
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500 flex items-center gap-1.5">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
                   <Monitor className="w-4 h-4" /> Agents
                 </p>
-                <p className="text-4xl font-bold text-gray-900 mt-1">
+                <p className="text-4xl font-bold text-gray-900 dark:text-gray-100 mt-1">
                   <span className="text-emerald-600">{agentSummary.online}</span>
-                  <span className="text-lg font-normal text-gray-400"> / {agentSummary.total}</span>
+                  <span className="text-lg font-normal text-gray-400 dark:text-gray-500"> / {agentSummary.total}</span>
                 </p>
               </div>
-              <p className="text-sm text-gray-400">online / gesamt</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500">online / gesamt</p>
             </div>
           </div>
         )}
       </div>
 
       {/* Per-Tenant Breakdown */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
-          <Building2 className="w-5 h-5 text-gray-400" />
-          <h2 className="font-semibold text-gray-800">Status nach Tenant</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center gap-2">
+          <Building2 className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+          <h2 className="font-semibold text-gray-800 dark:text-gray-200">Status nach Tenant</h2>
         </div>
 
         {tenantsLoading ? (
           <LoadingSpinner />
         ) : (
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
+            <thead className="bg-gray-50 dark:bg-gray-900 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
               <tr>
                 <th className="px-6 py-3 text-left">Tenant</th>
                 <th className="px-6 py-3 text-center text-red-600">Critical</th>
                 <th className="px-6 py-3 text-center text-amber-600">Warning</th>
                 <th className="px-6 py-3 text-center text-orange-600">No Data</th>
-                <th className="px-6 py-3 text-center text-gray-500">Unknown</th>
+                <th className="px-6 py-3 text-center text-gray-500 dark:text-gray-400">Unknown</th>
                 <th className="px-6 py-3 text-center text-emerald-600">OK</th>
-                <th className="px-6 py-3 text-right text-gray-500">Gesamt</th>
+                <th className="px-6 py-3 text-right text-gray-500 dark:text-gray-400">Gesamt</th>
                 <th className="px-6 py-3 min-w-[140px]">Verteilung</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
               {tenants.map(t => (
-                <tr key={t.tenant_id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 font-medium text-gray-900">
+                <tr key={t.tenant_id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <td className="px-6 py-4 font-medium text-gray-900 dark:text-gray-100">
                     {t.tenant_name}
                   </td>
                   <td className="px-6 py-4 text-center">
                     {t.critical > 0
                       ? <Link to={`/errors?tenant_id=${t.tenant_id}`} className="font-bold text-red-600 hover:underline">{t.critical}</Link>
-                      : <span className="text-gray-300">–</span>}
+                      : <span className="text-gray-300 dark:text-gray-600">–</span>}
                   </td>
                   <td className="px-6 py-4 text-center">
                     {t.warning > 0
                       ? <span className="font-bold text-amber-600">{t.warning}</span>
-                      : <span className="text-gray-300">–</span>}
+                      : <span className="text-gray-300 dark:text-gray-600">–</span>}
                   </td>
                   <td className="px-6 py-4 text-center">
                     {t.no_data > 0
                       ? <span className="font-semibold text-orange-600">{t.no_data}</span>
-                      : <span className="text-gray-300">–</span>}
+                      : <span className="text-gray-300 dark:text-gray-600">–</span>}
                   </td>
                   <td className="px-6 py-4 text-center">
                     {t.unknown > 0
-                      ? <span className="font-semibold text-gray-500">{t.unknown}</span>
-                      : <span className="text-gray-300">–</span>}
+                      ? <span className="font-semibold text-gray-500 dark:text-gray-400">{t.unknown}</span>
+                      : <span className="text-gray-300 dark:text-gray-600">–</span>}
                   </td>
                   <td className="px-6 py-4 text-center">
                     <span className="font-semibold text-emerald-600">{t.ok}</span>
                   </td>
-                  <td className="px-6 py-4 text-right text-gray-500">{t.total}</td>
+                  <td className="px-6 py-4 text-right text-gray-500 dark:text-gray-400">{t.total}</td>
                   <td className="px-6 py-4">
                     <TenantBar {...t} />
                   </td>

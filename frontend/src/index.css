@@ -6,6 +6,10 @@
   body {
     @apply bg-gray-50 text-gray-900 antialiased;
   }
+  .dark body,
+  body:is(.dark *) {
+    /* handled by dark: utilities on individual elements */
+  }
 
   /* Hide number input spinners */
   input[type="number"]::-webkit-inner-spin-button,
@@ -16,4 +20,33 @@
   input[type="number"] {
     -moz-appearance: textfield;
   }
+}
+
+/* Smooth theme transitions */
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease !important;
+}
+
+/* Dark mode body */
+html.dark body {
+  @apply bg-gray-900 text-gray-100;
+}
+
+/* Dark mode scrollbar */
+html.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+html.dark ::-webkit-scrollbar-track {
+  background: theme('colors.gray.800');
+}
+html.dark ::-webkit-scrollbar-thumb {
+  background: theme('colors.gray.600');
+  border-radius: 4px;
+}
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: theme('colors.gray.500');
 }

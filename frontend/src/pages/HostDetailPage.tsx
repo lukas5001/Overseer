@@ -24,7 +24,7 @@ function CodeBlock({ children, className }: { children: string; className?: stri
   const [copied, setCopied] = useState(false)
   return (
     <div className={clsx('relative group', className)}>
-      <pre className="bg-gray-900 rounded px-3 py-2 text-emerald-400 text-xs font-mono whitespace-pre-wrap break-all overflow-x-auto">{children}</pre>
+      <pre className="bg-gray-900 dark:bg-gray-950 rounded px-3 py-2 text-emerald-400 text-xs font-mono whitespace-pre-wrap break-all overflow-x-auto">{children}</pre>
       <button
         onClick={() => { navigator.clipboard.writeText(children); setCopied(true); setTimeout(() => setCopied(false), 2000) }}
         className="absolute top-1.5 right-1.5 p-1 rounded bg-gray-700/80 text-gray-300 hover:text-white hover:bg-gray-600 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -360,34 +360,34 @@ function HistoryModal({ serviceId, serviceName, thresholdWarn, thresholdCrit, on
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl mx-4 p-6 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-4xl mx-4 p-6 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-overseer-600" />
-            <h2 className="text-lg font-semibold text-gray-900">{serviceName}</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{serviceName}</h2>
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex bg-gray-100 rounded-lg p-0.5">
+            <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-0.5">
               {[
                 { key: 'chart' as const, label: 'Graph' },
                 { key: 'table' as const, label: 'Tabelle' },
               ].map(t => (
                 <button key={t.key} onClick={() => setTab(t.key)}
                   className={clsx('px-3 py-1 text-xs font-medium rounded-md transition-colors',
-                    tab === t.key ? 'bg-white shadow text-gray-800' : 'text-gray-500 hover:text-gray-700'
+                    tab === t.key ? 'bg-white dark:bg-gray-600 shadow text-gray-800 dark:text-gray-200' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                   )}>{t.label}</button>
               ))}
             </div>
             <select value={hours} onChange={e => setHours(Number(e.target.value))}
-              className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-overseer-500">
+              className="text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-overseer-500 dark:bg-gray-700 dark:text-gray-200">
               <option value={1}>1h</option>
               <option value={6}>6h</option>
               <option value={24}>24h</option>
               <option value={168}>7 Tage</option>
               <option value={720}>30 Tage</option>
             </select>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+            <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><X className="w-5 h-5" /></button>
           </div>
         </div>
 
@@ -396,13 +396,13 @@ function HistoryModal({ serviceId, serviceName, thresholdWarn, thresholdCrit, on
           <div className="grid grid-cols-5 gap-2 mb-4">
             {[
               { label: 'Min', val: summary.min != null ? `${summary.min}${unit}` : '–', color: 'text-blue-600' },
-              { label: 'Durchschnitt', val: summary.avg != null ? `${summary.avg}${unit}` : '–', color: 'text-gray-800' },
+              { label: 'Durchschnitt', val: summary.avg != null ? `${summary.avg}${unit}` : '–', color: 'text-gray-800 dark:text-gray-200' },
               { label: 'Max', val: summary.max != null ? `${summary.max}${unit}` : '–', color: 'text-blue-600' },
-              { label: 'Checks', val: summary.total, color: 'text-gray-800' },
+              { label: 'Checks', val: summary.total, color: 'text-gray-800 dark:text-gray-200' },
               { label: 'Verfügbarkeit', val: summary.total > 0 ? `${Math.round(((summary.ok_count ?? 0) / summary.total) * 100)}%` : '–', color: (summary.ok_count ?? 0) === summary.total ? 'text-emerald-600' : 'text-amber-600' },
             ].map(s => (
-              <div key={s.label} className="bg-gray-50 rounded-lg px-3 py-2">
-                <p className="text-[10px] text-gray-400 uppercase tracking-wide">{s.label}</p>
+              <div key={s.label} className="bg-gray-50 dark:bg-gray-900 rounded-lg px-3 py-2">
+                <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wide">{s.label}</p>
                 <p className={clsx('text-sm font-bold mt-0.5', s.color)}>{s.val}</p>
               </div>
             ))}
@@ -410,22 +410,22 @@ function HistoryModal({ serviceId, serviceName, thresholdWarn, thresholdCrit, on
         )}
 
         {isLoading ? (
-          <p className="text-center text-gray-400 py-12">Lade…</p>
+          <p className="text-center text-gray-400 dark:text-gray-500 py-12">Lade…</p>
         ) : history.length === 0 ? (
-          <p className="text-center text-gray-400 py-12">Keine Daten für diesen Zeitraum.</p>
+          <p className="text-center text-gray-400 dark:text-gray-500 py-12">Keine Daten für diesen Zeitraum.</p>
         ) : (
           <>
             {/* Chart tab */}
             {tab === 'chart' && (
               <div className="space-y-3">
                 {hasValues ? (
-                  <div className="bg-gray-50 rounded-lg p-3">
+                  <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
                     <InteractiveChart history={history} unit={unit} hours={hours} thresholdWarn={thresholdWarn} thresholdCrit={thresholdCrit} />
                   </div>
                 ) : (
                   /* No numeric values — show status timeline only */
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <p className="text-xs text-gray-500 mb-3">Kein numerischer Wert — Status-Verlauf:</p>
+                  <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">Kein numerischer Wert — Status-Verlauf:</p>
                     <div className="flex gap-0.5 h-8 rounded overflow-hidden">
                       {history.map((p, i) => {
                         const w = history.length > 1 ? 100 / history.length : 100
@@ -437,8 +437,8 @@ function HistoryModal({ serviceId, serviceName, thresholdWarn, thresholdCrit, on
                       })}
                     </div>
                     <div className="flex justify-between mt-1">
-                      <span className="text-[10px] text-gray-400">{formatTimeLabel(new Date(history[0].time), hours)}</span>
-                      <span className="text-[10px] text-gray-400">{formatTimeLabel(new Date(history[history.length - 1].time), hours)}</span>
+                      <span className="text-[10px] text-gray-400 dark:text-gray-500">{formatTimeLabel(new Date(history[0].time), hours)}</span>
+                      <span className="text-[10px] text-gray-400 dark:text-gray-500">{formatTimeLabel(new Date(history[history.length - 1].time), hours)}</span>
                     </div>
                   </div>
                 )}
@@ -460,7 +460,7 @@ function HistoryModal({ serviceId, serviceName, thresholdWarn, thresholdCrit, on
                         const count = (summary as any)[key] ?? 0
                         if (count === 0) return null
                         return (
-                          <span key={s} className="flex items-center gap-1 text-[10px] text-gray-500">
+                          <span key={s} className="flex items-center gap-1 text-[10px] text-gray-500 dark:text-gray-400">
                             <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: STATUS_COLORS[s] }} />
                             {s === 'NO_DATA' ? 'NO DATA' : s} ({count})
                           </span>
@@ -474,9 +474,9 @@ function HistoryModal({ serviceId, serviceName, thresholdWarn, thresholdCrit, on
 
             {/* Table tab */}
             {tab === 'table' && (
-              <div className="max-h-[55vh] overflow-y-auto rounded-lg border border-gray-200">
+              <div className="max-h-[55vh] overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-700">
                 <table className="w-full text-xs">
-                  <thead className="bg-gray-50 text-gray-500 uppercase tracking-wide sticky top-0">
+                  <thead className="bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400 uppercase tracking-wide sticky top-0">
                     <tr>
                       <th className="px-4 py-2 text-left">Zeit</th>
                       <th className="px-4 py-2 text-left">Status</th>
@@ -484,10 +484,10 @@ function HistoryModal({ serviceId, serviceName, thresholdWarn, thresholdCrit, on
                       <th className="px-4 py-2 text-left">Meldung</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                     {[...history].reverse().map((p, i) => (
-                      <tr key={i} className="hover:bg-gray-50">
-                        <td className="px-4 py-1.5 text-gray-400 font-mono whitespace-nowrap">
+                      <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <td className="px-4 py-1.5 text-gray-400 dark:text-gray-500 font-mono whitespace-nowrap">
                           {formatTooltipTime(new Date(p.time))}
                         </td>
                         <td className="px-4 py-1.5">
@@ -496,10 +496,10 @@ function HistoryModal({ serviceId, serviceName, thresholdWarn, thresholdCrit, on
                             <span className="font-bold" style={{ color: STATUS_COLORS[p.status] }}>{p.status === 'NO_DATA' ? 'NO DATA' : p.status}</span>
                           </span>
                         </td>
-                        <td className="px-4 py-1.5 text-right font-mono text-gray-700">
+                        <td className="px-4 py-1.5 text-right font-mono text-gray-700 dark:text-gray-300">
                           {p.value !== null ? `${p.value}${p.unit ?? ''}` : '–'}
                         </td>
-                        <td className="px-4 py-1.5 text-gray-500 truncate max-w-sm">{p.message ?? '–'}</td>
+                        <td className="px-4 py-1.5 text-gray-500 dark:text-gray-400 truncate max-w-sm">{p.message ?? '–'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -523,7 +523,7 @@ function SparklineCell({ serviceId, onClick }: { serviceId: string; onClick: () 
   })
   const values = history.filter(p => p.value !== null).map(p => p.value as number)
   return (
-    <button onClick={onClick} className="text-gray-300 hover:text-overseer-500 transition-colors flex items-center gap-1" title="Verlauf anzeigen">
+    <button onClick={onClick} className="text-gray-300 dark:text-gray-600 hover:text-overseer-500 transition-colors flex items-center gap-1" title="Verlauf anzeigen">
       {values.length >= 2 ? <Sparkline values={values} /> : <TrendingUp className="w-4 h-4" />}
     </button>
   )
@@ -581,7 +581,7 @@ function SslCertificatePanel({ serviceId }: { serviceId: string }) {
         ) : (
           <ShieldX className="w-4 h-4 text-red-500 flex-shrink-0" />
         )}
-        <span className="text-sm text-gray-700">{label}</span>
+        <span className="text-sm text-gray-700 dark:text-gray-300">{label}</span>
       </div>
     )
   }
@@ -589,36 +589,36 @@ function SslCertificatePanel({ serviceId }: { serviceId: string }) {
   return (
     <div className="mt-4 space-y-4">
       {/* Certificate Details Card */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
         <div className="flex items-center gap-2 mb-4">
           <Shield className="w-5 h-5 text-overseer-600" />
-          <h3 className="font-semibold text-gray-800">Certificate Details</h3>
+          <h3 className="font-semibold text-gray-800 dark:text-gray-200">Certificate Details</h3>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-sm">
           {subject && (
-            <div className="flex justify-between py-1.5 border-b border-gray-50">
-              <span className="text-gray-500 font-medium">Subject</span>
-              <span className="text-gray-800 font-mono text-xs">{subject}</span>
+            <div className="flex justify-between py-1.5 border-b border-gray-50 dark:border-gray-700">
+              <span className="text-gray-500 dark:text-gray-400 font-medium">Subject</span>
+              <span className="text-gray-800 dark:text-gray-200 font-mono text-xs">{subject}</span>
             </div>
           )}
           {issuer && (
-            <div className="flex justify-between py-1.5 border-b border-gray-50">
-              <span className="text-gray-500 font-medium">Issuer</span>
-              <span className="text-gray-800 text-xs">{issuer}</span>
+            <div className="flex justify-between py-1.5 border-b border-gray-50 dark:border-gray-700">
+              <span className="text-gray-500 dark:text-gray-400 font-medium">Issuer</span>
+              <span className="text-gray-800 dark:text-gray-200 text-xs">{issuer}</span>
             </div>
           )}
           {notBefore && (
-            <div className="flex justify-between py-1.5 border-b border-gray-50">
-              <span className="text-gray-500 font-medium">Valid From</span>
-              <span className="text-gray-800 text-xs">{notBefore}</span>
+            <div className="flex justify-between py-1.5 border-b border-gray-50 dark:border-gray-700">
+              <span className="text-gray-500 dark:text-gray-400 font-medium">Valid From</span>
+              <span className="text-gray-800 dark:text-gray-200 text-xs">{notBefore}</span>
             </div>
           )}
           {notAfter && (
-            <div className="flex justify-between py-1.5 border-b border-gray-50">
-              <span className="text-gray-500 font-medium">Valid Until</span>
+            <div className="flex justify-between py-1.5 border-b border-gray-50 dark:border-gray-700">
+              <span className="text-gray-500 dark:text-gray-400 font-medium">Valid Until</span>
               <span className="text-xs">
-                <span className="text-gray-800">{notAfter}</span>
+                <span className="text-gray-800 dark:text-gray-200">{notAfter}</span>
                 {days !== undefined && (
                   <span className="ml-2 font-bold" style={{ color: getDaysColor(days) }}>
                     {days <= 0 ? `EXPIRED ${Math.abs(days)} days ago` : `(${days} days remaining)`}
@@ -628,21 +628,21 @@ function SslCertificatePanel({ serviceId }: { serviceId: string }) {
             </div>
           )}
           {serial && (
-            <div className="flex justify-between py-1.5 border-b border-gray-50">
-              <span className="text-gray-500 font-medium">Serial</span>
-              <span className="text-gray-800 font-mono text-[11px] truncate max-w-[200px]" title={serial}>{serial}</span>
+            <div className="flex justify-between py-1.5 border-b border-gray-50 dark:border-gray-700">
+              <span className="text-gray-500 dark:text-gray-400 font-medium">Serial</span>
+              <span className="text-gray-800 dark:text-gray-200 font-mono text-[11px] truncate max-w-[200px]" title={serial}>{serial}</span>
             </div>
           )}
           {sans && sans.length > 0 && (
-            <div className="flex justify-between py-1.5 border-b border-gray-50 col-span-full">
-              <span className="text-gray-500 font-medium">SANs</span>
-              <span className="text-gray-800 text-xs">{sans.join(', ')}</span>
+            <div className="flex justify-between py-1.5 border-b border-gray-50 dark:border-gray-700 col-span-full">
+              <span className="text-gray-500 dark:text-gray-400 font-medium">SANs</span>
+              <span className="text-gray-800 dark:text-gray-200 text-xs">{sans.join(', ')}</span>
             </div>
           )}
         </div>
 
         {/* Validation checks */}
-        <div className="mt-4 pt-3 border-t border-gray-100 grid grid-cols-2 md:grid-cols-3 gap-2">
+        <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 grid grid-cols-2 md:grid-cols-3 gap-2">
           {signatureAlg && (
             <Check ok={true} label={`${signatureAlg}`} />
           )}
@@ -657,7 +657,7 @@ function SslCertificatePanel({ serviceId }: { serviceId: string }) {
           {selfSigned && (
             <div className="flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />
-              <span className="text-sm text-amber-700">Self-Signed</span>
+              <span className="text-sm text-amber-700 dark:text-amber-300">Self-Signed</span>
             </div>
           )}
         </div>
@@ -665,10 +665,10 @@ function SslCertificatePanel({ serviceId }: { serviceId: string }) {
 
       {/* Days until Expiry Chart */}
       {sslHistory.length >= 2 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
           <div className="flex items-center gap-2 mb-4">
             <TrendingUp className="w-5 h-5 text-overseer-600" />
-            <h3 className="font-semibold text-gray-800">Days until Expiry</h3>
+            <h3 className="font-semibold text-gray-800 dark:text-gray-200">Days until Expiry</h3>
           </div>
           <SslExpiryChart data={sslHistory} />
         </div>
@@ -1018,30 +1018,30 @@ function AddCheckModal({ host, onClose, onSaved }: AddCheckModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 p-6 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-lg mx-4 p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-gray-900">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
             {mode === 'choose' ? 'Check hinzufügen' : mode === 'template' ? 'Vorlage anwenden' : 'Einzelner Check'}
           </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+          <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><X className="w-5 h-5" /></button>
         </div>
 
-        <div className="bg-gray-50 rounded-lg px-4 py-3 mb-4 text-sm">
-          <p className="font-medium text-gray-800">{host.display_name || host.hostname}</p>
+        <div className="bg-gray-50 dark:bg-gray-900 rounded-lg px-4 py-3 mb-4 text-sm">
+          <p className="font-medium text-gray-800 dark:text-gray-200">{host.display_name || host.hostname}</p>
         </div>
 
         {/* Step 1: Choose mode */}
         {mode === 'choose' && (
           <div className="space-y-3">
             <button onClick={() => setMode('template')}
-              className="w-full text-left border border-gray-200 rounded-lg px-4 py-3 hover:bg-gray-50 transition-colors">
-              <p className="font-medium text-gray-800 text-sm">Vorlage verwenden</p>
-              <p className="text-xs text-gray-500 mt-0.5">Vorgefertigtes Check-Paket (Linux Server, Switch, etc.)</p>
+              className="w-full text-left border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+              <p className="font-medium text-gray-800 dark:text-gray-200 text-sm">Vorlage verwenden</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Vorgefertigtes Check-Paket (Linux Server, Switch, etc.)</p>
             </button>
             <button onClick={() => setMode('manual')}
-              className="w-full text-left border border-gray-200 rounded-lg px-4 py-3 hover:bg-gray-50 transition-colors">
-              <p className="font-medium text-gray-800 text-sm">Einzelnen Check erstellen</p>
-              <p className="text-xs text-gray-500 mt-0.5">Manuell konfigurieren</p>
+              className="w-full text-left border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+              <p className="font-medium text-gray-800 dark:text-gray-200 text-sm">Einzelnen Check erstellen</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Manuell konfigurieren</p>
             </button>
           </div>
         )}
@@ -1072,7 +1072,7 @@ function AddCheckModal({ host, onClose, onSaved }: AddCheckModalProps) {
           return (
           <div className="space-y-2">
             {compatibleTemplates.length === 0 && (
-              <p className="text-sm text-gray-500 text-center py-4">
+              <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
                 {templates.length === 0
                   ? <>Keine Vorlagen vorhanden. Erstelle welche unter <a href="/templates" className="text-overseer-600 hover:underline">Vorlagen</a>.</>
                   : 'Keine kompatiblen Vorlagen für diesen Host. Vorlagen erfordern passende Konfiguration (Agent, IP, SNMP).'}
@@ -1083,28 +1083,28 @@ function AddCheckModal({ host, onClose, onSaved }: AddCheckModalProps) {
                 disabled={!!applyingTemplate}
                 className={clsx(
                   'w-full text-left border rounded-lg px-4 py-3 transition-colors',
-                  applyingTemplate === tpl.id ? 'border-overseer-400 bg-overseer-50' : 'border-gray-200 hover:bg-gray-50',
+                  applyingTemplate === tpl.id ? 'border-overseer-400 bg-overseer-50' : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700',
                   applyingTemplate && applyingTemplate !== tpl.id && 'opacity-50',
                 )}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium text-gray-800 text-sm">{tpl.name}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{tpl.description}</p>
+                    <p className="font-medium text-gray-800 dark:text-gray-200 text-sm">{tpl.name}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{tpl.description}</p>
                   </div>
-                  <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
+                  <span className="text-xs text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">
                     {applyingTemplate === tpl.id ? 'Wird erstellt…' : `${tpl.checks.length} Checks`}
                   </span>
                 </div>
               </button>
             ))}
             {successMsg && (
-              <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">{successMsg}</p>
+              <p className="text-sm text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 rounded-lg px-3 py-2">{successMsg}</p>
             )}
             {error && (
-              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>
+              <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">{error}</p>
             )}
             <button onClick={successMsg ? onClose : () => setMode('choose')}
-              className="w-full py-2 text-sm text-gray-500 hover:text-gray-700">
+              className="w-full py-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
               {successMsg ? 'Schließen' : 'Zurück'}
             </button>
           </div>
@@ -1117,14 +1117,14 @@ function AddCheckModal({ host, onClose, onSaved }: AddCheckModalProps) {
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Name *</label>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Name *</label>
                   <input value={form.name} onChange={setF('name')} placeholder="CPU-Auslastung"
-                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+                    className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none dark:bg-gray-700 dark:text-gray-200" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Check-Typ *</label>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Check-Typ *</label>
                   <select value={form.check_type} onChange={e => handleTypeChange(e.target.value)}
-                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none">
+                    className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none dark:bg-gray-700 dark:text-gray-200">
                     {grouped.map(g => (
                       <optgroup key={g.category} label={g.label}>
                         {g.types.map(t => <option key={t.key} value={t.key}>{t.label}</option>)}
@@ -1132,7 +1132,7 @@ function AddCheckModal({ host, onClose, onSaved }: AddCheckModalProps) {
                     ))}
                   </select>
                   {typeDef?.description && (
-                    <p className="text-[11px] text-gray-400 mt-0.5">{typeDef.description}</p>
+                    <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">{typeDef.description}</p>
                   )}
                 </div>
               </div>
@@ -1150,21 +1150,21 @@ function AddCheckModal({ host, onClose, onSaved }: AddCheckModalProps) {
 
               <div className={clsx('grid gap-3', isDisk ? 'grid-cols-1' : 'grid-cols-3')}>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Intervall (s)</label>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Intervall (s)</label>
                   <input value={form.interval_seconds} onChange={setF('interval_seconds')} type="number"
-                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+                    className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none dark:bg-gray-700 dark:text-gray-200" />
                 </div>
                 {!isDisk && (
                   <>
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">Warn-Schwelle</label>
+                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Warn-Schwelle</label>
                       <input value={form.threshold_warn} onChange={setF('threshold_warn')} type="number" placeholder="80"
-                        className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+                        className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none dark:bg-gray-700 dark:text-gray-200" />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">Crit-Schwelle</label>
+                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Crit-Schwelle</label>
                       <input value={form.threshold_crit} onChange={setF('threshold_crit')} type="number" placeholder="90"
-                        className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+                        className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none dark:bg-gray-700 dark:text-gray-200" />
                     </div>
                   </>
                 )}
@@ -1172,38 +1172,38 @@ function AddCheckModal({ host, onClose, onSaved }: AddCheckModalProps) {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Max. Versuche (SOFT→HARD)</label>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Max. Versuche (SOFT→HARD)</label>
                   <input value={form.max_check_attempts} onChange={setF('max_check_attempts')} type="number" min="1"
-                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+                    className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none dark:bg-gray-700 dark:text-gray-200" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Retry-Intervall (s)</label>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Retry-Intervall (s)</label>
                   <input value={form.retry_interval_seconds} onChange={setF('retry_interval_seconds')} type="number" min="5"
-                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+                    className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none dark:bg-gray-700 dark:text-gray-200" />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Check-Modus</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Check-Modus</label>
                 {typeDef?.mode === 'agent' ? (
-                  <div className="text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-lg">
-                    Agent <span className="text-xs text-gray-400">(wird automatisch gesetzt)</span>
+                  <div className="text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900 px-3 py-2 rounded-lg">
+                    Agent <span className="text-xs text-gray-400 dark:text-gray-500">(wird automatisch gesetzt)</span>
                   </div>
                 ) : (
                   <div className="flex gap-3 mt-1">
                     <label className="inline-flex items-center gap-1.5 text-sm cursor-pointer">
                       <input type="radio" name="check_mode" value="active" checked={form.check_mode === 'active'}
                         onChange={setF('check_mode')} className="w-4 h-4 text-overseer-600 focus:ring-overseer-500" />
-                      <span>Aktiv <span className="text-xs text-gray-400">(Server prüft)</span></span>
+                      <span>Aktiv <span className="text-xs text-gray-400 dark:text-gray-500">(Server prüft)</span></span>
                     </label>
                     {host.collector_id ? (
                       <label className="inline-flex items-center gap-1.5 text-sm cursor-pointer">
                         <input type="radio" name="check_mode" value="passive" checked={form.check_mode === 'passive'}
                           onChange={setF('check_mode')} className="w-4 h-4 text-overseer-600 focus:ring-overseer-500" />
-                        <span>Passiv <span className="text-xs text-gray-400">(Collector sendet)</span></span>
+                        <span>Passiv <span className="text-xs text-gray-400 dark:text-gray-500">(Collector sendet)</span></span>
                       </label>
                     ) : (
-                      <span className="inline-flex items-center gap-1.5 text-sm text-gray-300">
+                      <span className="inline-flex items-center gap-1.5 text-sm text-gray-300 dark:text-gray-600">
                         Passiv <span className="text-xs">(kein Collector zugewiesen)</span>
                       </span>
                     )}
@@ -1212,19 +1212,19 @@ function AddCheckModal({ host, onClose, onSaved }: AddCheckModalProps) {
               </div>
 
               {available.length === 0 && (
-                <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                <p className="text-sm text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
                   Keine Check-Typen für diesen Host verfügbar. Bitte zuerst IP-Adresse, Agent oder SNMP-Community konfigurieren.
                 </p>
               )}
 
               {error && (
-                <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>
+                <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">{error}</p>
               )}
             </div>
 
             <div className="flex gap-3 mt-6">
               <button onClick={() => setMode('choose')}
-                className="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">
+                className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
                 Zurück
               </button>
               <button
@@ -1285,29 +1285,29 @@ function EditHostModal({ host, onClose, onSaved }: EditHostModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-lg mx-4 p-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-gray-900">Host bearbeiten</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Host bearbeiten</h2>
+          <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><X className="w-5 h-5" /></button>
         </div>
 
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Hostname *</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Hostname *</label>
             <input value={form.hostname} onChange={setF('hostname')}
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none dark:bg-gray-700 dark:text-gray-200" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Anzeigename</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Anzeigename</label>
             <input value={form.display_name} onChange={setF('display_name')} placeholder="z.B. Webserver Produktion"
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none dark:bg-gray-700 dark:text-gray-200" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">IP-Adresse</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">IP-Adresse</label>
               <input value={form.ip_address} onChange={setF('ip_address')} placeholder="192.168.1.1"
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
-              <p className="text-[11px] text-gray-400 mt-0.5">
+                className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none dark:bg-gray-700 dark:text-gray-200" />
+              <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
                 {host.agent_managed
                   ? 'Optional — Agent verbindet sich selbst. Nur für Netzwerk-Checks nötig.'
                   : host.collector_id
@@ -1316,9 +1316,9 @@ function EditHostModal({ host, onClose, onSaved }: EditHostModalProps) {
               </p>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Typ</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Typ</label>
               <select value={form.host_type_id} onChange={setF('host_type_id')}
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none">
+                className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none dark:bg-gray-700 dark:text-gray-200">
                 {hostTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
               </select>
             </div>
@@ -1327,14 +1327,14 @@ function EditHostModal({ host, onClose, onSaved }: EditHostModalProps) {
           {(selectedType?.snmp_enabled || host.snmp_community) && (
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">SNMP Community</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">SNMP Community</label>
                 <input value={form.snmp_community} onChange={setF('snmp_community')} placeholder="public"
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+                  className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none dark:bg-gray-700 dark:text-gray-200" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">SNMP Version</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">SNMP Version</label>
                 <select value={form.snmp_version} onChange={setF('snmp_version')}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none">
+                  className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none dark:bg-gray-700 dark:text-gray-200">
                   <option value="1">v1</option>
                   <option value="2c">v2c</option>
                 </select>
@@ -1343,13 +1343,13 @@ function EditHostModal({ host, onClose, onSaved }: EditHostModalProps) {
           )}
 
           {error && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>
+            <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">{error}</p>
           )}
         </div>
 
         <div className="flex gap-3 mt-6">
           <button onClick={onClose}
-            className="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">
+            className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
             Abbrechen
           </button>
           <button
@@ -1477,22 +1477,22 @@ function EditServiceModal({ service, host, onClose, onSaved }: EditServiceModalP
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 p-6 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-lg mx-4 p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-gray-900">Service bearbeiten</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Service bearbeiten</h2>
+          <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><X className="w-5 h-5" /></button>
         </div>
 
-        <div className="bg-gray-50 rounded-lg px-4 py-3 mb-4 text-sm flex items-center justify-between">
-          <span className="font-medium text-gray-800">{service.name}</span>
-          <span className="text-gray-500 text-xs">{editTypeDef ? `${editTypeDef.label}` : service.check_type}</span>
+        <div className="bg-gray-50 dark:bg-gray-900 rounded-lg px-4 py-3 mb-4 text-sm flex items-center justify-between">
+          <span className="font-medium text-gray-800 dark:text-gray-200">{service.name}</span>
+          <span className="text-gray-500 dark:text-gray-400 text-xs">{editTypeDef ? `${editTypeDef.label}` : service.check_type}</span>
         </div>
 
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Name</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Name</label>
             <input value={form.name} onChange={setF('name')}
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none dark:bg-gray-700 dark:text-gray-200" />
           </div>
 
           {/* Dynamic config fields from registry */}
@@ -1508,21 +1508,21 @@ function EditServiceModal({ service, host, onClose, onSaved }: EditServiceModalP
 
           <div className={clsx('grid gap-3', isDisk ? 'grid-cols-1' : 'grid-cols-3')}>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Intervall (s)</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Intervall (s)</label>
               <input value={form.interval_seconds} onChange={setF('interval_seconds')} type="number"
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+                className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none dark:bg-gray-700 dark:text-gray-200" />
             </div>
             {!isDisk && (
               <>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Warn-Schwelle</label>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Warn-Schwelle</label>
                   <input value={form.threshold_warn} onChange={setF('threshold_warn')} type="number" placeholder="80"
-                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+                    className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none dark:bg-gray-700 dark:text-gray-200" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Crit-Schwelle</label>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Crit-Schwelle</label>
                   <input value={form.threshold_crit} onChange={setF('threshold_crit')} type="number" placeholder="90"
-                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+                    className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none dark:bg-gray-700 dark:text-gray-200" />
                 </div>
               </>
             )}
@@ -1530,47 +1530,47 @@ function EditServiceModal({ service, host, onClose, onSaved }: EditServiceModalP
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Max. Versuche (SOFT→HARD)</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Max. Versuche (SOFT→HARD)</label>
               <input value={form.max_check_attempts} onChange={setF('max_check_attempts')} type="number"
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+                className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none dark:bg-gray-700 dark:text-gray-200" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Retry-Intervall (s)</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Retry-Intervall (s)</label>
               <input value={form.retry_interval_seconds} onChange={setF('retry_interval_seconds')} type="number" min="5"
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+                className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none dark:bg-gray-700 dark:text-gray-200" />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Check-Modus</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Check-Modus</label>
             {editTypeDef?.mode === 'agent' ? (
-              <div className="text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-lg">
-                Agent <span className="text-xs text-gray-400">(wird automatisch gesetzt)</span>
+              <div className="text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900 px-3 py-2 rounded-lg">
+                Agent <span className="text-xs text-gray-400 dark:text-gray-500">(wird automatisch gesetzt)</span>
               </div>
             ) : (
               <div className="flex gap-3 mt-1">
                 <label className="inline-flex items-center gap-1.5 text-sm cursor-pointer">
                   <input type="radio" name="edit_check_mode" value="active" checked={form.check_mode === 'active'}
                     onChange={setF('check_mode')} className="w-4 h-4 text-overseer-600 focus:ring-overseer-500" />
-                  <span>Aktiv <span className="text-xs text-gray-400">(Server prüft)</span></span>
+                  <span>Aktiv <span className="text-xs text-gray-400 dark:text-gray-500">(Server prüft)</span></span>
                 </label>
                 <label className="inline-flex items-center gap-1.5 text-sm cursor-pointer">
                   <input type="radio" name="edit_check_mode" value="passive" checked={form.check_mode === 'passive'}
                     onChange={setF('check_mode')} className="w-4 h-4 text-overseer-600 focus:ring-overseer-500" />
-                  <span>Passiv <span className="text-xs text-gray-400">(Collector sendet)</span></span>
+                  <span>Passiv <span className="text-xs text-gray-400 dark:text-gray-500">(Collector sendet)</span></span>
                 </label>
               </div>
             )}
           </div>
 
           {error && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>
+            <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">{error}</p>
           )}
         </div>
 
         <div className="flex gap-3 mt-6">
           <button onClick={onClose}
-            className="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">
+            className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
             Abbrechen
           </button>
           <button
@@ -1725,21 +1725,21 @@ function SnmpDiscoveryModal({ host, onClose, onSaved }: SnmpDiscoveryModalProps)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl mx-4 p-6 max-h-[90vh] flex flex-col">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-4xl mx-4 p-6 max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Search className="w-5 h-5 text-overseer-600" />
-            <h2 className="text-lg font-semibold text-gray-900">SNMP Discovery</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">SNMP Discovery</h2>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+          <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><X className="w-5 h-5" /></button>
         </div>
 
-        <div className="bg-gray-50 rounded-lg px-4 py-3 mb-4 text-sm flex items-center justify-between">
+        <div className="bg-gray-50 dark:bg-gray-900 rounded-lg px-4 py-3 mb-4 text-sm flex items-center justify-between">
           <div>
-            <span className="font-medium text-gray-800">{host.display_name || host.hostname}</span>
-            <span className="text-gray-400 ml-2">{host.ip_address}</span>
+            <span className="font-medium text-gray-800 dark:text-gray-200">{host.display_name || host.hostname}</span>
+            <span className="text-gray-400 dark:text-gray-500 ml-2">{host.ip_address}</span>
           </div>
-          <span className="text-xs text-gray-500">Community: {host.snmp_community || '–'}</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400">Community: {host.snmp_community || '–'}</span>
         </div>
 
         {/* Walk controls */}
@@ -1747,7 +1747,7 @@ function SnmpDiscoveryModal({ host, onClose, onSaved }: SnmpDiscoveryModalProps)
           <div className="flex-1">
             <input value={baseOid} onChange={e => setBaseOid(e.target.value)}
               placeholder="Base OID (z.B. 1.3.6.1.2.1)"
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none dark:bg-gray-700 dark:text-gray-200" />
           </div>
           <button onClick={startWalk} disabled={walking}
             className="px-4 py-2 bg-overseer-600 text-white text-sm font-medium rounded-lg hover:bg-overseer-700 disabled:opacity-50 whitespace-nowrap">
@@ -1756,10 +1756,10 @@ function SnmpDiscoveryModal({ host, onClose, onSaved }: SnmpDiscoveryModalProps)
         </div>
 
         {error && (
-          <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3">{error}</p>
+          <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2 mb-3">{error}</p>
         )}
         {successMsg && (
-          <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 mb-3">{successMsg}</p>
+          <p className="text-sm text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 rounded-lg px-3 py-2 mb-3">{successMsg}</p>
         )}
 
         {/* Results */}
@@ -1768,15 +1768,15 @@ function SnmpDiscoveryModal({ host, onClose, onSaved }: SnmpDiscoveryModalProps)
             <div className="flex items-center gap-2 mb-2">
               <input value={filter} onChange={e => setFilter(e.target.value)}
                 placeholder="Filtern nach OID, Name oder Wert..."
-                className="flex-1 text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-overseer-500 outline-none" />
-              <span className="text-xs text-gray-400 whitespace-nowrap">
+                className="flex-1 text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-overseer-500 outline-none dark:bg-gray-700 dark:text-gray-200" />
+              <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">
                 {filtered.length} OIDs{truncated ? ' (abgeschnitten)' : ''}
               </span>
             </div>
 
-            <div className="flex-1 overflow-y-auto border border-gray-200 rounded-lg min-h-0">
+            <div className="flex-1 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg min-h-0">
               <table className="w-full text-xs">
-                <thead className="bg-gray-50 text-gray-500 uppercase tracking-wide sticky top-0">
+                <thead className="bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400 uppercase tracking-wide sticky top-0">
                   <tr>
                     <th className="px-3 py-2 text-left w-8">
                       <input type="checkbox" onChange={selectAll}
@@ -1789,20 +1789,20 @@ function SnmpDiscoveryModal({ host, onClose, onSaved }: SnmpDiscoveryModalProps)
                     <th className="px-3 py-2 text-left">Typ</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
+                <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
                   {filtered.map(r => (
-                    <tr key={r.oid} className={clsx('hover:bg-gray-50 cursor-pointer', selected.has(r.oid) && 'bg-overseer-50')}
+                    <tr key={r.oid} className={clsx('hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer', selected.has(r.oid) && 'bg-overseer-50 dark:bg-overseer-900/30')}
                       onClick={() => toggleSelect(r.oid)}>
                       <td className="px-3 py-1.5">
                         <input type="checkbox" checked={selected.has(r.oid)} onChange={() => toggleSelect(r.oid)}
                           className="w-3.5 h-3.5" />
                       </td>
-                      <td className="px-3 py-1.5 font-medium text-gray-800">
-                        {r.name !== r.oid ? r.name : <span className="text-gray-400">–</span>}
+                      <td className="px-3 py-1.5 font-medium text-gray-800 dark:text-gray-200">
+                        {r.name !== r.oid ? r.name : <span className="text-gray-400 dark:text-gray-500">–</span>}
                       </td>
-                      <td className="px-3 py-1.5 font-mono text-gray-500">{r.oid}</td>
-                      <td className="px-3 py-1.5 text-gray-700 max-w-xs truncate" title={r.value}>{r.value}</td>
-                      <td className="px-3 py-1.5 text-gray-400">{r.type}</td>
+                      <td className="px-3 py-1.5 font-mono text-gray-500 dark:text-gray-400">{r.oid}</td>
+                      <td className="px-3 py-1.5 text-gray-700 dark:text-gray-300 max-w-xs truncate" title={r.value}>{r.value}</td>
+                      <td className="px-3 py-1.5 text-gray-400 dark:text-gray-500">{r.type}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -1811,7 +1811,7 @@ function SnmpDiscoveryModal({ host, onClose, onSaved }: SnmpDiscoveryModalProps)
 
             {selected.size > 0 && (
               <div className="mt-3 flex items-center justify-between">
-                <span className="text-sm text-gray-500">{selected.size} OID(s) ausgewählt</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">{selected.size} OID(s) ausgewählt</span>
                 <button onClick={createChecks} disabled={creating}
                   className="px-4 py-2 bg-overseer-600 text-white text-sm font-medium rounded-lg hover:bg-overseer-700 disabled:opacity-50">
                   {creating ? 'Erstelle...' : `${selected.size} Check(s) erstellen`}
@@ -1822,12 +1822,12 @@ function SnmpDiscoveryModal({ host, onClose, onSaved }: SnmpDiscoveryModalProps)
         )}
 
         {results.length === 0 && !walking && !error && (
-          <p className="text-center text-gray-400 py-8 text-sm">
+          <p className="text-center text-gray-400 dark:text-gray-500 py-8 text-sm">
             Klicke "Walk starten" um verfügbare SNMP-OIDs zu entdecken.
           </p>
         )}
         {walking && (
-          <p className="text-center text-gray-400 py-8 text-sm animate-pulse">
+          <p className="text-center text-gray-400 dark:text-gray-500 py-8 text-sm animate-pulse">
             SNMP Walk läuft...
           </p>
         )}
@@ -2022,7 +2022,7 @@ export default function HostDetailPage() {
   })
 
   if (hostLoading) {
-    return <div className="p-8 text-gray-500">Lade Host-Daten…</div>
+    return <div className="p-8 text-gray-500 dark:text-gray-400">Lade Host-Daten…</div>
   }
   if (!host) {
     return <div className="p-8 text-red-500">Host nicht gefunden.</div>
@@ -2097,42 +2097,42 @@ export default function HostDetailPage() {
       {/* Copy Host Modal */}
       {showCopyHost && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-semibold text-gray-900">Host kopieren</h2>
-              <button onClick={() => setShowCopyHost(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Host kopieren</h2>
+              <button onClick={() => setShowCopyHost(false)} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><X className="w-5 h-5" /></button>
             </div>
-            <div className="bg-gray-50 rounded-lg px-4 py-3 mb-4 text-sm">
-              <p className="text-gray-500">Quelle:</p>
-              <p className="font-medium text-gray-800">{host.display_name || host.hostname}</p>
-              <p className="text-xs text-gray-400 mt-1">Alle Services werden mitkopiert.</p>
+            <div className="bg-gray-50 dark:bg-gray-900 rounded-lg px-4 py-3 mb-4 text-sm">
+              <p className="text-gray-500 dark:text-gray-400">Quelle:</p>
+              <p className="font-medium text-gray-800 dark:text-gray-200">{host.display_name || host.hostname}</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Alle Services werden mitkopiert.</p>
             </div>
             <div className="space-y-3 mb-4">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Neuer Hostname</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Neuer Hostname</label>
                 <input
                   value={copyHostname}
                   onChange={e => setCopyHostname(e.target.value)}
                   placeholder={`${host.hostname}-copy`}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none"
+                  className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none dark:bg-gray-700 dark:text-gray-200"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Ziel-Tenant</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Ziel-Tenant</label>
                 <select
                   value={copyTenantId}
                   onChange={e => setCopyTenantId(e.target.value)}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none"
+                  className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none dark:bg-gray-700 dark:text-gray-200"
                 >
                   <option value="">Gleicher Tenant</option>
                   {tenantsList.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                 </select>
               </div>
             </div>
-            {copyHostError && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-4">{copyHostError}</p>}
+            {copyHostError && <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2 mb-4">{copyHostError}</p>}
             <div className="flex gap-3">
               <button onClick={() => setShowCopyHost(false)}
-                className="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">Abbrechen</button>
+                className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Abbrechen</button>
               <button
                 onClick={() => {
                   setCopyHostError(null)
@@ -2155,25 +2155,25 @@ export default function HostDetailPage() {
       {/* Back link */}
       <Link
         to="/hosts"
-        className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-6"
+        className="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 mb-6"
       >
         <ArrowLeft className="w-4 h-4" /> Zurück zu Hosts
       </Link>
 
       {/* Host header */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 mb-6">
         <div className="flex items-start gap-4">
           <div className={clsx('w-14 h-14 rounded-xl flex items-center justify-center', worstCfg.bg)}>
             <HostIcon className={clsx('w-7 h-7', worstCfg.color)} />
           </div>
           <div className="flex-1">
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
               {host.display_name || host.hostname}
             </h1>
-            <p className="text-gray-500 text-sm mt-0.5">{host.hostname}</p>
-            <div className="flex items-center gap-4 mt-3 text-sm text-gray-500">
+            <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">{host.hostname}</p>
+            <div className="flex items-center gap-4 mt-3 text-sm text-gray-500 dark:text-gray-400">
               {host.ip_address && (
-                <span className="font-mono bg-gray-100 px-2 py-0.5 rounded">{host.ip_address}</span>
+                <span className="font-mono bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">{host.ip_address}</span>
               )}
               <span>{host.host_type_name ?? 'Unbekannt'}</span>
             </div>
@@ -2181,21 +2181,21 @@ export default function HostDetailPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowEditHost(true)}
-              className="p-2 rounded-lg border border-gray-200 text-gray-400 hover:text-overseer-600 hover:border-overseer-300 transition-colors"
+              className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 hover:text-overseer-600 hover:border-overseer-300 transition-colors"
               title="Host bearbeiten"
             >
               <Pencil className="w-4 h-4" />
             </button>
             <button
               onClick={() => { setShowCopyHost(true); setCopyHostname(''); setCopyTenantId(''); setCopyHostError(null) }}
-              className="p-2 rounded-lg border border-gray-200 text-gray-400 hover:text-blue-500 hover:border-blue-300 transition-colors"
+              className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 hover:text-blue-500 hover:border-blue-300 transition-colors"
               title="Host kopieren"
             >
               <Copy className="w-4 h-4" />
             </button>
             <button
               onClick={() => setShowDeleteConfirm(true)}
-              className="p-2 rounded-lg border border-gray-200 text-gray-400 hover:text-red-600 hover:border-red-300 transition-colors"
+              className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 hover:text-red-600 hover:border-red-300 transition-colors"
               title="Host endgültig löschen"
             >
               <Trash2 className="w-4 h-4" />
@@ -2208,7 +2208,7 @@ export default function HostDetailPage() {
         </div>
 
         {/* Mini stats */}
-        <div className="grid grid-cols-5 gap-3 mt-5 pt-5 border-t border-gray-100">
+        <div className="grid grid-cols-5 gap-3 mt-5 pt-5 border-t border-gray-100 dark:border-gray-800">
           {(['CRITICAL', 'WARNING', 'NO_DATA', 'UNKNOWN', 'OK'] as const).map(s => {
             const cfg = getStatusConfig(s)
             const Icon = cfg.icon
@@ -2224,8 +2224,8 @@ export default function HostDetailPage() {
 
       {/* 3.1 Onboarding-Banner für neue Hosts */}
       {isNewHost && serviceList.length === 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl px-5 py-4 mb-6">
-          <p className="text-sm font-medium text-blue-800 mb-2">Host erstellt! Nächste Schritte:</p>
+        <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-xl px-5 py-4 mb-6">
+          <p className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">Host erstellt! Nächste Schritte:</p>
           <div className="flex flex-wrap gap-2">
             {host.host_type_agent_capable && !host.agent_managed && (
               <button onClick={() => generateTokenMutation.mutate()}
@@ -2236,7 +2236,7 @@ export default function HostDetailPage() {
               </button>
             )}
             <button onClick={() => setShowAddCheck(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white text-blue-700 text-xs font-medium rounded-lg border border-blue-300 hover:bg-blue-50 transition-colors">
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-gray-800 text-blue-700 dark:text-blue-300 text-xs font-medium rounded-lg border border-blue-300 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors">
               <Plus className="w-3.5 h-3.5" />
               Checks / Template hinzufügen
             </button>
@@ -2249,11 +2249,11 @@ export default function HostDetailPage() {
       )}
 
       {/* Agent section */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 mb-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Monitor className="w-5 h-5 text-gray-400" />
-            <h2 className="font-semibold text-gray-800">Agent</h2>
+            <Monitor className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+            <h2 className="font-semibold text-gray-800 dark:text-gray-200">Agent</h2>
           </div>
           {host.agent_managed && agentTokenInfo && (
             <div className="flex items-center gap-3">
@@ -2275,8 +2275,8 @@ export default function HostDetailPage() {
         </div>
 
         {!host.agent_managed ? (
-          <div className="mt-3 flex items-center justify-between bg-gray-50 rounded-lg px-4 py-3">
-            <p className="text-sm text-gray-500">Kein Agent eingerichtet</p>
+          <div className="mt-3 flex items-center justify-between bg-gray-50 dark:bg-gray-900 rounded-lg px-4 py-3">
+            <p className="text-sm text-gray-500 dark:text-gray-400">Kein Agent eingerichtet</p>
             {host.host_type_agent_capable ? (
               <button
                 onClick={() => generateTokenMutation.mutate()}
@@ -2287,23 +2287,23 @@ export default function HostDetailPage() {
                 {generateTokenMutation.isPending ? 'Generiere…' : 'Agent einrichten'}
               </button>
             ) : (
-              <span className="text-xs text-gray-400">Agent für diesen Host-Typ nicht verfügbar</span>
+              <span className="text-xs text-gray-400 dark:text-gray-500">Agent für diesen Host-Typ nicht verfügbar</span>
             )}
           </div>
         ) : agentTokenInfo ? (
-          <div className="mt-3 flex items-center gap-4 bg-gray-50 rounded-lg px-4 py-3">
+          <div className="mt-3 flex items-center gap-4 bg-gray-50 dark:bg-gray-900 rounded-lg px-4 py-3">
             <div className="flex items-center gap-2">
               <div className={clsx(
                 'w-2.5 h-2.5 rounded-full',
                 agentTokenInfo.last_seen_at && (Date.now() - new Date(agentTokenInfo.last_seen_at).getTime()) < 3 * 60 * 1000
                   ? 'bg-emerald-500' : 'bg-red-500'
               )} />
-              <span className="text-sm font-medium text-gray-800">
+              <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
                 {agentTokenInfo.last_seen_at && (Date.now() - new Date(agentTokenInfo.last_seen_at).getTime()) < 3 * 60 * 1000
                   ? 'Agent online' : 'Agent offline'}
               </span>
             </div>
-            <div className="flex items-center gap-3 text-xs text-gray-500">
+            <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
               {agentTokenInfo.agent_version && <span>v{agentTokenInfo.agent_version}</span>}
               {agentTokenInfo.agent_os && <span>{agentTokenInfo.agent_os}</span>}
               {agentTokenInfo.last_seen_at && (
@@ -2313,15 +2313,15 @@ export default function HostDetailPage() {
             </div>
           </div>
         ) : (
-          <div className="mt-3 text-sm text-gray-400">Lade Agent-Status…</div>
+          <div className="mt-3 text-sm text-gray-400 dark:text-gray-500">Lade Agent-Status…</div>
         )}
 
         {/* Revoke confirmation */}
         {revokeConfirm && (
-          <div className="mt-3 bg-red-50 border border-red-200 rounded-lg px-4 py-3 flex items-center justify-between">
-            <span className="text-sm text-red-700">Token wirklich widerrufen? Der Agent wird sich nicht mehr verbinden können.</span>
+          <div className="mt-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg px-4 py-3 flex items-center justify-between">
+            <span className="text-sm text-red-700 dark:text-red-300">Token wirklich widerrufen? Der Agent wird sich nicht mehr verbinden können.</span>
             <div className="flex gap-2">
-              <button onClick={() => setRevokeConfirm(false)} className="text-xs text-gray-500 hover:text-gray-700">Abbrechen</button>
+              <button onClick={() => setRevokeConfirm(false)} className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">Abbrechen</button>
               <button
                 onClick={() => revokeTokenMutation.mutate()}
                 disabled={revokeTokenMutation.isPending}
@@ -2337,16 +2337,16 @@ export default function HostDetailPage() {
       {/* Agent Setup Dialog (Token generated) */}
       {showAgentSetup && generatedToken && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 p-6 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-lg mx-4 p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-semibold text-gray-900">Agent einrichten</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Agent einrichten</h2>
               <button onClick={() => { setShowAgentSetup(false); setGeneratedToken(null); setTokenCopied(false) }}
-                className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+                className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><X className="w-5 h-5" /></button>
             </div>
 
-            <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-4">
-              <p className="text-sm text-amber-800 font-medium">Token wird nur einmal angezeigt!</p>
-              <p className="text-xs text-amber-600 mt-1">Kopiere den Token jetzt und trage ihn in die Agent-Konfiguration ein.</p>
+            <div className="bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-lg px-4 py-3 mb-4">
+              <p className="text-sm text-amber-800 dark:text-amber-300 font-medium">Token wird nur einmal angezeigt!</p>
+              <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">Kopiere den Token jetzt und trage ihn in die Agent-Konfiguration ein.</p>
             </div>
 
             <div className="bg-gray-900 rounded-lg px-4 py-3 mb-4 flex items-center justify-between">
@@ -2366,7 +2366,7 @@ export default function HostDetailPage() {
             </div>
 
             {/* Tab selector */}
-            <div className="flex border-b border-gray-200 mb-4">
+            <div className="flex border-b border-gray-200 dark:border-gray-700 mb-4">
               {([
                 ['debian', 'Debian / Ubuntu'],
                 ['rhel', 'RHEL / Rocky'],
@@ -2377,15 +2377,15 @@ export default function HostDetailPage() {
                   key={key}
                   onClick={() => setSetupTab(key)}
                   className={clsx('px-3 py-2 text-xs font-medium border-b-2 transition-colors -mb-px',
-                    setupTab === key ? 'border-overseer-600 text-overseer-700' : 'border-transparent text-gray-500 hover:text-gray-700')}
+                    setupTab === key ? 'border-overseer-600 text-overseer-700' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300')}
                 >{label}</button>
               ))}
             </div>
 
-            <div className="text-sm text-gray-700">
+            <div className="text-sm text-gray-700 dark:text-gray-300">
               {setupTab === 'windows' ? (
-                <div className="bg-gray-50 rounded-lg px-4 py-3 text-xs space-y-3">
-                  <p className="font-sans"><span className="text-gray-400 font-mono">1.</span> Installer herunterladen:</p>
+                <div className="bg-gray-50 dark:bg-gray-900 rounded-lg px-4 py-3 text-xs space-y-3">
+                  <p className="font-sans"><span className="text-gray-400 dark:text-gray-500 font-mono">1.</span> Installer herunterladen:</p>
                   <a
                     href="/agent/overseer-agent-setup.exe"
                     download
@@ -2394,45 +2394,45 @@ export default function HostDetailPage() {
                     <Download className="w-3.5 h-3.5" />
                     overseer-agent-setup.exe (5.6 MB)
                   </a>
-                  <p className="font-sans"><span className="text-gray-400 font-mono">2.</span> Setup als Administrator ausführen</p>
-                  <p className="font-sans"><span className="text-gray-400 font-mono">3.</span> Server-URL und Token eingeben:</p>
+                  <p className="font-sans"><span className="text-gray-400 dark:text-gray-500 font-mono">2.</span> Setup als Administrator ausführen</p>
+                  <p className="font-sans"><span className="text-gray-400 dark:text-gray-500 font-mono">3.</span> Server-URL und Token eingeben:</p>
                   <CodeBlock>{`Server: ${window.location.origin}\nToken: ${generatedToken}`}</CodeBlock>
-                  <p className="font-sans"><span className="text-gray-400 font-mono">4.</span> Weiter klicken — der Installer erledigt den Rest</p>
-                  <p className="text-gray-400 font-sans">(Service wird automatisch installiert und gestartet)</p>
+                  <p className="font-sans"><span className="text-gray-400 dark:text-gray-500 font-mono">4.</span> Weiter klicken — der Installer erledigt den Rest</p>
+                  <p className="text-gray-400 dark:text-gray-500 font-sans">(Service wird automatisch installiert und gestartet)</p>
                 </div>
               ) : (
-                <div className="bg-gray-50 rounded-lg px-4 py-3 text-xs space-y-3">
+                <div className="bg-gray-50 dark:bg-gray-900 rounded-lg px-4 py-3 text-xs space-y-3">
                   {setupTab === 'debian' && (
                     <>
-                      <p className="font-sans text-gray-600">Voraussetzung — <code className="bg-gray-200 px-1.5 py-0.5 rounded text-[11px]">wget</code> installieren falls nicht vorhanden:</p>
+                      <p className="font-sans text-gray-600 dark:text-gray-400">Voraussetzung — <code className="bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded text-[11px]">wget</code> installieren falls nicht vorhanden:</p>
                       <CodeBlock>{`apt install -y wget`}</CodeBlock>
                     </>
                   )}
                   {setupTab === 'rhel' && (
                     <>
-                      <p className="font-sans text-gray-600">Voraussetzung — <code className="bg-gray-200 px-1.5 py-0.5 rounded text-[11px]">wget</code> installieren falls nicht vorhanden:</p>
+                      <p className="font-sans text-gray-600 dark:text-gray-400">Voraussetzung — <code className="bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded text-[11px]">wget</code> installieren falls nicht vorhanden:</p>
                       <CodeBlock>{`dnf install -y wget`}</CodeBlock>
                     </>
                   )}
                   {setupTab === 'generic' && (
-                    <p className="font-sans text-gray-600">
-                      <code className="bg-gray-200 px-1.5 py-0.5 rounded text-[11px]">wget</code> oder <code className="bg-gray-200 px-1.5 py-0.5 rounded text-[11px]">curl</code> muss installiert sein.
+                    <p className="font-sans text-gray-600 dark:text-gray-400">
+                      <code className="bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded text-[11px]">wget</code> oder <code className="bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded text-[11px]">curl</code> muss installiert sein.
                     </p>
                   )}
-                  <p className="font-sans text-gray-700">Als <strong>root</strong> ausführen:</p>
+                  <p className="font-sans text-gray-700 dark:text-gray-300">Als <strong>root</strong> ausführen:</p>
                   <CodeBlock>{`wget -qO- ${window.location.origin}/agent/install.sh | bash -s -- ${generatedToken} ${window.location.origin}`}</CodeBlock>
-                  <p className="text-gray-400 text-[11px] font-sans">
+                  <p className="text-gray-400 dark:text-gray-500 text-[11px] font-sans">
                     Das Script lädt den Agent herunter, erstellt Config + systemd-Service und startet den Agent.
                     Bei erneuter Ausführung wird eine bestehende Installation aktualisiert.
                   </p>
-                  <p className="text-gray-400 text-[11px] font-sans">
+                  <p className="text-gray-400 dark:text-gray-500 text-[11px] font-sans">
                     Logs: <code className="text-emerald-600">journalctl -u overseer-agent -f</code>
                   </p>
                 </div>
               )}
             </div>
 
-            <p className="text-xs text-gray-400 mt-3">Sobald der Agent sich meldet, erscheint der Status oben.</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-3">Sobald der Agent sich meldet, erscheint der Status oben.</p>
 
             <button
               onClick={() => { setShowAgentSetup(false); setGeneratedToken(null); setTokenCopied(false) }}
@@ -2445,12 +2445,12 @@ export default function HostDetailPage() {
       )}
 
       {/* Services table */}
-      <div className="bg-white rounded-xl border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="font-semibold text-gray-800">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+        <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+          <h2 className="font-semibold text-gray-800 dark:text-gray-200">
             Services ({serviceList.filter(s => s.active).length})
             {serviceList.some(s => !s.active) && (
-              <span className="text-gray-400 font-normal text-sm ml-1">
+              <span className="text-gray-400 dark:text-gray-500 font-normal text-sm ml-1">
                 · {serviceList.filter(s => !s.active).length} inaktiv
               </span>
             )}
@@ -2459,7 +2459,7 @@ export default function HostDetailPage() {
             {host.snmp_community && host.ip_address && (
               <button
                 onClick={() => setShowSnmpDiscovery(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-xs font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 <Search className="w-3.5 h-3.5" />
                 SNMP Discovery
@@ -2476,10 +2476,10 @@ export default function HostDetailPage() {
         </div>
 
         {svcLoading ? (
-          <div className="p-8 text-center text-gray-400">Lade Services…</div>
+          <div className="p-8 text-center text-gray-400 dark:text-gray-500">Lade Services…</div>
         ) : (
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
+            <thead className="bg-gray-50 dark:bg-gray-900 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
               <tr>
                 <th className="px-6 py-3 text-left">Status</th>
                 <th className="px-6 py-3 text-left">Check</th>
@@ -2491,7 +2491,7 @@ export default function HostDetailPage() {
                 <th className="px-6 py-3"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
               {sorted.map(svc => {
                 const meta = serviceNames[svc.service_id]
                 const isInactive = meta?.active === false
@@ -2502,7 +2502,7 @@ export default function HostDetailPage() {
                 return (
                   <React.Fragment key={svc.service_id}>
                   <tr
-                    className={clsx('hover:bg-gray-50 cursor-pointer', isInactive && 'opacity-50')}
+                    className={clsx('hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer', isInactive && 'opacity-50')}
                     onClick={() => {
                       if (isSslCheck) setExpandedSslService(prev => prev === svc.service_id ? null : svc.service_id)
                       const svcItem = serviceList.find(s => s.id === svc.service_id)
@@ -2511,7 +2511,7 @@ export default function HostDetailPage() {
                   >
                     <td className="px-6 py-3 whitespace-nowrap">
                       {isInactive ? (
-                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-bold bg-gray-100 text-gray-400">
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-bold bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500">
                           INAKTIV
                         </span>
                       ) : (
@@ -2531,9 +2531,9 @@ export default function HostDetailPage() {
                         </div>
                       )}
                     </td>
-                    <td className={clsx('px-6 py-3 font-medium whitespace-nowrap', isInactive ? 'text-gray-400 line-through' : 'text-gray-800')}>
+                    <td className={clsx('px-6 py-3 font-medium whitespace-nowrap', isInactive ? 'text-gray-400 dark:text-gray-500 line-through' : 'text-gray-800 dark:text-gray-200')}>
                       <span className="flex items-center gap-1.5">
-                        {isSslCheck && <Shield className={clsx('w-3.5 h-3.5', isSslExpanded ? 'text-overseer-500' : 'text-gray-400')} />}
+                        {isSslCheck && <Shield className={clsx('w-3.5 h-3.5', isSslExpanded ? 'text-overseer-500' : 'text-gray-400 dark:text-gray-500')} />}
                         {meta?.name ?? '–'}
                         {isSslCheck && (
                           <svg className={clsx('w-3 h-3 transition-transform', isSslExpanded && 'rotate-180')} viewBox="0 0 12 12" fill="currentColor">
@@ -2542,26 +2542,26 @@ export default function HostDetailPage() {
                         )}
                       </span>
                     </td>
-                    <td className="px-6 py-3 text-gray-500 text-xs whitespace-nowrap">
+                    <td className="px-6 py-3 text-gray-500 dark:text-gray-400 text-xs whitespace-nowrap">
                       <span className="flex items-center gap-1.5">
                         {meta?.check_type ? getCheckTypeLabel(meta.check_type) : '–'}
                         {meta?.check_mode === 'active' && (
-                          <span className="text-[10px] font-sans font-medium bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">aktiv</span>
+                          <span className="text-[10px] font-sans font-medium bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 px-1.5 py-0.5 rounded">aktiv</span>
                         )}
                         {meta?.check_mode === 'agent' && (
-                          <span className="text-[10px] font-sans font-medium bg-violet-100 text-violet-800 px-1.5 py-0.5 rounded">agent</span>
+                          <span className="text-[10px] font-sans font-medium bg-violet-100 dark:bg-violet-900/40 text-violet-800 dark:text-violet-300 px-1.5 py-0.5 rounded">agent</span>
                         )}
                       </span>
                     </td>
-                    <td className="px-6 py-3 text-gray-500" onClick={e => e.stopPropagation()}>
+                    <td className="px-6 py-3 text-gray-500 dark:text-gray-400" onClick={e => e.stopPropagation()}>
                       <span
-                        className="block break-words cursor-pointer hover:text-gray-800"
+                        className="block break-words cursor-pointer hover:text-gray-800 dark:hover:text-gray-200"
                         onClick={() => svc.status_message && navigator.clipboard.writeText(svc.status_message)}
                       >
                         {svc.status_message ?? '–'}
                       </span>
                     </td>
-                    <td className="px-6 py-3 text-right font-mono text-xs text-gray-700 whitespace-nowrap">
+                    <td className="px-6 py-3 text-right font-mono text-xs text-gray-700 dark:text-gray-300 whitespace-nowrap">
                       {svc.value !== null ? `${svc.value}${svc.unit ?? ''}` : '–'}
                     </td>
                     <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
@@ -2569,7 +2569,7 @@ export default function HostDetailPage() {
                         setHistoryTarget({ id: svc.service_id, name: meta?.name ?? svc.service_id, warn: meta?.threshold_warn ?? null, crit: meta?.threshold_crit ?? null })
                       } />
                     </td>
-                    <td className="px-6 py-3 text-right text-gray-400 text-xs whitespace-nowrap">
+                    <td className="px-6 py-3 text-right text-gray-400 dark:text-gray-500 text-xs whitespace-nowrap">
                       <span className="inline-flex items-center gap-1 justify-end">
                         <Clock className="w-3 h-3" />
                         {svc.last_state_change_at
@@ -2588,7 +2588,7 @@ export default function HostDetailPage() {
                             checkingNow[svc.service_id] === 'pending' ? 'text-overseer-400 animate-pulse' :
                             checkingNow[svc.service_id] === 'done' ? 'text-emerald-500' :
                             checkingNow[svc.service_id] === 'error' ? 'text-red-500' :
-                            'text-gray-400 hover:text-overseer-600 hover:bg-overseer-50',
+                            'text-gray-400 dark:text-gray-500 hover:text-overseer-600 hover:bg-overseer-50',
                           )}
                           title="Jetzt prüfen"
                         >
@@ -2601,7 +2601,7 @@ export default function HostDetailPage() {
                             className={clsx(
                               'p-1 rounded transition-colors',
                               meta.active
-                                ? 'text-gray-400 hover:text-red-500 hover:bg-red-50'
+                                ? 'text-gray-400 dark:text-gray-500 hover:text-red-500 hover:bg-red-50'
                                 : 'text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50',
                             )}
                             title={meta.active ? 'Deaktivieren' : 'Aktivieren'}
@@ -2623,7 +2623,7 @@ export default function HostDetailPage() {
                             </button>
                             <button
                               onClick={() => setConfirmDelete(null)}
-                              className="p-1 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                              className="p-1 rounded text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                               title="Abbrechen"
                             >
                               <X className="w-4 h-4" />
@@ -2632,7 +2632,7 @@ export default function HostDetailPage() {
                         ) : (
                           <button
                             onClick={() => setConfirmDelete(svc.service_id)}
-                            className="p-1 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                            className="p-1 rounded text-gray-400 dark:text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors"
                             title="Check löschen"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -2643,7 +2643,7 @@ export default function HostDetailPage() {
                   </tr>
                   {isSslExpanded && (
                     <tr>
-                      <td colSpan={8} className="px-4 py-2 bg-gray-50/50">
+                      <td colSpan={8} className="px-4 py-2 bg-gray-50/50 dark:bg-gray-900/50">
                         <SslCertificatePanel serviceId={svc.service_id} />
                       </td>
                     </tr>
@@ -2672,10 +2672,10 @@ export default function HostDetailPage() {
       />
 
       {/* Dependencies section */}
-      <div className="bg-white rounded-xl border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-100">
-          <h2 className="font-semibold text-gray-800">Dependencies</h2>
-          <p className="text-xs text-gray-500 mt-0.5">When a parent host is down, alerts for this host are suppressed.</p>
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+        <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+          <h2 className="font-semibold text-gray-800 dark:text-gray-200">Dependencies</h2>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">When a parent host is down, alerts for this host are suppressed.</p>
         </div>
         <div className="p-6 space-y-4">
           {/* Parents: this host depends on */}
@@ -2685,19 +2685,19 @@ export default function HostDetailPage() {
             return (
               <>
                 <div>
-                  <h3 className="text-xs font-medium text-gray-600 uppercase tracking-wider mb-2">This host depends on</h3>
+                  <h3 className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">This host depends on</h3>
                   {parents.length === 0 ? (
-                    <p className="text-sm text-gray-400">No parent dependencies</p>
+                    <p className="text-sm text-gray-400 dark:text-gray-500">No parent dependencies</p>
                   ) : (
                     <div className="space-y-1.5">
                       {parents.map(d => (
-                        <div key={d.id} className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg">
+                        <div key={d.id} className="flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-gray-900 rounded-lg">
                           <Link to={`/hosts/${d.depends_on_id}`} className="text-sm font-medium text-blue-600 hover:underline">
                             {d.depends_on_name || d.depends_on_id}
                           </Link>
                           <button
                             onClick={() => deleteDepMutation.mutate(d.id)}
-                            className="text-gray-400 hover:text-red-500 p-1"
+                            className="text-gray-400 dark:text-gray-500 hover:text-red-500 p-1"
                             title="Remove dependency"
                           >
                             <X className="w-3.5 h-3.5" />
@@ -2710,7 +2710,7 @@ export default function HostDetailPage() {
                   <div className="flex items-center gap-2 mt-2">
                     <select
                       value={depTarget} onChange={e => setDepTarget(e.target.value)}
-                      className="flex-1 text-sm border border-gray-300 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-overseer-500"
+                      className="flex-1 text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-overseer-500 dark:bg-gray-700 dark:text-gray-200"
                     >
                       <option value="">Select parent host...</option>
                       {allHosts
@@ -2727,22 +2727,22 @@ export default function HostDetailPage() {
                     </button>
                   </div>
                   {addDepMutation.isError && (
-                    <p className="text-xs text-red-500 mt-1">{(addDepMutation.error as any)?.response?.data?.detail || 'Error'}</p>
+                    <p className="text-xs text-red-500 dark:text-red-400 mt-1">{(addDepMutation.error as any)?.response?.data?.detail || 'Error'}</p>
                   )}
                 </div>
 
                 {children.length > 0 && (
-                  <div className="pt-3 border-t border-gray-100">
-                    <h3 className="text-xs font-medium text-gray-600 uppercase tracking-wider mb-2">Dependent hosts (children)</h3>
+                  <div className="pt-3 border-t border-gray-100 dark:border-gray-800">
+                    <h3 className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">Dependent hosts (children)</h3>
                     <div className="space-y-1.5">
                       {children.map(d => (
-                        <div key={d.id} className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg">
+                        <div key={d.id} className="flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-gray-900 rounded-lg">
                           <Link to={`/hosts/${d.source_id}`} className="text-sm font-medium text-blue-600 hover:underline">
                             {d.source_name || d.source_id}
                           </Link>
                           <button
                             onClick={() => deleteDepMutation.mutate(d.id)}
-                            className="text-gray-400 hover:text-red-500 p-1"
+                            className="text-gray-400 dark:text-gray-500 hover:text-red-500 p-1"
                             title="Remove dependency"
                           >
                             <X className="w-3.5 h-3.5" />

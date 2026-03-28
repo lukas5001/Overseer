@@ -120,36 +120,36 @@ function PolicyModal({ onClose, tenants, existing }: ModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-xl mx-4 p-6 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-xl mx-4 p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-gray-900">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
             {existing ? 'Policy bearbeiten' : 'Neue Global Policy'}
           </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+          <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><X className="w-5 h-5" /></button>
         </div>
 
         <div className="space-y-4">
           {/* Name */}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Name *</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Name *</label>
             <input type="text" value={form.name} onChange={e => set('name', e.target.value)}
               placeholder="z.B. Windows Services global ausschließen"
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500 dark:bg-gray-700 dark:text-gray-200" />
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Beschreibung</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Beschreibung</label>
             <input type="text" value={form.description} onChange={e => set('description', e.target.value)}
               placeholder="Optional"
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500 dark:bg-gray-700 dark:text-gray-200" />
           </div>
 
           {/* Check Type */}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Check-Typ</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Check-Typ</label>
             <select value={form.check_type} onChange={e => set('check_type', e.target.value)}
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500">
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500 dark:bg-gray-700 dark:text-gray-200">
               <option value="*">Alle Check-Typen</option>
               {POLICY_GROUPED.map(g => (
                 <optgroup key={g.category} label={g.label}>
@@ -161,39 +161,39 @@ function PolicyModal({ onClose, tenants, existing }: ModalProps) {
 
           {/* Merge Config */}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
               Config (JSON) — wird in check_config gemergt
             </label>
             <textarea
               value={form.merge_config_json}
               onChange={e => set('merge_config_json', e.target.value)}
               rows={5}
-              className="w-full text-sm font-mono border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500"
+              className="w-full text-sm font-mono border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500 dark:bg-gray-700 dark:text-gray-200"
               placeholder='{"exclude": ["sppsvc", "wuauserv"]}'
             />
           </div>
 
           {/* Merge Strategy */}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Merge-Strategie</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Merge-Strategie</label>
             <div className="flex gap-3">
               <label className="flex items-center gap-2 text-sm cursor-pointer">
                 <input type="radio" checked={form.merge_strategy === 'merge'}
                   onChange={() => set('merge_strategy', 'merge')} className="accent-overseer-600" />
-                <span>Merge <span className="text-xs text-gray-400">(Arrays vereinen, Skalare als Default)</span></span>
+                <span>Merge <span className="text-xs text-gray-400 dark:text-gray-500">(Arrays vereinen, Skalare als Default)</span></span>
               </label>
               <label className="flex items-center gap-2 text-sm cursor-pointer">
                 <input type="radio" checked={form.merge_strategy === 'override'}
                   onChange={() => set('merge_strategy', 'override')} className="accent-overseer-600" />
-                <span>Override <span className="text-xs text-gray-400">(Werte erzwingen)</span></span>
+                <span>Override <span className="text-xs text-gray-400 dark:text-gray-500">(Werte erzwingen)</span></span>
               </label>
             </div>
           </div>
 
           {/* Priority */}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
-              Priorität: {form.priority} <span className="text-gray-400">(höher = wird später angewandt)</span>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+              Priorität: {form.priority} <span className="text-gray-400 dark:text-gray-500">(höher = wird später angewandt)</span>
             </label>
             <input type="range" min={0} max={100} step={1} value={form.priority}
               onChange={e => set('priority', parseInt(e.target.value))}
@@ -207,19 +207,19 @@ function PolicyModal({ onClose, tenants, existing }: ModalProps) {
               {(['all', 'include_tenants', 'exclude_tenants'] as const).map(mode => (
                 <button key={mode} onClick={() => set('scope_mode', mode)}
                   className={clsx('px-3 py-1.5 rounded text-xs font-semibold transition-all',
-                    form.scope_mode === mode ? 'bg-overseer-100 text-overseer-700' : 'bg-gray-100 text-gray-400')}>
+                    form.scope_mode === mode ? 'bg-overseer-100 text-overseer-700' : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500')}>
                   {mode === 'all' ? 'Alle Tenants' : mode === 'include_tenants' ? 'Nur diese' : 'Alle außer'}
                 </button>
               ))}
             </div>
 
             {form.scope_mode !== 'all' && (
-              <div className="max-h-40 overflow-y-auto space-y-1 border border-gray-200 rounded-lg p-2">
+              <div className="max-h-40 overflow-y-auto space-y-1 border border-gray-200 dark:border-gray-700 rounded-lg p-2">
                 {tenants.map(t => (
-                  <label key={t.id} className="flex items-center gap-2 text-sm cursor-pointer px-1 py-0.5 hover:bg-gray-50 rounded">
+                  <label key={t.id} className="flex items-center gap-2 text-sm cursor-pointer px-1 py-0.5 hover:bg-gray-50 dark:hover:bg-gray-700 rounded">
                     <input type="checkbox" checked={form.scope_tenant_ids.includes(t.id)}
-                      onChange={() => toggleTenant(t.id)} className="rounded border-gray-300" />
-                    <span className="text-gray-700">{t.name}</span>
+                      onChange={() => toggleTenant(t.id)} className="rounded border-gray-300 dark:border-gray-600" />
+                    <span className="text-gray-700 dark:text-gray-300">{t.name}</span>
                   </label>
                 ))}
               </div>
@@ -229,8 +229,8 @@ function PolicyModal({ onClose, tenants, existing }: ModalProps) {
           {/* Enabled */}
           <label className="flex items-center gap-2 text-sm cursor-pointer">
             <input type="checkbox" checked={form.enabled}
-              onChange={e => set('enabled', e.target.checked)} className="rounded border-gray-300" />
-            <span className="text-gray-700">Aktiviert</span>
+              onChange={e => set('enabled', e.target.checked)} className="rounded border-gray-300 dark:border-gray-600" />
+            <span className="text-gray-700 dark:text-gray-300">Aktiviert</span>
           </label>
 
           {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}
@@ -238,7 +238,7 @@ function PolicyModal({ onClose, tenants, existing }: ModalProps) {
 
         <div className="flex gap-3 mt-6">
           <button onClick={onClose}
-            className="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">Abbrechen</button>
+            className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Abbrechen</button>
           <button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !form.name}
             className="flex-1 py-2 rounded-lg bg-overseer-600 text-white text-sm font-medium hover:bg-overseer-700 disabled:opacity-60">
             {saveMutation.isPending ? 'Speichern...' : 'Speichern'}
@@ -292,8 +292,8 @@ export default function GlobalPoliciesPage() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <Globe className="w-7 h-7 text-overseer-600" />
-          <h1 className="text-2xl font-bold text-gray-900">Globale Check-Policies</h1>
-          <span className="text-sm text-gray-500 ml-2">{policies.length} Policies</span>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Globale Check-Policies</h1>
+          <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">{policies.length} Policies</span>
         </div>
         <button onClick={() => setShowModal(true)}
           className="inline-flex items-center gap-2 px-4 py-2 bg-overseer-600 text-white text-sm font-medium rounded-lg hover:bg-overseer-700">
@@ -308,11 +308,11 @@ export default function GlobalPoliciesPage() {
         Bei Arrays (z.B. <code className="font-mono bg-blue-100 px-1 rounded">exclude</code>) werden die Werte vereint.
       </div>
 
-      {isLoading && <div className="text-gray-400 text-sm">Lade...</div>}
+      {isLoading && <div className="text-gray-400 dark:text-gray-500 text-sm">Lade...</div>}
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
+          <thead className="bg-gray-50 dark:bg-gray-900 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
             <tr>
               <th className="px-6 py-3 text-left">Name</th>
               <th className="px-6 py-3 text-left">Check-Typ</th>
@@ -324,25 +324,25 @@ export default function GlobalPoliciesPage() {
               <th className="px-6 py-3 text-right">Aktionen</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
             {policies.map(p => (
-              <tr key={p.id} className={clsx('hover:bg-gray-50', !p.enabled && 'opacity-50')}>
+              <tr key={p.id} className={clsx('hover:bg-gray-50 dark:hover:bg-gray-700', !p.enabled && 'opacity-50')}>
                 <td className="px-6 py-3">
-                  <p className="font-medium text-gray-900">{p.name}</p>
-                  {p.description && <p className="text-xs text-gray-400 mt-0.5">{p.description}</p>}
+                  <p className="font-medium text-gray-900 dark:text-gray-100">{p.name}</p>
+                  {p.description && <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{p.description}</p>}
                 </td>
                 <td className="px-6 py-3">
-                  <span className="px-2 py-0.5 rounded bg-gray-100 text-xs text-gray-700">
+                  <span className="px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-xs text-gray-700 dark:text-gray-300">
                     {p.check_type === '*' ? 'Alle' : (CHECK_TYPE_REGISTRY.find(ct => ct.key === p.check_type)?.label ?? p.check_type)}
                   </span>
                 </td>
                 <td className="px-6 py-3">
-                  <code className="text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded block max-w-xs truncate" title={JSON.stringify(p.merge_config)}>
+                  <code className="text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900 px-2 py-1 rounded block max-w-xs truncate" title={JSON.stringify(p.merge_config)}>
                     {JSON.stringify(p.merge_config)}
                   </code>
                 </td>
-                <td className="px-6 py-3 text-xs text-gray-500">{p.merge_strategy}</td>
-                <td className="px-6 py-3 text-xs text-gray-500">
+                <td className="px-6 py-3 text-xs text-gray-500 dark:text-gray-400">{p.merge_strategy}</td>
+                <td className="px-6 py-3 text-xs text-gray-500 dark:text-gray-400">
                   {p.scope_mode === 'all' ? (
                     <span className="text-green-600 font-medium">Alle Tenants</span>
                   ) : (
@@ -352,7 +352,7 @@ export default function GlobalPoliciesPage() {
                     </span>
                   )}
                 </td>
-                <td className="px-6 py-3 text-center text-xs font-mono text-gray-500">{p.priority}</td>
+                <td className="px-6 py-3 text-center text-xs font-mono text-gray-500 dark:text-gray-400">{p.priority}</td>
                 <td className="px-6 py-3 text-center">
                   <button
                     onClick={() => toggleEnabled.mutate({ id: p.id, enabled: !p.enabled })}
@@ -364,10 +364,10 @@ export default function GlobalPoliciesPage() {
                 </td>
                 <td className="px-6 py-3 text-right">
                   <div className="flex items-center gap-2 justify-end">
-                    <button onClick={() => setEditPolicy(p)} title="Bearbeiten" className="text-gray-400 hover:text-overseer-600">
+                    <button onClick={() => setEditPolicy(p)} title="Bearbeiten" className="text-gray-400 dark:text-gray-500 hover:text-overseer-600">
                       <Pencil className="w-4 h-4" />
                     </button>
-                    <button onClick={() => setDeleteTarget(p.id)} title="Löschen" className="text-gray-400 hover:text-red-500">
+                    <button onClick={() => setDeleteTarget(p.id)} title="Löschen" className="text-gray-400 dark:text-gray-500 hover:text-red-500">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
@@ -377,7 +377,7 @@ export default function GlobalPoliciesPage() {
           </tbody>
         </table>
         {policies.length === 0 && !isLoading && (
-          <div className="p-8 text-center text-gray-400 text-sm">Keine globalen Check-Policies konfiguriert.</div>
+          <div className="p-8 text-center text-gray-400 dark:text-gray-500 text-sm">Keine globalen Check-Policies konfiguriert.</div>
         )}
       </div>
 

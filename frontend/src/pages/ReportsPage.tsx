@@ -39,7 +39,7 @@ function cronToLabel(cron: string): string {
 
 function statusBadge(status: string) {
   const map: Record<string, { bg: string; text: string; label: string }> = {
-    pending: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Pending' },
+    pending: { bg: 'bg-gray-100 dark:bg-gray-700', text: 'text-gray-800 dark:text-gray-300', label: 'Pending' },
     generating: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Generating...' },
     sending: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Sending...' },
     sent: { bg: 'bg-emerald-100', text: 'text-emerald-800', label: 'Sent' },
@@ -124,12 +124,12 @@ export default function ReportsPage() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <FileText className="w-7 h-7 text-overseer-600" />
-          <h1 className="text-2xl font-bold text-gray-900">PDF Reports</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">PDF Reports</h1>
         </div>
         {isAdmin && (
           <div className="flex items-center gap-2">
             <button onClick={() => setShowGenerateDialog(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
               <Play className="w-4 h-4" /> Jetzt generieren
             </button>
             <button onClick={() => { setEditSchedule(null); setShowCreateDialog(true) }}
@@ -144,19 +144,19 @@ export default function ReportsPage() {
       {isSuperAdmin && tenants.length > 0 && (
         <div className="mb-4 relative inline-block">
           <select value={activeTenantId} onChange={e => setSelectedTenantId(e.target.value)}
-            className="text-sm border border-gray-300 rounded-lg pl-3 pr-8 py-2 bg-white appearance-none outline-none focus:ring-2 focus:ring-overseer-500">
+            className="text-sm border border-gray-300 rounded-lg pl-3 pr-8 py-2 bg-white dark:bg-gray-700 dark:text-gray-200 appearance-none outline-none focus:ring-2 focus:ring-overseer-500">
             {tenants.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
-          <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <ChevronDown className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
         </div>
       )}
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 border-b border-gray-200">
+      <div className="flex gap-1 mb-6 border-b border-gray-200 dark:border-gray-700">
         {(['schedules', 'history'] as Tab[]).map(t => (
           <button key={t} onClick={() => setTab(t)}
             className={clsx('px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors',
-              tab === t ? 'border-overseer-600 text-overseer-700' : 'border-transparent text-gray-500 hover:text-gray-700')}>
+              tab === t ? 'border-overseer-600 text-overseer-700' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200')}>
             {t === 'schedules' ? 'Schedules' : 'History'}
           </button>
         ))}
@@ -202,9 +202,9 @@ export default function ReportsPage() {
       {/* Preview overlay */}
       {previewHtml && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl w-full max-w-5xl max-h-[90vh] overflow-auto relative">
+          <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-5xl max-h-[90vh] overflow-auto relative">
             <button onClick={() => setPreviewHtml(null)}
-              className="absolute top-3 right-3 p-1 rounded-lg hover:bg-gray-100 z-10">
+              className="absolute top-3 right-3 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 z-10">
               <X className="w-5 h-5" />
             </button>
             <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
@@ -224,12 +224,12 @@ function SchedulesTab({ schedules, loading, onEdit, onDelete, onToggle }: {
   onDelete: (s: ReportSchedule) => void
   onToggle: (s: ReportSchedule) => void
 }) {
-  if (loading) return <div className="text-gray-400 text-sm">Lade Schedules...</div>
+  if (loading) return <div className="text-gray-400 dark:text-gray-500 text-sm">Lade Schedules...</div>
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
       <table className="w-full text-sm">
-        <thead className="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
+        <thead className="bg-gray-50 dark:bg-gray-900 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
           <tr>
             <th className="px-6 py-3 text-left">Name</th>
             <th className="px-6 py-3 text-left">Typ</th>
@@ -241,32 +241,32 @@ function SchedulesTab({ schedules, loading, onEdit, onDelete, onToggle }: {
             <th className="px-6 py-3 text-right">Aktionen</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100">
+        <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
           {schedules.map(s => (
-            <tr key={s.id} className="hover:bg-gray-50">
-              <td className="px-6 py-3 font-medium text-gray-900">{s.name}</td>
-              <td className="px-6 py-3 text-gray-600 capitalize">{s.report_type}</td>
-              <td className="px-6 py-3 text-gray-600">{cronToLabel(s.cron_expression)}</td>
-              <td className="px-6 py-3 text-gray-500 text-xs max-w-[200px] truncate">
+            <tr key={s.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+              <td className="px-6 py-3 font-medium text-gray-900 dark:text-gray-100">{s.name}</td>
+              <td className="px-6 py-3 text-gray-600 dark:text-gray-400 capitalize">{s.report_type}</td>
+              <td className="px-6 py-3 text-gray-600 dark:text-gray-400">{cronToLabel(s.cron_expression)}</td>
+              <td className="px-6 py-3 text-gray-500 dark:text-gray-400 text-xs max-w-[200px] truncate">
                 {(s.recipients?.to || []).join(', ') || '—'}
               </td>
-              <td className="px-6 py-3 text-gray-500">{localDate(s.next_run_at)}</td>
-              <td className="px-6 py-3 text-gray-500">{localDate(s.last_run_at)}</td>
+              <td className="px-6 py-3 text-gray-500 dark:text-gray-400">{localDate(s.next_run_at)}</td>
+              <td className="px-6 py-3 text-gray-500 dark:text-gray-400">{localDate(s.last_run_at)}</td>
               <td className="px-6 py-3 text-center">
                 <button onClick={() => onToggle(s)}
                   className={clsx('inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
-                    s.enabled ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500')}>
+                    s.enabled ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400')}>
                   {s.enabled ? 'Active' : 'Disabled'}
                 </button>
               </td>
               <td className="px-6 py-3 text-right">
                 <div className="flex items-center justify-end gap-1">
                   <button onClick={() => onEdit(s)} title="Bearbeiten"
-                    className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700">
+                    className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-200">
                     <Pencil className="w-4 h-4" />
                   </button>
                   <button onClick={() => onDelete(s)} title="Löschen"
-                    className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600">
+                    className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 dark:text-gray-500 hover:text-red-600">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
@@ -276,7 +276,7 @@ function SchedulesTab({ schedules, loading, onEdit, onDelete, onToggle }: {
         </tbody>
       </table>
       {schedules.length === 0 && (
-        <div className="p-8 text-center text-gray-400 text-sm">
+        <div className="p-8 text-center text-gray-400 dark:text-gray-500 text-sm">
           Keine Report-Schedules vorhanden. Erstelle einen mit "Neuer Schedule".
         </div>
       )}
@@ -293,12 +293,12 @@ function HistoryTab({ history, loading, onDownload, onResend, onRetry }: {
   onResend: (d: ReportDelivery) => void
   onRetry: (d: ReportDelivery) => void
 }) {
-  if (loading) return <div className="text-gray-400 text-sm">Lade History...</div>
+  if (loading) return <div className="text-gray-400 dark:text-gray-500 text-sm">Lade History...</div>
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
       <table className="w-full text-sm">
-        <thead className="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
+        <thead className="bg-gray-50 dark:bg-gray-900 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
           <tr>
             <th className="px-6 py-3 text-left">Datum</th>
             <th className="px-6 py-3 text-left">Schedule</th>
@@ -310,14 +310,14 @@ function HistoryTab({ history, loading, onDownload, onResend, onRetry }: {
             <th className="px-6 py-3 text-right">Aktionen</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100">
+        <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
           {history.map(d => (
-            <tr key={d.id} className="hover:bg-gray-50">
-              <td className="px-6 py-3 text-gray-500">{localDate(d.created_at)}</td>
-              <td className="px-6 py-3 text-gray-900 font-medium">{d.schedule_name || 'Ad-hoc'}</td>
-              <td className="px-6 py-3 text-gray-600 capitalize">{d.report_type}</td>
-              <td className="px-6 py-3 text-gray-500">{d.report_period_start} – {d.report_period_end}</td>
-              <td className="px-6 py-3 text-gray-500 text-xs max-w-[160px] truncate">
+            <tr key={d.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+              <td className="px-6 py-3 text-gray-500 dark:text-gray-400">{localDate(d.created_at)}</td>
+              <td className="px-6 py-3 text-gray-900 dark:text-gray-100 font-medium">{d.schedule_name || 'Ad-hoc'}</td>
+              <td className="px-6 py-3 text-gray-600 dark:text-gray-400 capitalize">{d.report_type}</td>
+              <td className="px-6 py-3 text-gray-500 dark:text-gray-400">{d.report_period_start} – {d.report_period_end}</td>
+              <td className="px-6 py-3 text-gray-500 dark:text-gray-400 text-xs max-w-[160px] truncate">
                 {(d.recipients?.to || []).join(', ') || '—'}
               </td>
               <td className="px-6 py-3 text-center">
@@ -328,24 +328,24 @@ function HistoryTab({ history, loading, onDownload, onResend, onRetry }: {
                   </span>
                 )}
               </td>
-              <td className="px-6 py-3 text-right text-gray-500">{formatBytes(d.pdf_size_bytes)}</td>
+              <td className="px-6 py-3 text-right text-gray-500 dark:text-gray-400">{formatBytes(d.pdf_size_bytes)}</td>
               <td className="px-6 py-3 text-right">
                 <div className="flex items-center justify-end gap-1">
                   {d.pdf_path && d.status === 'sent' && (
                     <button onClick={() => onDownload(d)} title="Download"
-                      className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700">
+                      className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-200">
                       <Download className="w-4 h-4" />
                     </button>
                   )}
                   {d.pdf_path && d.status === 'sent' && (
                     <button onClick={() => onResend(d)} title="Erneut senden"
-                      className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700">
+                      className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-200">
                       <Send className="w-4 h-4" />
                     </button>
                   )}
                   {d.status === 'failed' && (
                     <button onClick={() => onRetry(d)} title="Retry"
-                      className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-orange-600">
+                      className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 dark:text-gray-500 hover:text-orange-600">
                       <RotateCcw className="w-4 h-4" />
                     </button>
                   )}
@@ -356,7 +356,7 @@ function HistoryTab({ history, loading, onDownload, onResend, onRetry }: {
         </tbody>
       </table>
       {history.length === 0 && (
-        <div className="p-8 text-center text-gray-400 text-sm">Noch keine Reports generiert.</div>
+        <div className="p-8 text-center text-gray-400 dark:text-gray-500 text-sm">Noch keine Reports generiert.</div>
       )}
     </div>
   )
@@ -444,35 +444,35 @@ function ScheduleDialog({ tenantId, schedule, onClose }: {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl w-full max-w-xl max-h-[90vh] overflow-auto">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-bold text-gray-900">
+      <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-xl max-h-[90vh] overflow-auto">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
             {isEdit ? 'Schedule bearbeiten' : 'Neuer Report-Schedule'}
           </h2>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100"><X className="w-5 h-5" /></button>
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"><X className="w-5 h-5" /></button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
             <input type="text" value={name} onChange={e => setName(e.target.value)} required
               placeholder="z.B. Monthly Executive Report"
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
           </div>
 
           {/* Report Type */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Report-Typ</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Report-Typ</label>
             <select value={reportType} onChange={e => setReportType(e.target.value)}
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white outline-none focus:ring-2 focus:ring-overseer-500">
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:text-gray-200 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 outline-none focus:ring-2 focus:ring-overseer-500">
               {REPORT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
           </div>
 
           {/* Frequency */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Frequenz</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Frequenz</label>
             <div className="flex gap-2 flex-wrap mb-2">
               {FREQUENCY_PRESETS.map(p => (
                 <button key={p.cron} type="button"
@@ -480,82 +480,82 @@ function ScheduleDialog({ tenantId, schedule, onClose }: {
                   className={clsx('px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors',
                     cronExpr === p.cron && !customCron
                       ? 'bg-overseer-600 text-white border-overseer-600'
-                      : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50')}>
+                      : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600')}>
                   {p.label}
                 </button>
               ))}
             </div>
             <input type="text" value={customCron} onChange={e => setCustomCron(e.target.value)}
               placeholder="Oder eigene Cron-Expression (z.B. 0 8 * * 1)"
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500 font-mono" />
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500 font-mono" />
           </div>
 
           {/* Recipients */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Empfänger (To)</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Empfänger (To)</label>
             <input type="text" value={toEmails} onChange={e => setToEmails(e.target.value)} required
               placeholder="email@example.com, other@example.com"
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">CC (optional)</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">CC (optional)</label>
             <input type="text" value={ccEmails} onChange={e => setCcEmails(e.target.value)}
               placeholder="cc@example.com"
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
           </div>
 
           {/* Branding */}
-          <div className="border-t border-gray-100 pt-4">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Branding</h3>
+          <div className="border-t border-gray-100 dark:border-gray-800 pt-4">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Branding</h3>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Firmenname</label>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Firmenname</label>
                 <input type="text" value={companyName} onChange={e => setCompanyName(e.target.value)}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+                  className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Primärfarbe</label>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Primärfarbe</label>
                 <div className="flex items-center gap-2">
                   <input type="color" value={primaryColor} onChange={e => setPrimaryColor(e.target.value)}
-                    className="w-8 h-8 rounded border border-gray-300 cursor-pointer" />
+                    className="w-8 h-8 rounded border border-gray-300 dark:border-gray-600 cursor-pointer" />
                   <input type="text" value={primaryColor} onChange={e => setPrimaryColor(e.target.value)}
-                    className="flex-1 text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500 font-mono" />
+                    className="flex-1 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500 font-mono" />
                 </div>
               </div>
             </div>
             <div className="mt-3">
-              <label className="block text-xs text-gray-500 mb-1">Footer-Text</label>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Footer-Text</label>
               <input type="text" value={footerText} onChange={e => setFooterText(e.target.value)}
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+                className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
             </div>
           </div>
 
           {/* Cover Text */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Anschreiben (optional)</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Anschreiben (optional)</label>
             <textarea value={coverText} onChange={e => setCoverText(e.target.value)} rows={3}
               placeholder="Text oberhalb des Reports..."
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
           </div>
 
           {/* Timezone + Enabled */}
           <div className="flex items-center gap-4">
             <div className="flex-1">
-              <label className="block text-xs text-gray-500 mb-1">Zeitzone</label>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Zeitzone</label>
               <input type="text" value={tz} onChange={e => setTz(e.target.value)}
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+                className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
             </div>
             <label className="flex items-center gap-2 mt-4 cursor-pointer">
               <input type="checkbox" checked={enabled} onChange={e => setEnabled(e.target.checked)}
-                className="w-4 h-4 rounded border-gray-300 text-overseer-600 focus:ring-overseer-500" />
-              <span className="text-sm text-gray-700">Aktiviert</span>
+                className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-overseer-600 focus:ring-overseer-500" />
+              <span className="text-sm text-gray-700 dark:text-gray-300 dark:text-gray-600">Aktiviert</span>
             </label>
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
             <button type="button" onClick={onClose}
-              className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
+              className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
               Abbrechen
             </button>
             <button type="submit" disabled={saving}
@@ -613,10 +613,10 @@ function GenerateDialog({ tenantId, onClose }: {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl w-full max-w-md">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-bold text-gray-900">Report jetzt generieren</h2>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100"><X className="w-5 h-5" /></button>
+      <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-md">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Report jetzt generieren</h2>
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"><X className="w-5 h-5" /></button>
         </div>
 
         {result ? (
@@ -624,7 +624,7 @@ function GenerateDialog({ tenantId, onClose }: {
             <div className="text-4xl">
               {result.status === 'sent' ? '✓' : result.status === 'failed' ? '✗' : '⏳'}
             </div>
-            <div className="text-sm text-gray-700">
+            <div className="text-sm text-gray-700 dark:text-gray-300 dark:text-gray-600">
               Status: {statusBadge(result.status)}
             </div>
             {result.error_message && (
@@ -648,7 +648,7 @@ function GenerateDialog({ tenantId, onClose }: {
             )}
             <div>
               <button onClick={onClose}
-                className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
+                className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
                 Schließen
               </button>
             </div>
@@ -656,42 +656,42 @@ function GenerateDialog({ tenantId, onClose }: {
         ) : (
           <form onSubmit={handleGenerate} className="p-6 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Report-Typ</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Report-Typ</label>
               <select value={reportType} onChange={e => setReportType(e.target.value)}
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white outline-none focus:ring-2 focus:ring-overseer-500">
+                className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:text-gray-200 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 outline-none focus:ring-2 focus:ring-overseer-500">
                 {REPORT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Von</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Von</label>
                 <input type="date" value={periodStart} onChange={e => setPeriodStart(e.target.value)} required
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+                  className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Bis</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bis</label>
                 <input type="date" value={periodEnd} onChange={e => setPeriodEnd(e.target.value)} required
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+                  className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Empfänger (optional)</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Empfänger (optional)</label>
               <input type="text" value={toEmails} onChange={e => setToEmails(e.target.value)}
                 placeholder="Leer lassen = nur generieren, nicht senden"
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+                className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Firmenname</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Firmenname</label>
               <input type="text" value={companyName} onChange={e => setCompanyName(e.target.value)}
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+                className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
             </div>
 
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
               <button type="button" onClick={onClose}
-                className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
+                className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
                 Abbrechen
               </button>
               <button type="submit" disabled={generating}

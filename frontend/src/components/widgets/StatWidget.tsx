@@ -25,9 +25,9 @@ export default function StatWidget({ config, data, summaryData, isLoading }: Wid
     const val = summaryData[ds.field]
     const color = opts.color || '#fff'
     return (
-      <div className="h-full flex flex-col bg-gray-800 border border-gray-700 rounded-lg overflow-hidden">
-        <div className="px-3 py-2 border-b border-gray-700">
-          <span className="text-sm font-medium text-gray-200 truncate">{config.title}</span>
+      <div className="h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+        <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-700">
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">{config.title}</span>
         </div>
         <div className="flex-1 flex items-center justify-center">
           <span className="text-4xl font-bold" style={{ color }}>
@@ -51,23 +51,23 @@ export default function StatWidget({ config, data, summaryData, isLoading }: Wid
   const hasSparkline = opts.showSparkline !== false && sparkData && sparkData.length > 1
 
   return (
-    <div className="h-full flex flex-col bg-gray-800 border border-gray-700 rounded-lg overflow-hidden">
-      <div className="px-3 py-2 border-b border-gray-700 flex items-center justify-between">
-        <span className="text-sm font-medium text-gray-200 truncate">{config.title}</span>
+    <div className="h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+      <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+        <span className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">{config.title}</span>
         {series && (
-          <span className="text-[10px] text-gray-500 truncate ml-2">{series.host}</span>
+          <span className="text-[10px] text-gray-400 dark:text-gray-500 truncate ml-2">{series.host}</span>
         )}
       </div>
       <div className="flex-1 flex flex-col items-center justify-center relative px-3">
         {isLoading && !data ? (
-          <div className="text-gray-500 text-sm">Laden...</div>
+          <div className="text-gray-400 dark:text-gray-500 text-sm">Laden...</div>
         ) : (
           <>
             <span className="text-4xl font-bold" style={{ color: displayColor }}>
               {formatValue(value, unit, decimals)}
             </span>
             {series && (
-              <span className="text-xs text-gray-500 mt-1 truncate max-w-full">
+              <span className="text-xs text-gray-400 dark:text-gray-500 mt-1 truncate max-w-full">
                 {series.metric}
               </span>
             )}

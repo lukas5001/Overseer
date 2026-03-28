@@ -72,13 +72,13 @@ export default function NotificationLogPage() {
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <ScrollText className="w-7 h-7 text-overseer-600" />
-        <h1 className="text-2xl font-bold text-gray-900">Notification Log</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Notification Log</h1>
       </div>
 
       {/* Filters */}
       <div className="flex items-center gap-3 mb-4">
         <select value={channelFilter} onChange={e => { setChannelFilter(e.target.value); setPage(0) }}
-          className="text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500">
+          className="text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500">
           <option value="">Alle Kanäle</option>
           {channels.map(ch => (
             <option key={ch.id} value={ch.id}>{ch.name} ({ch.channel_type})</option>
@@ -86,18 +86,18 @@ export default function NotificationLogPage() {
         </select>
 
         <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(0) }}
-          className="text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500">
+          className="text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500">
           <option value="">Alle Status</option>
           <option value="success">Nur erfolgreich</option>
           <option value="error">Nur Fehler</option>
         </select>
       </div>
 
-      {isLoading && <div className="text-gray-400 text-sm">Lade…</div>}
+      {isLoading && <div className="text-gray-400 dark:text-gray-500 text-sm">Lade…</div>}
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
+          <thead className="bg-gray-50 dark:bg-gray-900 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
             <tr>
               <th className="px-4 py-3 text-left w-8"></th>
               <th className="px-4 py-3 text-left">Zeitpunkt</th>
@@ -107,39 +107,39 @@ export default function NotificationLogPage() {
               <th className="px-4 py-3 text-center">Status</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
             {logs.map(log => {
               const isExpanded = expandedRow === log.id
               const hasError = !log.success && log.error_message
 
               return (
-                <tr key={log.id} className="hover:bg-gray-50">
+                <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td className="px-4 py-3">
                     {hasError && (
                       <button onClick={() => setExpandedRow(isExpanded ? null : log.id)}
-                        className="text-gray-400 hover:text-gray-600">
+                        className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
                         {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                       </button>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
+                  <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
                     {formatDateTime(log.sent_at)}
                   </td>
                   <td className="px-4 py-3">
-                    <span className="inline-flex items-center gap-1.5 text-xs text-gray-600">
+                    <span className="inline-flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
                       <ChannelTypeIcon type={log.channel_type} className="w-3.5 h-3.5" />
                       {log.channel_id ? channelNames[log.channel_id] ?? log.channel_type : log.channel_type}
                     </span>
                   </td>
                   <td className="px-4 py-3">
                     <span className={clsx('px-1.5 py-0.5 rounded text-xs font-medium',
-                      log.notification_type === 'alert' ? 'bg-red-100 text-red-800'
-                        : log.notification_type === 'recovery' ? 'bg-emerald-100 text-emerald-800'
-                        : 'bg-gray-100 text-gray-600')}>
+                      log.notification_type === 'alert' ? 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'
+                        : log.notification_type === 'recovery' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
+                        : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400')}>
                       {TYPE_LABELS[log.notification_type] ?? log.notification_type}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-xs text-gray-600">
+                  <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-400">
                     {log.host_name && log.service_name
                       ? `${log.host_name} / ${log.service_name}`
                       : log.host_name ?? log.service_name ?? '–'}
@@ -172,19 +172,19 @@ export default function NotificationLogPage() {
           </tbody>
         </table>
         {logs.length === 0 && !isLoading && (
-          <div className="p-8 text-center text-gray-400 text-sm">Keine Log-Einträge gefunden.</div>
+          <div className="p-8 text-center text-gray-400 dark:text-gray-500 text-sm">Keine Log-Einträge gefunden.</div>
         )}
       </div>
 
       {/* Pagination */}
       <div className="flex items-center justify-between mt-4">
         <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}
-          className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 disabled:opacity-30">
+          className="inline-flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 disabled:opacity-30">
           <ChevronLeft className="w-4 h-4" /> Zurück
         </button>
-        <span className="text-xs text-gray-500">Seite {page + 1}</span>
+        <span className="text-xs text-gray-500 dark:text-gray-400">Seite {page + 1}</span>
         <button onClick={() => setPage(p => p + 1)} disabled={logs.length < PAGE_SIZE}
-          className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 disabled:opacity-30">
+          className="inline-flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 disabled:opacity-30">
           Weiter <ChevronRight className="w-4 h-4" />
         </button>
       </div>

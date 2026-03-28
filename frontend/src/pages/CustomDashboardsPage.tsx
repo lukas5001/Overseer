@@ -58,13 +58,13 @@ export default function CustomDashboardsPage() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <LayoutGrid className="w-6 h-6 text-blue-400" />
-          <h1 className="text-2xl font-bold text-white">Dashboards</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboards</h1>
         </div>
         {tenants && tenants.length > 1 && (
           <select
             value={selectedTenant}
             onChange={e => setSelectedTenant(e.target.value)}
-            className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-200"
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-700 dark:text-gray-200"
           >
             {tenants.map(t => (
               <option key={t.id} value={t.id}>{t.name}</option>
@@ -81,10 +81,10 @@ export default function CustomDashboardsPage() {
             <div
               key={d.id}
               onClick={() => navigate(`/custom-dashboards/${d.id}`)}
-              className="bg-gray-800 border border-gray-700 rounded-xl p-5 cursor-pointer hover:border-blue-500/50 hover:bg-gray-750 transition-all group"
+              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 cursor-pointer hover:border-blue-500/50 hover:bg-gray-50 dark:hover:bg-gray-750 transition-all group"
             >
               <div className="flex items-start justify-between mb-2">
-                <h3 className="text-base font-semibold text-white truncate pr-2">{d.title}</h3>
+                <h3 className="text-base font-semibold text-gray-900 dark:text-white truncate pr-2">{d.title}</h3>
                 <div className="flex items-center gap-1">
                   {d.is_default && (
                     <Star className="w-4 h-4 text-amber-400 flex-shrink-0" fill="currentColor" />
@@ -101,12 +101,12 @@ export default function CustomDashboardsPage() {
                 </div>
               </div>
               {d.description && (
-                <p className="text-sm text-gray-400 mb-3 line-clamp-2">{d.description}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-3 line-clamp-2">{d.description}</p>
               )}
               {d.is_default && !d.description && (
-                <p className="text-sm text-gray-500 mb-3">Standard-Dashboard</p>
+                <p className="text-sm text-gray-400 dark:text-gray-500 mb-3">Standard-Dashboard</p>
               )}
-              <div className="flex items-center gap-1.5 text-xs text-gray-500">
+              <div className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
                 <Clock className="w-3.5 h-3.5" />
                 <span>{timeAgo(d.updated_at)}</span>
               </div>
@@ -116,10 +116,10 @@ export default function CustomDashboardsPage() {
           {/* + New Dashboard card */}
           <div
             onClick={() => setShowCreate(true)}
-            className="bg-gray-800/50 border-2 border-dashed border-gray-700 rounded-xl p-5 cursor-pointer hover:border-blue-500/50 hover:bg-gray-800 transition-all flex flex-col items-center justify-center min-h-[140px]"
+            className="bg-gray-100 dark:bg-gray-800/50 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl p-5 cursor-pointer hover:border-blue-500/50 hover:bg-white dark:hover:bg-gray-800 transition-all flex flex-col items-center justify-center min-h-[140px]"
           >
-            <Plus className="w-8 h-8 text-gray-500 mb-2" />
-            <span className="text-sm text-gray-400 font-medium">Neues Dashboard</span>
+            <Plus className="w-8 h-8 text-gray-400 dark:text-gray-500 mb-2" />
+            <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">Neues Dashboard</span>
           </div>
         </div>
       )}
@@ -127,26 +127,26 @@ export default function CustomDashboardsPage() {
       {/* Create dialog */}
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setShowCreate(false)}>
-          <div className="bg-gray-800 border border-gray-700 rounded-xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <h2 className="text-lg font-semibold text-white mb-4">Neues Dashboard</h2>
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Neues Dashboard</h2>
             <div className="space-y-3">
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Titel</label>
+                <label className="block text-sm text-gray-500 dark:text-gray-400 mb-1">Titel</label>
                 <input
                   autoFocus
                   value={newTitle}
                   onChange={e => setNewTitle(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleCreate()}
-                  className="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"
+                  className="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-blue-500"
                   placeholder="z.B. Network Overview"
                 />
               </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Beschreibung (optional)</label>
+                <label className="block text-sm text-gray-500 dark:text-gray-400 mb-1">Beschreibung (optional)</label>
                 <input
                   value={newDesc}
                   onChange={e => setNewDesc(e.target.value)}
-                  className="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"
+                  className="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-blue-500"
                   placeholder="Kurze Beschreibung..."
                 />
               </div>
@@ -154,7 +154,7 @@ export default function CustomDashboardsPage() {
             <div className="flex justify-end gap-2 mt-5">
               <button
                 onClick={() => setShowCreate(false)}
-                className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors"
+                className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
               >
                 Abbrechen
               </button>

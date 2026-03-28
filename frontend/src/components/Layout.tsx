@@ -188,7 +188,7 @@ export default function Layout() {
       )}
 
       {/* ── Main Content ── */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden bg-gray-50 dark:bg-gray-900">
         {/* Mobile top bar */}
         <header className="lg:hidden flex items-center gap-3 px-4 py-3 bg-overseer-900 text-white flex-shrink-0">
           <button onClick={() => setMobileOpen(true)} className="text-gray-300 hover:text-white">

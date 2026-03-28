@@ -107,20 +107,20 @@ function AddHostModal({ onClose, onSaved }: AddHostModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-xl mx-4 p-6 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-xl mx-4 p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-gray-900">Host anlegen</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Host anlegen</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"><X className="w-5 h-5" /></button>
         </div>
 
         <div className="space-y-4">
           {/* Host Type Selector — Visual Cards */}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-2">Typ *</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Typ *</label>
             <div className="space-y-2">
               {Object.entries(grouped).map(([category, types]) => (
                 <div key={category}>
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-1">{category}</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1">{category}</p>
                   <div className="flex flex-wrap gap-1.5">
                     {types.map(ht => {
                       const Icon = getHostTypeIcon(ht.icon)
@@ -134,7 +134,7 @@ function AddHostModal({ onClose, onSaved }: AddHostModalProps) {
                             'flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all',
                             isSelected
                               ? 'border-overseer-500 bg-overseer-50 text-overseer-700 ring-1 ring-overseer-500'
-                              : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                              : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
                           )}
                         >
                           <Icon className="w-4 h-4 flex-shrink-0" />
@@ -151,17 +151,17 @@ function AddHostModal({ onClose, onSaved }: AddHostModalProps) {
           {/* Tenant + Collector */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Tenant *</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Tenant *</label>
               <select value={form.tenant_id} onChange={set('tenant_id')}
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none">
+                className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none">
                 <option value="">– wählen –</option>
                 {tenants.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Collector</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Collector</label>
               <select value={form.collector_id} onChange={set('collector_id')}
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none">
+                className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none">
                 <option value="">– keiner (nur aktive Checks) –</option>
                 {filteredCollectors.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
@@ -171,26 +171,26 @@ function AddHostModal({ onClose, onSaved }: AddHostModalProps) {
           {/* Hostname + Display Name */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Hostname *</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Hostname *</label>
               <input value={form.hostname} onChange={set('hostname')} placeholder="srv-01.example.com"
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+                className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Anzeigename</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Anzeigename</label>
               <input value={form.display_name} onChange={set('display_name')} placeholder="Server EG"
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+                className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
             </div>
           </div>
 
           {/* IP Address — conditional based on type */}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
               IP-Adresse
               {selectedType?.ip_required && <span className="text-red-400 ml-0.5">*</span>}
             </label>
             <input value={form.ip_address} onChange={set('ip_address')} placeholder="192.168.1.1"
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
-            <p className="text-[11px] text-gray-400 mt-0.5">
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+            <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
               {selectedType?.agent_capable
                 ? 'Optional bei Agent-Hosts, nötig für aktive Checks (Ping, SSH, Port)'
                 : selectedType?.ip_required
@@ -203,14 +203,14 @@ function AddHostModal({ onClose, onSaved }: AddHostModalProps) {
           {selectedType?.snmp_enabled && (
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">SNMP Community</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">SNMP Community</label>
                 <input value={form.snmp_community} onChange={set('snmp_community')} placeholder="public"
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+                  className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">SNMP Version</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">SNMP Version</label>
                 <select value={form.snmp_version} onChange={set('snmp_version')}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none">
+                  className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none">
                   <option value="1">v1</option>
                   <option value="2c">v2c</option>
                   <option value="3">v3</option>
@@ -233,7 +233,7 @@ function AddHostModal({ onClose, onSaved }: AddHostModalProps) {
 
         <div className="flex gap-3 mt-6">
           <button onClick={onClose}
-            className="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">
+            className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
             Abbrechen
           </button>
           <button
@@ -419,32 +419,32 @@ export default function HostsPage() {
       {/* Copy Host Modal */}
       {copyHostTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-semibold text-gray-900">Host kopieren</h2>
-              <button onClick={() => setCopyHostTarget(null)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Host kopieren</h2>
+              <button onClick={() => setCopyHostTarget(null)} className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"><X className="w-5 h-5" /></button>
             </div>
-            <div className="bg-gray-50 rounded-lg px-4 py-3 mb-4 text-sm">
-              <p className="text-gray-500">Quelle:</p>
-              <p className="font-medium text-gray-800">{copyHostTarget.hostname}</p>
-              <p className="text-xs text-gray-400 mt-1">Alle Services werden mitkopiert.</p>
+            <div className="bg-gray-50 dark:bg-gray-900 rounded-lg px-4 py-3 mb-4 text-sm">
+              <p className="text-gray-500 dark:text-gray-400">Quelle:</p>
+              <p className="font-medium text-gray-800 dark:text-gray-200">{copyHostTarget.hostname}</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Alle Services werden mitkopiert.</p>
             </div>
             <div className="space-y-3 mb-4">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Neuer Hostname</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Neuer Hostname</label>
                 <input
                   value={copyHostname}
                   onChange={e => setCopyHostname(e.target.value)}
                   placeholder={`${copyHostTarget.hostname}-copy`}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none"
+                  className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Ziel-Tenant</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Ziel-Tenant</label>
                 <select
                   value={copyTenantId}
                   onChange={e => setCopyTenantId(e.target.value)}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none"
+                  className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none"
                 >
                   <option value="">Gleicher Tenant</option>
                   {tenantsList.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
@@ -454,7 +454,7 @@ export default function HostsPage() {
             {copyHostError && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-4">{copyHostError}</p>}
             <div className="flex gap-3">
               <button onClick={() => setCopyHostTarget(null)}
-                className="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">Abbrechen</button>
+                className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Abbrechen</button>
               <button
                 onClick={() => {
                   setCopyHostError(null)
@@ -479,10 +479,10 @@ export default function HostsPage() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <Monitor className="w-7 h-7 text-overseer-600" />
-          <h1 className="text-2xl font-bold text-gray-900">Hosts</h1>
-          <span className="text-sm text-gray-500 ml-2">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Hosts</h1>
+          <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">
             {hosts.filter(h => h.active && h.tenant_active).length} aktiv
-            {hosts.some(h => !h.active || !h.tenant_active) && <span className="text-gray-400"> · {hosts.filter(h => !h.active || !h.tenant_active).length} inaktiv</span>}
+            {hosts.some(h => !h.active || !h.tenant_active) && <span className="text-gray-400 dark:text-gray-500"> · {hosts.filter(h => !h.active || !h.tenant_active).length} inaktiv</span>}
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -491,8 +491,8 @@ export default function HostsPage() {
             className={clsx(
               'flex items-center gap-1.5 text-sm px-3 py-2 rounded-lg border transition-colors',
               showInactive
-                ? 'border-gray-300 bg-gray-50 text-gray-600'
-                : 'border-gray-200 text-gray-400 hover:bg-gray-50',
+                ? 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                : 'border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700',
             )}
           >
             {showInactive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
@@ -511,35 +511,35 @@ export default function HostsPage() {
       {/* Search + controls */}
       <div className="flex items-center gap-3 mb-5">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Host, IP, Tenant suchen…"
-            className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-overseer-500 outline-none"
+            className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg focus:ring-2 focus:ring-overseer-500 outline-none"
           />
         </div>
         <select
           value={filterAgent}
           onChange={e => setFilterAgent(e.target.value as 'all' | 'agent' | 'no-agent')}
-          className="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none"
+          className="text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none"
         >
           <option value="all">Alle Hosts</option>
           <option value="agent">Agent-Hosts</option>
           <option value="no-agent">Ohne Agent</option>
         </select>
         <div className="flex items-center gap-1 text-xs">
-          <button onClick={expandAll} className="px-2 py-1.5 text-gray-500 hover:text-gray-700 rounded border border-gray-200 hover:bg-gray-50">
+          <button onClick={expandAll} className="px-2 py-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
             Alle aufklappen
           </button>
-          <button onClick={collapseAll} className="px-2 py-1.5 text-gray-500 hover:text-gray-700 rounded border border-gray-200 hover:bg-gray-50">
+          <button onClick={collapseAll} className="px-2 py-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
             Alle zuklappen
           </button>
         </div>
       </div>
 
       {isLoading && (
-        <div className="text-gray-400 text-sm">Lade…</div>
+        <div className="text-gray-400 dark:text-gray-500 text-sm">Lade…</div>
       )}
 
       {/* Grouped by tenant (collapsed by default) */}
@@ -549,56 +549,56 @@ export default function HostsPage() {
           const hasProblem = statusCounts.CRITICAL > 0 || statusCounts.WARNING > 0 || statusCounts.NO_DATA > 0 || statusCounts.UNKNOWN > 0
 
           return (
-            <div key={tid} className={clsx('bg-white rounded-xl border overflow-hidden', tenantActive ? 'border-gray-200' : 'border-dashed border-gray-300 opacity-60')}>
+            <div key={tid} className={clsx('bg-white dark:bg-gray-800 rounded-xl border overflow-hidden', tenantActive ? 'border-gray-200 dark:border-gray-700' : 'border-dashed border-gray-300 dark:border-gray-600 opacity-60')}>
               {/* Tenant header (clickable) */}
               <button
                 onClick={() => toggleTenant(tid)}
-                className="w-full flex items-center justify-between px-5 py-3 hover:bg-gray-50 transition-colors"
+                className="w-full flex items-center justify-between px-5 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 <div className="flex items-center gap-3">
                   {isExpanded
-                    ? <ChevronDown className="w-4 h-4 text-gray-400" />
-                    : <ChevronRight className="w-4 h-4 text-gray-400" />
+                    ? <ChevronDown className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                    : <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
                   }
-                  <p className={clsx('text-sm font-semibold', tenantActive ? 'text-gray-800' : 'text-gray-400 line-through')}>{tenantName}</p>
+                  <p className={clsx('text-sm font-semibold', tenantActive ? 'text-gray-800 dark:text-gray-200' : 'text-gray-400 dark:text-gray-500 line-through')}>{tenantName}</p>
                   {!tenantActive && (
-                    <span className="text-xs font-bold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">INAKTIV</span>
+                    <span className="text-xs font-bold text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded">INAKTIV</span>
                   )}
-                  <span className="text-xs text-gray-400">{tenantHosts.length} Hosts</span>
+                  <span className="text-xs text-gray-400 dark:text-gray-500">{tenantHosts.length} Hosts</span>
                 </div>
                 <div className="flex items-center gap-2">
                   {statusCounts.CRITICAL > 0 && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300">
                       <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
                       {statusCounts.CRITICAL}
                     </span>
                   )}
                   {statusCounts.WARNING > 0 && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300">
                       <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                       {statusCounts.WARNING}
                     </span>
                   )}
                   {statusCounts.NO_DATA > 0 && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-300">
                       <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
                       {statusCounts.NO_DATA}
                     </span>
                   )}
                   {statusCounts.UNKNOWN > 0 && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
                       <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
                       {statusCounts.UNKNOWN}
                     </span>
                   )}
                   {!hasProblem && statusCounts.OK > 0 && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                       OK
                     </span>
                   )}
                   {inactiveCount > 0 && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-400">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500">
                       {inactiveCount} inaktiv
                     </span>
                   )}
@@ -607,9 +607,9 @@ export default function HostsPage() {
 
               {/* Host table (shown when expanded) */}
               {isExpanded && (
-                <div className="border-t border-gray-100">
+                <div className="border-t border-gray-100 dark:border-gray-700">
                   <table className="w-full text-sm">
-                    <thead className="text-xs font-medium text-gray-400 uppercase tracking-wide border-b border-gray-100">
+                    <thead className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide border-b border-gray-100 dark:border-gray-700">
                       <tr>
                         <th className="px-6 py-2 text-left">Host</th>
                         <th className="px-6 py-2 text-left">IP</th>
@@ -618,41 +618,41 @@ export default function HostsPage() {
                         <th className="px-6 py-2 text-left">Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50">
+                    <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
                       {tenantHosts.map(host => {
                         const HostIcon = getHostTypeIcon(host.host_type_icon)
                         const effectiveActive = host.active && host.tenant_active
                         const status = effectiveActive ? (worstStatus[host.id] ?? null) : null
                         const dotClass = status ? getStatusConfig(status).dot : 'bg-gray-300'
                         return (
-                          <tr key={host.id} className={clsx('hover:bg-gray-50', !effectiveActive && 'opacity-50')}>
+                          <tr key={host.id} className={clsx('hover:bg-gray-50 dark:hover:bg-gray-700', !effectiveActive && 'opacity-50')}>
                             <td className="px-6 py-2.5">
                               <Link
                                 to={`/hosts/${host.id}`}
                                 className="flex items-center gap-2 hover:text-overseer-600"
                               >
-                                <HostIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                <HostIcon className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
                                 <div>
                                   <div className="flex items-center gap-1.5">
-                                    <p className={clsx('font-medium', effectiveActive ? 'text-gray-900' : 'text-gray-400 line-through')}>
+                                    <p className={clsx('font-medium', effectiveActive ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 dark:text-gray-500 line-through')}>
                                       {host.display_name || host.hostname}
                                     </p>
                                     {host.agent_managed && (
-                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-100 text-blue-800">
+                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300">
                                         Agent
                                       </span>
                                     )}
                                   </div>
                                   {host.display_name && (
-                                    <p className="text-xs text-gray-400">{host.hostname}</p>
+                                    <p className="text-xs text-gray-400 dark:text-gray-500">{host.hostname}</p>
                                   )}
                                 </div>
                               </Link>
                             </td>
-                            <td className="px-6 py-2.5 text-gray-500 font-mono text-xs">
+                            <td className="px-6 py-2.5 text-gray-500 dark:text-gray-400 font-mono text-xs">
                               {host.ip_address ?? '–'}
                             </td>
-                            <td className="px-6 py-2.5 text-gray-500">
+                            <td className="px-6 py-2.5 text-gray-500 dark:text-gray-400">
                               {host.host_type_name ?? '–'}
                             </td>
                             <td className="px-6 py-2.5">
@@ -673,28 +673,28 @@ export default function HostsPage() {
                             <td className="px-6 py-2.5">
                               <div className="flex items-center gap-2">
                                 {!effectiveActive ? (
-                                  <span className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-400">
-                                    <span className="w-2 h-2 rounded-full bg-gray-300" />
+                                  <span className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-400 dark:text-gray-500">
+                                    <span className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-600" />
                                     INAKTIV
                                   </span>
                                 ) : (
                                   <span className={clsx('inline-flex items-center gap-1.5 text-xs font-medium',
                                     status === 'OK' ? 'text-emerald-700' :
                                     status === 'WARNING' ? 'text-amber-700' :
-                                    status === 'CRITICAL' ? 'text-red-700' : 'text-gray-500')}>
+                                    status === 'CRITICAL' ? 'text-red-700' : 'text-gray-500 dark:text-gray-400')}>
                                     <span className={clsx('w-2 h-2 rounded-full', dotClass)} />
                                     {status}
                                   </span>
                                 )}
                                 {effectiveActive && host.collector_offline && (
-                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600 border border-gray-300" title="Collector sendet keine Daten">
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600" title="Collector sendet keine Daten">
                                     Offline
                                   </span>
                                 )}
                                 <div className="flex items-center gap-1 ml-auto">
                                   <button
                                     onClick={(e) => { e.preventDefault(); setCopyHostTarget({ id: host.id, hostname: host.display_name || host.hostname }); setCopyHostname(''); setCopyTenantId(''); setCopyHostError(null) }}
-                                    className="p-1 rounded border border-gray-200 text-gray-400 hover:text-blue-500 hover:border-blue-300 transition-colors"
+                                    className="p-1 rounded border border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 hover:text-blue-500 hover:border-blue-300 transition-colors"
                                     title="Host kopieren"
                                   >
                                     <Copy className="w-3.5 h-3.5" />
@@ -704,7 +704,7 @@ export default function HostsPage() {
                                     className={clsx(
                                       'p-1 rounded border transition-colors',
                                       host.active
-                                        ? 'border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-300'
+                                        ? 'border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 hover:text-red-500 hover:border-red-300'
                                         : 'border-emerald-300 text-emerald-500 hover:bg-emerald-50',
                                     )}
                                     title={host.active ? 'Host deaktivieren' : 'Host aktivieren'}
@@ -713,7 +713,7 @@ export default function HostsPage() {
                                   </button>
                                   <button
                                     onClick={(e) => { e.preventDefault(); setDeleteTarget({ id: host.id, name: host.display_name || host.hostname }) }}
-                                    className="p-1 rounded border border-gray-200 text-gray-400 hover:text-red-600 hover:border-red-300 transition-colors"
+                                    className="p-1 rounded border border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 hover:text-red-600 hover:border-red-300 transition-colors"
                                     title="Host endgültig löschen"
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
@@ -736,8 +736,8 @@ export default function HostsPage() {
       {/* No results */}
       {!isLoading && filteredHosts.length === 0 && hosts.length > 0 && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <Search className="w-10 h-10 text-gray-300 mb-3" />
-          <p className="text-gray-400 text-sm">Keine Hosts für "{search}" gefunden.</p>
+          <Search className="w-10 h-10 text-gray-300 dark:text-gray-600 mb-3" />
+          <p className="text-gray-400 dark:text-gray-500 text-sm">Keine Hosts für "{search}" gefunden.</p>
         </div>
       )}
     </div>

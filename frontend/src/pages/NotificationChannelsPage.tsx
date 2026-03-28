@@ -61,10 +61,10 @@ function ConfigForm({
                 type="checkbox"
                 checked={!!currentValue}
                 onChange={e => handleChange(key, e.target.checked)}
-                className="rounded border-gray-300"
+                className="rounded border-gray-300 dark:border-gray-600"
               />
-              <span className="text-gray-700">{label}</span>
-              {prop.description && <span className="text-xs text-gray-400 ml-1">({prop.description})</span>}
+              <span className="text-gray-700 dark:text-gray-300">{label}</span>
+              {prop.description && <span className="text-xs text-gray-400 dark:text-gray-500 ml-1">({prop.description})</span>}
             </label>
           )
         }
@@ -77,7 +77,7 @@ function ConfigForm({
 
         return (
           <div key={key}>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
               {label}{isRequired && ' *'}
             </label>
             <input
@@ -90,10 +90,10 @@ function ConfigForm({
                   : e.target.value
                 handleChange(key, v)
               }}
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500"
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500"
             />
             {prop.description && (
-              <p className="text-xs text-gray-400 mt-0.5">{prop.description}</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{prop.description}</p>
             )}
           </div>
         )
@@ -177,13 +177,13 @@ function ChannelModal({ onClose, tenants, channelTypes, existing }: ChannelModal
   if (createdId) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-        <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
           <div className="text-center">
-            <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
+            <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center mx-auto mb-4">
               <Check className="w-6 h-6 text-emerald-600" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-1">Kanal erstellt</h3>
-            <p className="text-sm text-gray-500 mb-4">Test-Benachrichtigung senden?</p>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">Kanal erstellt</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Test-Benachrichtigung senden?</p>
 
             {testResult && (
               <div className={clsx('mb-4 px-3 py-2 rounded-lg text-sm',
@@ -194,7 +194,7 @@ function ChannelModal({ onClose, tenants, channelTypes, existing }: ChannelModal
 
             <div className="flex gap-3">
               <button onClick={onClose}
-                className="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">
+                className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
                 Schließen
               </button>
               <button
@@ -213,12 +213,12 @@ function ChannelModal({ onClose, tenants, channelTypes, existing }: ChannelModal
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 p-6 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-lg mx-4 p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-gray-900">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
             {isEdit ? 'Kanal bearbeiten' : step === 'type' ? 'Kanaltyp wählen' : 'Kanal konfigurieren'}
           </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+          <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><X className="w-5 h-5" /></button>
         </div>
 
         {/* Step 1: Type selection (only for create) */}
@@ -229,9 +229,9 @@ function ChannelModal({ onClose, tenants, channelTypes, existing }: ChannelModal
                 <button
                   key={ct.channel_type}
                   onClick={() => { setChannelType(ct.channel_type); setConfig({}); setStep('config') }}
-                  className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-gray-200 hover:border-overseer-500 hover:bg-overseer-50 transition-colors">
-                  <ChannelTypeIcon type={ct.channel_type} className="w-8 h-8 text-gray-600" />
-                  <span className="text-sm font-medium text-gray-700">{ct.display_name}</span>
+                  className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-overseer-500 hover:bg-overseer-50 transition-colors">
+                  <ChannelTypeIcon type={ct.channel_type} className="w-8 h-8 text-gray-600 dark:text-gray-400" />
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{ct.display_name}</span>
                 </button>
               ))}
             </div>
@@ -249,7 +249,7 @@ function ChannelModal({ onClose, tenants, channelTypes, existing }: ChannelModal
             )}
 
             {isEdit && (
-              <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+              <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-2">
                 <ChannelTypeIcon type={channelType} className="w-4 h-4" />
                 <span>{selectedSchema.display_name}</span>
               </div>
@@ -257,18 +257,18 @@ function ChannelModal({ onClose, tenants, channelTypes, existing }: ChannelModal
 
             {/* Name */}
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Name *</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Name *</label>
               <input type="text" value={name} onChange={e => setName(e.target.value)}
                 placeholder="z.B. Slack #critical-alerts"
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+                className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
             </div>
 
             {/* Tenant (only for create) */}
             {!isEdit && (
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Tenant</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Tenant</label>
                 <select value={tenantId} onChange={e => setTenantId(e.target.value)}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500">
+                  className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500">
                   {tenants.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                 </select>
               </div>
@@ -286,7 +286,7 @@ function ChannelModal({ onClose, tenants, channelTypes, existing }: ChannelModal
 
             <div className="flex gap-3 mt-6">
               <button onClick={onClose}
-                className="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">
+                className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
                 Abbrechen
               </button>
               <button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !name}
@@ -374,8 +374,8 @@ export default function NotificationChannelsPage() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <Bell className="w-7 h-7 text-overseer-600" />
-          <h1 className="text-2xl font-bold text-gray-900">Benachrichtigungskanäle</h1>
-          <span className="text-sm text-gray-500 ml-2">{channels.length} Kanäle</span>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Benachrichtigungskanäle</h1>
+          <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">{channels.length} Kanäle</span>
         </div>
         <button onClick={() => setShowModal(true)}
           className="inline-flex items-center gap-2 px-4 py-2 bg-overseer-600 text-white text-sm font-medium rounded-lg hover:bg-overseer-700">
@@ -383,11 +383,11 @@ export default function NotificationChannelsPage() {
         </button>
       </div>
 
-      {isLoading && <div className="text-gray-400 text-sm">Lade…</div>}
+      {isLoading && <div className="text-gray-400 dark:text-gray-500 text-sm">Lade…</div>}
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
+          <thead className="bg-gray-50 dark:bg-gray-900 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
             <tr>
               <th className="px-6 py-3 text-left">Name</th>
               <th className="px-6 py-3 text-left">Typ</th>
@@ -396,7 +396,7 @@ export default function NotificationChannelsPage() {
               <th className="px-6 py-3 text-right">Aktionen</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
             {channels.map(ch => {
               const isDisabled = !ch.active
               const failureInfo = ch.consecutive_failures > 0
@@ -405,26 +405,26 @@ export default function NotificationChannelsPage() {
               const tr = testResults[ch.id]
 
               return (
-                <tr key={ch.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-3 font-medium text-gray-900">{ch.name}</td>
+                <tr key={ch.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <td className="px-6 py-3 font-medium text-gray-900 dark:text-gray-100">{ch.name}</td>
                   <td className="px-6 py-3">
-                    <span className="inline-flex items-center gap-1.5 text-xs text-gray-600">
+                    <span className="inline-flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
                       <ChannelTypeIcon type={ch.channel_type} className="w-3.5 h-3.5" />
                       {typeDisplayNames[ch.channel_type] ?? ch.channel_type}
                     </span>
                   </td>
-                  <td className="px-6 py-3 text-xs text-gray-500">{tenantNames[ch.tenant_id] ?? '–'}</td>
+                  <td className="px-6 py-3 text-xs text-gray-500 dark:text-gray-400">{tenantNames[ch.tenant_id] ?? '–'}</td>
                   <td className="px-6 py-3 text-center">
                     {isDisabled ? (
-                      <span className="px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700">
+                      <span className="px-2 py-0.5 rounded text-xs font-medium bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300">
                         Deaktiviert{failureInfo && ` (${failureInfo})`}
                       </span>
                     ) : failureInfo ? (
-                      <span className="px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">
+                      <span className="px-2 py-0.5 rounded text-xs font-medium bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">
                         Aktiv ({failureInfo})
                       </span>
                     ) : (
-                      <span className="px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700">
+                      <span className="px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">
                         Aktiv
                       </span>
                     )}
@@ -452,21 +452,21 @@ export default function NotificationChannelsPage() {
 
                       {/* Edit */}
                       <button onClick={() => setEditChannel(ch)} title="Bearbeiten"
-                        className="text-gray-400 hover:text-overseer-600">
+                        className="text-gray-400 dark:text-gray-500 hover:text-overseer-600">
                         <Pencil className="w-4 h-4" />
                       </button>
 
                       {/* Enable (only when disabled) */}
                       {isDisabled && (
                         <button onClick={() => enableMutation.mutate(ch.id)} title="Aktivieren"
-                          className="text-gray-400 hover:text-emerald-600">
+                          className="text-gray-400 dark:text-gray-500 hover:text-emerald-600">
                           <Power className="w-4 h-4" />
                         </button>
                       )}
 
                       {/* Delete */}
                       <button onClick={() => setDeleteTarget(ch.id)}
-                        title="Löschen" className="text-gray-400 hover:text-red-500">
+                        title="Löschen" className="text-gray-400 dark:text-gray-500 hover:text-red-500">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -477,7 +477,7 @@ export default function NotificationChannelsPage() {
           </tbody>
         </table>
         {channels.length === 0 && !isLoading && (
-          <div className="p-8 text-center text-gray-400 text-sm">Keine Kanäle konfiguriert.</div>
+          <div className="p-8 text-center text-gray-400 dark:text-gray-500 text-sm">Keine Kanäle konfiguriert.</div>
         )}
       </div>
 

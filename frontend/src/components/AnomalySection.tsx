@@ -72,9 +72,9 @@ function sensitivityLabel(s: number) {
 
 function statusBadge(status: string) {
   const map: Record<string, { bg: string; text: string; label: string }> = {
-    disabled: { bg: 'bg-gray-100', text: 'text-gray-600', label: 'Deaktiviert' },
-    learning: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Lernphase' },
-    active: { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Aktiv' },
+    disabled: { bg: 'bg-gray-100 dark:bg-gray-700', text: 'text-gray-600 dark:text-gray-300', label: 'Deaktiviert' },
+    learning: { bg: 'bg-blue-100 dark:bg-blue-900/40', text: 'text-blue-700 dark:text-blue-300', label: 'Lernphase' },
+    active: { bg: 'bg-emerald-100 dark:bg-emerald-900/40', text: 'text-emerald-700 dark:text-emerald-300', label: 'Aktiv' },
   }
   const s = map[status] || map.disabled
   return <span className={clsx('px-2 py-0.5 rounded text-xs font-medium', s.bg, s.text)}>{s.label}</span>
@@ -83,7 +83,7 @@ function statusBadge(status: string) {
 // ── Baseline Mini Chart ─────────────────────────────────────────────────────
 
 function BaselineChart({ baselines, sensitivity }: { baselines: Baseline[]; sensitivity: number }) {
-  if (baselines.length === 0) return <p className="text-sm text-gray-400">Noch keine Baselines berechnet.</p>
+  if (baselines.length === 0) return <p className="text-sm text-gray-500 dark:text-gray-400">Noch keine Baselines berechnet.</p>
 
   const maxVal = Math.max(...baselines.map(b => b.mean + b.std_dev * sensitivity))
   const h = 120
@@ -171,37 +171,37 @@ export default function AnomalySection({ hostId, services }: { hostId: string; s
   const configMap = new Map(configs.map(c => [c.service_id, c]))
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full px-6 py-4 flex items-center justify-between border-b border-gray-100 hover:bg-gray-50 transition-colors"
+        className="w-full px-6 py-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
       >
         <div className="flex items-center gap-3">
           <Activity className="w-5 h-5 text-overseer-600" />
           <div className="text-left">
-            <h2 className="font-semibold text-gray-800">Anomaly Detection & Predictions</h2>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <h2 className="font-semibold text-gray-800 dark:text-gray-100">Anomaly Detection & Predictions</h2>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
               {activeConfigs.length} aktive Konfigurationen
               {activeAnomalies.length > 0 && ` · ${activeAnomalies.length} Anomalien`}
               {predictions.length > 0 && ` · ${predictions.length} Prognosen`}
             </p>
           </div>
         </div>
-        {expanded ? <ChevronDown className="w-4 h-4 text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
+        {expanded ? <ChevronDown className="w-4 h-4 text-gray-400 dark:text-gray-500" /> : <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />}
       </button>
 
       {expanded && (
         <div className="p-6 space-y-6">
           {/* Service Toggles */}
           <div>
-            <h3 className="text-xs font-medium text-gray-600 uppercase tracking-wider mb-3">Services konfigurieren</h3>
+            <h3 className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3">Services konfigurieren</h3>
             <div className="space-y-2">
               {services.map(svc => {
                 const cfg = configMap.get(svc.service_id)
                 const isEnabled = cfg?.enabled ?? false
                 const status = cfg?.status || 'disabled'
                 return (
-                  <div key={svc.service_id} className="flex items-center justify-between px-4 py-2.5 bg-gray-50 rounded-lg">
+                  <div key={svc.service_id} className="flex items-center justify-between px-4 py-2.5 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                     <div className="flex items-center gap-3">
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
@@ -210,11 +210,11 @@ export default function AnomalySection({ hostId, services }: { hostId: string; s
                           onChange={() => toggleMutation.mutate({ serviceId: svc.service_id, enabled: !isEnabled })}
                           className="sr-only peer"
                         />
-                        <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:bg-overseer-600 transition-colors after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full" />
+                        <div className="w-9 h-5 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:bg-overseer-600 transition-colors after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full" />
                       </label>
                       <div>
-                        <span className="text-sm font-medium text-gray-800">{svc.name}</span>
-                        <span className="text-xs text-gray-400 ml-2">{svc.check_type}</span>
+                        <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{svc.name}</span>
+                        <span className="text-xs text-gray-400 dark:text-gray-500 ml-2">{svc.check_type}</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
@@ -223,7 +223,7 @@ export default function AnomalySection({ hostId, services }: { hostId: string; s
                           value={cfg.sensitivity}
                           onChange={e => toggleMutation.mutate({ serviceId: svc.service_id, enabled: true, sensitivity: parseFloat(e.target.value) })}
                           disabled={!isEnabled}
-                          className="text-xs border border-gray-200 rounded px-2 py-1 outline-none disabled:opacity-50"
+                          className="text-xs border border-gray-200 dark:border-gray-600 rounded px-2 py-1 outline-none disabled:opacity-50 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
                         >
                           <option value="2.0">Hoch (2σ)</option>
                           <option value="3.0">Normal (3σ)</option>
@@ -249,15 +249,15 @@ export default function AnomalySection({ hostId, services }: { hostId: string; s
           {/* Baselines Chart */}
           {showBaselines && selectedService && (
             <div>
-              <h3 className="text-xs font-medium text-gray-600 uppercase tracking-wider mb-3">
+              <h3 className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3">
                 Baseline – {services.find(s => s.service_id === selectedService)?.name}
               </h3>
-              <div className="bg-gray-50 rounded-lg p-4">
+              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
                 <BaselineChart
                   baselines={baselines}
                   sensitivity={configMap.get(selectedService)?.sensitivity ?? 3.0}
                 />
-                <p className="text-xs text-gray-400 mt-2">Grüne Fläche: erwarteter Bereich ({sensitivityLabel(configMap.get(selectedService)?.sensitivity ?? 3.0)}). Linie: Mittelwert.</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">Grüne Fläche: erwarteter Bereich ({sensitivityLabel(configMap.get(selectedService)?.sensitivity ?? 3.0)}). Linie: Mittelwert.</p>
               </div>
             </div>
           )}
@@ -265,14 +265,14 @@ export default function AnomalySection({ hostId, services }: { hostId: string; s
           {/* Predictions */}
           {predictions.length > 0 && (
             <div>
-              <h3 className="text-xs font-medium text-gray-600 uppercase tracking-wider mb-3">Kapazitätsprognosen</h3>
+              <h3 className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3">Kapazitätsprognosen</h3>
               <div className="grid gap-3 md:grid-cols-2">
                 {predictions.map(p => {
                   const urgencyColor =
-                    p.days_until_full < 7 ? 'border-red-300 bg-red-50' :
-                    p.days_until_full < 14 ? 'border-amber-300 bg-amber-50' :
-                    p.days_until_full < 30 ? 'border-yellow-300 bg-yellow-50' :
-                    'border-gray-200 bg-gray-50'
+                    p.days_until_full < 7 ? 'border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-900/30' :
+                    p.days_until_full < 14 ? 'border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/30' :
+                    p.days_until_full < 30 ? 'border-yellow-300 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/30' :
+                    'border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50'
                   const urgencyIcon =
                     p.days_until_full < 7 ? <AlertTriangle className="w-5 h-5 text-red-500" /> :
                     p.days_until_full < 14 ? <AlertTriangle className="w-5 h-5 text-amber-500" /> :
@@ -281,8 +281,8 @@ export default function AnomalySection({ hostId, services }: { hostId: string; s
                     <div key={p.id} className={clsx('rounded-lg border p-4', urgencyColor)}>
                       <div className="flex items-start justify-between">
                         <div>
-                          <p className="text-sm font-medium text-gray-800">{p.service_name}</p>
-                          <p className="text-xs text-gray-500 mt-0.5">
+                          <p className="text-sm font-medium text-gray-800 dark:text-gray-100">{p.service_name}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                             Voll in {Math.round(p.days_until_full)} Tagen ({p.predicted_date})
                           </p>
                         </div>
@@ -290,22 +290,22 @@ export default function AnomalySection({ hostId, services }: { hostId: string; s
                       </div>
                       <div className="mt-3 space-y-1.5">
                         <div className="flex justify-between text-xs">
-                          <span className="text-gray-500">Aktuell</span>
-                          <span className="font-medium">{p.current_value.toFixed(1)}% / {p.capacity}%</span>
+                          <span className="text-gray-500 dark:text-gray-400">Aktuell</span>
+                          <span className="font-medium text-gray-700 dark:text-gray-200">{p.current_value.toFixed(1)}% / {p.capacity}%</span>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
                           <div
                             className={clsx('h-2 rounded-full', p.current_value > 90 ? 'bg-red-500' : p.current_value > 75 ? 'bg-amber-500' : 'bg-emerald-500')}
                             style={{ width: `${Math.min(100, p.current_value)}%` }}
                           />
                         </div>
                         <div className="flex justify-between text-xs">
-                          <span className="text-gray-500">Wachstum</span>
-                          <span className="font-medium">{p.rate_per_day.toFixed(2)}%/Tag</span>
+                          <span className="text-gray-500 dark:text-gray-400">Wachstum</span>
+                          <span className="font-medium text-gray-700 dark:text-gray-200">{p.rate_per_day.toFixed(2)}%/Tag</span>
                         </div>
                         <div className="flex justify-between text-xs">
-                          <span className="text-gray-500">Konfidenz</span>
-                          <span className="font-medium">{(p.confidence * 100).toFixed(0)}%</span>
+                          <span className="text-gray-500 dark:text-gray-400">Konfidenz</span>
+                          <span className="font-medium text-gray-700 dark:text-gray-200">{(p.confidence * 100).toFixed(0)}%</span>
                         </div>
                       </div>
                     </div>
@@ -318,10 +318,10 @@ export default function AnomalySection({ hostId, services }: { hostId: string; s
           {/* Anomaly Events */}
           {events.length > 0 && (
             <div>
-              <h3 className="text-xs font-medium text-gray-600 uppercase tracking-wider mb-3">Letzte Anomalien</h3>
-              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+              <h3 className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3">Letzte Anomalien</h3>
+              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                 <table className="w-full text-sm">
-                  <thead className="bg-gray-50 text-xs font-medium text-gray-500 uppercase">
+                  <thead className="bg-gray-50 dark:bg-gray-700/50 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                     <tr>
                       <th className="px-4 py-2 text-left">Zeitpunkt</th>
                       <th className="px-4 py-2 text-left">Service</th>
@@ -331,32 +331,32 @@ export default function AnomalySection({ hostId, services }: { hostId: string; s
                       <th className="px-4 py-2 text-center">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                     {events.map(e => (
-                      <tr key={e.id} className={clsx('hover:bg-gray-50', e.is_false_positive && 'opacity-50')}>
-                        <td className="px-4 py-2 text-xs text-gray-500 whitespace-nowrap">
+                      <tr key={e.id} className={clsx('hover:bg-gray-50 dark:hover:bg-gray-700/50', e.is_false_positive && 'opacity-50')}>
+                        <td className="px-4 py-2 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
                           {format(new Date(e.detected_at), 'dd.MM. HH:mm')}
                         </td>
-                        <td className="px-4 py-2 text-gray-700">{e.service_name}</td>
-                        <td className="px-4 py-2 text-right font-mono text-xs">{e.value.toFixed(2)}</td>
-                        <td className="px-4 py-2 text-right font-mono text-xs text-gray-400">
+                        <td className="px-4 py-2 text-gray-700 dark:text-gray-200">{e.service_name}</td>
+                        <td className="px-4 py-2 text-right font-mono text-xs text-gray-700 dark:text-gray-200">{e.value.toFixed(2)}</td>
+                        <td className="px-4 py-2 text-right font-mono text-xs text-gray-400 dark:text-gray-500">
                           {(e.expected_mean - e.expected_std).toFixed(1)}–{(e.expected_mean + e.expected_std).toFixed(1)}
                         </td>
                         <td className="px-4 py-2 text-right">
                           <span className={clsx('font-mono text-xs font-medium px-1.5 py-0.5 rounded',
-                            Math.abs(e.z_score) > 4 ? 'bg-red-50 text-red-800' : 'bg-amber-50 text-amber-800')}>
+                            Math.abs(e.z_score) > 4 ? 'bg-red-50 dark:bg-red-900/40 text-red-800 dark:text-red-300' : 'bg-amber-50 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300')}>
                             {e.z_score > 0 ? '+' : ''}{e.z_score.toFixed(1)}σ
                           </span>
                         </td>
                         <td className="px-4 py-2 text-center">
                           {e.is_false_positive ? (
-                            <span className="text-xs text-gray-400 flex items-center justify-center gap-1">
+                            <span className="text-xs text-gray-400 dark:text-gray-500 flex items-center justify-center gap-1">
                               <Ban className="w-3 h-3" /> False Positive
                             </span>
                           ) : (
                             <button
                               onClick={() => fpMutation.mutate(e.id)}
-                              className="text-xs text-gray-400 hover:text-red-600 flex items-center justify-center gap-1 mx-auto"
+                              className="text-xs text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 flex items-center justify-center gap-1 mx-auto"
                               title="Als False Positive markieren"
                             >
                               <Zap className="w-3 h-3" /> Anomalie
@@ -372,7 +372,7 @@ export default function AnomalySection({ hostId, services }: { hostId: string; s
           )}
 
           {events.length === 0 && predictions.length === 0 && activeConfigs.length === 0 && (
-            <p className="text-sm text-gray-400 text-center py-4">
+            <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
               Aktivieren Sie die Anomaly Detection für einen Service, um Anomalien und Prognosen zu erhalten.
             </p>
           )}
@@ -391,25 +391,25 @@ export function PredictionsWidget() {
     refetchInterval: 60_000,
   })
 
-  if (isLoading) return <div className="text-sm text-gray-400 p-4">Lade Prognosen…</div>
+  if (isLoading) return <div className="text-sm text-gray-500 dark:text-gray-400 p-4">Lade Prognosen...</div>
   if (predictions.length === 0) return null
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200">
-      <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-2">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+      <div className="px-5 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2">
         <TrendingUp className="w-4 h-4 text-amber-500" />
-        <h3 className="font-semibold text-sm text-gray-800">Kapazitätsprognosen</h3>
-        <span className="ml-auto text-xs text-gray-400">{predictions.length} aktiv</span>
+        <h3 className="font-semibold text-sm text-gray-800 dark:text-gray-100">Kapazitätsprognosen</h3>
+        <span className="ml-auto text-xs text-gray-400 dark:text-gray-500">{predictions.length} aktiv</span>
       </div>
-      <div className="divide-y divide-gray-100">
+      <div className="divide-y divide-gray-100 dark:divide-gray-700">
         {predictions.slice(0, 10).map(p => (
           <div key={p.id} className="px-5 py-3 flex items-center justify-between">
             <div>
-              <span className="text-sm font-medium text-gray-800">{p.hostname}</span>
-              <span className="text-xs text-gray-400 ml-2">{p.service_name}</span>
+              <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{p.hostname}</span>
+              <span className="text-xs text-gray-400 dark:text-gray-500 ml-2">{p.service_name}</span>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-xs font-mono text-gray-500">{p.current_value.toFixed(1)}%</span>
+              <span className="text-xs font-mono text-gray-500 dark:text-gray-400">{p.current_value.toFixed(1)}%</span>
               <span className={clsx('text-xs font-medium',
                 p.days_until_full < 7 ? 'text-red-600' :
                 p.days_until_full < 14 ? 'text-amber-600' :

@@ -76,24 +76,24 @@ export default function TableWidget({ config, data, isLoading }: WidgetProps) {
   }
 
   return (
-    <div className="h-full flex flex-col bg-gray-800 border border-gray-700 rounded-lg overflow-hidden">
-      <div className="px-3 py-2 border-b border-gray-700">
-        <span className="text-sm font-medium text-gray-200 truncate">{config.title}</span>
+    <div className="h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+      <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-700">
+        <span className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">{config.title}</span>
       </div>
       <div className="flex-1 overflow-auto">
         {isLoading && !data ? (
-          <div className="h-full flex items-center justify-center text-gray-500 text-sm">Laden...</div>
+          <div className="h-full flex items-center justify-center text-gray-400 dark:text-gray-500 text-sm">Laden...</div>
         ) : sorted.length === 0 ? (
-          <div className="h-full flex items-center justify-center text-gray-500 text-sm">Keine Daten</div>
+          <div className="h-full flex items-center justify-center text-gray-400 dark:text-gray-500 text-sm">Keine Daten</div>
         ) : (
           <table className="w-full text-xs">
-            <thead className="sticky top-0 bg-gray-800">
+            <thead className="sticky top-0 bg-white dark:bg-gray-800">
               <tr>
                 {columns.map(col => (
                   <th
                     key={col}
                     onClick={() => toggleSort(col)}
-                    className="px-3 py-2 text-left text-gray-400 font-medium cursor-pointer hover:text-white select-none whitespace-nowrap"
+                    className="px-3 py-2 text-left text-gray-500 dark:text-gray-400 font-medium cursor-pointer hover:text-gray-900 dark:hover:text-white select-none whitespace-nowrap"
                   >
                     <span className="inline-flex items-center gap-1">
                       {COLUMN_LABELS[col] || col}
@@ -111,14 +111,14 @@ export default function TableWidget({ config, data, isLoading }: WidgetProps) {
               {sorted.map((row, i) => (
                 <tr
                   key={i}
-                  className="border-t border-gray-700/50 hover:bg-gray-700/30 transition-colors"
+                  className="border-t border-gray-200 dark:border-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700/30 transition-colors"
                 >
                   {columns.map(col => (
                     <td
                       key={col}
                       className={clsx(
                         'px-3 py-1.5 whitespace-nowrap',
-                        col === 'status' && STATUS_COLORS[row[col]] || 'text-gray-300',
+                        col === 'status' && STATUS_COLORS[row[col]] || 'text-gray-600 dark:text-gray-300',
                       )}
                     >
                       {col === 'value' && row.unit ? `${row[col]} ${row.unit}` : row[col]}

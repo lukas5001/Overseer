@@ -57,35 +57,35 @@ function AddCollectorModal({ tenantId, tenantName, onClose, onSaved }: AddCollec
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-gray-900">Collector anlegen</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Collector anlegen</h2>
+          <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><X className="w-5 h-5" /></button>
         </div>
 
-        <div className="bg-gray-50 rounded-lg px-4 py-3 mb-4 text-sm">
-          <p className="font-medium text-gray-800">{tenantName}</p>
+        <div className="bg-gray-50 dark:bg-gray-900 rounded-lg px-4 py-3 mb-4 text-sm">
+          <p className="font-medium text-gray-800 dark:text-gray-200">{tenantName}</p>
         </div>
 
         {!generatedKey ? (
           <>
             <div className="space-y-3 mb-4">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Name *</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Name *</label>
                 <input
                   value={name}
                   onChange={e => setName(e.target.value)}
                   placeholder="collector-standort-a"
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none"
+                  className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Hostname <span className="font-normal text-gray-400">(optional)</span></label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Hostname <span className="font-normal text-gray-400 dark:text-gray-500">(optional)</span></label>
                 <input
                   value={hostname}
                   onChange={e => setHostname(e.target.value)}
                   placeholder="collector-vm.example.com"
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none"
+                  className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none"
                 />
               </div>
             </div>
@@ -94,7 +94,7 @@ function AddCollectorModal({ tenantId, tenantName, onClose, onSaved }: AddCollec
             )}
             <div className="flex gap-3">
               <button onClick={onClose}
-                className="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">
+                className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
                 Abbrechen
               </button>
               <button
@@ -112,16 +112,16 @@ function AddCollectorModal({ tenantId, tenantName, onClose, onSaved }: AddCollec
             </p>
             <div className="space-y-3 mb-4">
               <div>
-                <p className="text-xs font-medium text-gray-500 mb-1">Collector-ID</p>
-                <div className="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2">
-                  <code className="flex-1 text-xs text-gray-700 font-mono break-all">{generatedKey.collectorId}</code>
-                  <button onClick={() => copy(generatedKey.collectorId)} className="text-gray-400 hover:text-gray-700 flex-shrink-0">
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Collector-ID</p>
+                <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 rounded-lg px-3 py-2">
+                  <code className="flex-1 text-xs text-gray-700 dark:text-gray-300 font-mono break-all">{generatedKey.collectorId}</code>
+                  <button onClick={() => copy(generatedKey.collectorId)} className="text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 flex-shrink-0">
                     {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
               <div>
-                <p className="text-xs font-medium text-gray-500 mb-1">API-Key</p>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">API-Key</p>
                 <div className="flex items-center gap-2 bg-gray-900 rounded-lg px-3 py-2">
                   <code className="flex-1 text-xs text-green-400 font-mono break-all">{generatedKey.apiKey}</code>
                   <button onClick={() => copy(generatedKey.apiKey)} className="text-gray-400 hover:text-white flex-shrink-0">
@@ -163,29 +163,29 @@ function AddTenantModal({ onClose, onSaved }: AddTenantModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-gray-900">Tenant anlegen</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Tenant anlegen</h2>
+          <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><X className="w-5 h-5" /></button>
         </div>
 
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Name *</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Name *</label>
             <input
               value={name}
               onChange={e => { setName(e.target.value); if (!slug) setSlug(autoSlug(e.target.value)) }}
               placeholder="Mustermann GmbH"
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none"
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Slug * <span className="font-normal text-gray-400">(URL-freundlich, einmalig)</span></label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Slug * <span className="font-normal text-gray-400 dark:text-gray-500">(URL-freundlich, einmalig)</span></label>
             <input
               value={slug}
               onChange={e => setSlug(e.target.value)}
               placeholder="mustermann-gmbh"
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none font-mono"
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none font-mono"
             />
           </div>
           {error && (
@@ -195,7 +195,7 @@ function AddTenantModal({ onClose, onSaved }: AddTenantModalProps) {
 
         <div className="flex gap-3 mt-6">
           <button onClick={onClose}
-            className="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">
+            className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
             Abbrechen
           </button>
           <button
@@ -244,24 +244,24 @@ function GenerateKeyModal({ tenantId, tenantName, onClose, onSaved }: GenerateKe
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-gray-900">API-Key generieren</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">API-Key generieren</h2>
+          <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><X className="w-5 h-5" /></button>
         </div>
 
-        <div className="bg-gray-50 rounded-lg px-4 py-3 mb-4 text-sm">
-          <p className="font-medium text-gray-800">{tenantName}</p>
+        <div className="bg-gray-50 dark:bg-gray-900 rounded-lg px-4 py-3 mb-4 text-sm">
+          <p className="font-medium text-gray-800 dark:text-gray-200">{tenantName}</p>
         </div>
 
         {!generatedKey ? (
           <>
             <div className="mb-4">
-              <label className="block text-xs font-medium text-gray-600 mb-1">Key-Name</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Key-Name</label>
               <input
                 value={keyName}
                 onChange={e => setKeyName(e.target.value)}
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none"
+                className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none"
               />
             </div>
             {error && (
@@ -269,7 +269,7 @@ function GenerateKeyModal({ tenantId, tenantName, onClose, onSaved }: GenerateKe
             )}
             <div className="flex gap-3">
               <button onClick={onClose}
-                className="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">
+                className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
                 Abbrechen
               </button>
               <button
@@ -406,39 +406,39 @@ export default function TenantsPage() {
       {/* Copy Tenant Modal */}
       {copyTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-semibold text-gray-900">Tenant kopieren</h2>
-              <button onClick={() => setCopyTarget(null)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Tenant kopieren</h2>
+              <button onClick={() => setCopyTarget(null)} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><X className="w-5 h-5" /></button>
             </div>
-            <div className="bg-gray-50 rounded-lg px-4 py-3 mb-4 text-sm">
-              <p className="text-gray-500">Quelle:</p>
-              <p className="font-medium text-gray-800">{copyTarget.name}</p>
-              <p className="text-xs text-gray-400 mt-1">Alle Hosts und Services werden mitkopiert.</p>
+            <div className="bg-gray-50 dark:bg-gray-900 rounded-lg px-4 py-3 mb-4 text-sm">
+              <p className="text-gray-500 dark:text-gray-400">Quelle:</p>
+              <p className="font-medium text-gray-800 dark:text-gray-200">{copyTarget.name}</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Alle Hosts und Services werden mitkopiert.</p>
             </div>
             <div className="space-y-3 mb-4">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Neuer Name *</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Neuer Name *</label>
                 <input
                   value={copyName}
                   onChange={e => { setCopyName(e.target.value); setCopySlug(e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')) }}
                   placeholder="Kopie von …"
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none"
+                  className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Slug *</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Slug *</label>
                 <input
                   value={copySlug}
                   onChange={e => setCopySlug(e.target.value)}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none font-mono"
+                  className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none font-mono"
                 />
               </div>
             </div>
             {copyError && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-4">{copyError}</p>}
             <div className="flex gap-3">
               <button onClick={() => setCopyTarget(null)}
-                className="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">Abbrechen</button>
+                className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Abbrechen</button>
               <button
                 onClick={() => {
                   setCopyError(null)
@@ -460,10 +460,10 @@ export default function TenantsPage() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <Building2 className="w-7 h-7 text-overseer-600" />
-          <h1 className="text-2xl font-bold text-gray-900">Tenants</h1>
-          <span className="text-sm text-gray-500 ml-2">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Tenants</h1>
+          <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">
             {tenants.filter(t => t.active).length} aktiv
-            {tenants.some(t => !t.active) && <span className="text-gray-400"> · {tenants.filter(t => !t.active).length} inaktiv</span>}
+            {tenants.some(t => !t.active) && <span className="text-gray-400 dark:text-gray-500"> · {tenants.filter(t => !t.active).length} inaktiv</span>}
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -472,8 +472,8 @@ export default function TenantsPage() {
             className={clsx(
               'flex items-center gap-1.5 text-sm px-3 py-2 rounded-lg border transition-colors',
               showInactive
-                ? 'border-gray-300 bg-gray-50 text-gray-600'
-                : 'border-gray-200 text-gray-400 hover:bg-gray-50',
+                ? 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                : 'border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700',
             )}
           >
             {showInactive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
@@ -489,62 +489,62 @@ export default function TenantsPage() {
         </div>
       </div>
 
-      {isLoading && <div className="text-gray-400 text-sm">Lade…</div>}
+      {isLoading && <div className="text-gray-400 dark:text-gray-500 text-sm">Lade…</div>}
 
       <div className="space-y-2">
         {tenants.map(t => (
-          <div key={t.tenant_id} className={clsx('bg-white rounded-xl border overflow-hidden', t.active ? 'border-gray-200' : 'border-dashed border-gray-300 opacity-60')}>
+          <div key={t.tenant_id} className={clsx('bg-white dark:bg-gray-800 rounded-xl border overflow-hidden', t.active ? 'border-gray-200 dark:border-gray-700' : 'border-dashed border-gray-300 dark:border-gray-600 opacity-60')}>
             {/* Row */}
             <div className="flex items-center">
               <button
                 onClick={() => toggle(t.tenant_id)}
-                className="flex-1 flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors text-left"
+                className="flex-1 flex items-center gap-4 px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left"
               >
-                <span className="text-gray-400">
+                <span className="text-gray-400 dark:text-gray-500">
                   {expanded === t.tenant_id
                     ? <ChevronDown className="w-4 h-4" />
                     : <ChevronRight className="w-4 h-4" />}
                 </span>
 
                 <div className="flex-1 min-w-0">
-                  <p className={clsx('font-semibold', t.active ? 'text-gray-900' : 'text-gray-400 line-through')}>{t.tenant_name}</p>
-                  <p className="text-xs text-gray-400">{t.slug}</p>
+                  <p className={clsx('font-semibold', t.active ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 dark:text-gray-500 line-through')}>{t.tenant_name}</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">{t.slug}</p>
                 </div>
 
-                <div className="flex items-center gap-4 text-sm text-gray-500">
+                <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
                   <span title="Hosts">{t.host_count} Hosts</span>
                   <span title="Services">{t.service_count} Checks</span>
                 </div>
 
                 <div className="flex items-center gap-2">
                   {!t.active ? (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-gray-200 text-gray-500">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
                       INAKTIV
                     </span>
                   ) : (
                     <>
                       {t.critical > 0 && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-red-100 text-red-800">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300">
                           {t.critical} CRIT
                         </span>
                       )}
                       {t.warning > 0 && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-amber-100 text-amber-800">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300">
                           {t.warning} WARN
                         </span>
                       )}
                       {t.no_data > 0 && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-orange-100 text-orange-800">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-300">
                           {t.no_data} NO DATA
                         </span>
                       )}
                       {t.unknown > 0 && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-gray-100 text-gray-600">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
                           {t.unknown} UNK
                         </span>
                       )}
                       {t.critical === 0 && t.warning === 0 && t.no_data === 0 && t.unknown === 0 && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">
                           OK
                         </span>
                       )}
@@ -555,7 +555,7 @@ export default function TenantsPage() {
               <div className="flex items-center gap-1.5 mr-4">
                 <button
                   onClick={(e) => { e.stopPropagation(); setCopyTarget({ id: t.tenant_id, name: t.tenant_name }); setCopyName(''); setCopySlug(''); setCopyError(null) }}
-                  className="p-1.5 rounded-lg border border-gray-200 text-gray-400 hover:text-blue-500 hover:border-blue-300 transition-colors"
+                  className="p-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 hover:text-blue-500 hover:border-blue-300 transition-colors"
                   title="Tenant kopieren"
                 >
                   <Copy className="w-4 h-4" />
@@ -565,7 +565,7 @@ export default function TenantsPage() {
                   className={clsx(
                     'p-1.5 rounded-lg border transition-colors',
                     t.active
-                      ? 'border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-300'
+                      ? 'border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 hover:text-red-500 hover:border-red-300'
                       : 'border-emerald-300 text-emerald-500 hover:bg-emerald-50',
                   )}
                   title={t.active ? 'Deaktivieren' : 'Aktivieren'}
@@ -574,7 +574,7 @@ export default function TenantsPage() {
                 </button>
                 <button
                   onClick={(e) => { e.stopPropagation(); setDeleteTarget({ id: t.tenant_id, name: t.tenant_name }) }}
-                  className="p-1.5 rounded-lg border border-gray-200 text-gray-400 hover:text-red-600 hover:border-red-300 transition-colors"
+                  className="p-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 hover:text-red-600 hover:border-red-300 transition-colors"
                   title="Tenant endgültig löschen"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -584,13 +584,13 @@ export default function TenantsPage() {
 
             {/* Expanded detail */}
             {expanded === t.tenant_id && (
-              <div className="border-t border-gray-100 px-6 py-4 bg-gray-50 grid grid-cols-2 gap-6">
+              <div className="border-t border-gray-100 dark:border-gray-700 px-6 py-4 bg-gray-50 dark:bg-gray-900 grid grid-cols-2 gap-6">
                 {/* Collectors */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <Wifi className="w-4 h-4 text-gray-400" />
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Collectors</p>
+                      <Wifi className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Collectors</p>
                     </div>
                     <button
                       onClick={() => setCollectorTarget({ id: t.tenant_id, name: t.tenant_name })}
@@ -600,19 +600,19 @@ export default function TenantsPage() {
                     </button>
                   </div>
                   {!detail ? (
-                    <p className="text-xs text-gray-400">Lade…</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">Lade…</p>
                   ) : detail.collectors.length === 0 ? (
-                    <p className="text-xs text-gray-400">Keine Collectors</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">Keine Collectors</p>
                   ) : (
                     <div className="space-y-2">
                       {detail.collectors.map(c => (
                         <div key={c.id} className="flex items-center gap-2 text-sm">
-                          <Server className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                          <Server className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 flex-shrink-0" />
                           <div>
-                            <p className="font-medium text-gray-800">{c.name}</p>
-                            {c.hostname && <p className="text-xs text-gray-400">{c.hostname}</p>}
+                            <p className="font-medium text-gray-800 dark:text-gray-200">{c.name}</p>
+                            {c.hostname && <p className="text-xs text-gray-400 dark:text-gray-500">{c.hostname}</p>}
                             {c.last_seen_at && (
-                              <p className="text-xs text-gray-400">
+                              <p className="text-xs text-gray-400 dark:text-gray-500">
                                 zuletzt: {formatDateTime(c.last_seen_at)}
                               </p>
                             )}
@@ -627,8 +627,8 @@ export default function TenantsPage() {
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <Key className="w-4 h-4 text-gray-400" />
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">API Keys</p>
+                      <Key className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">API Keys</p>
                     </div>
                     <button
                       onClick={() => setKeyTarget({ id: t.tenant_id, name: t.tenant_name })}
@@ -638,20 +638,20 @@ export default function TenantsPage() {
                     </button>
                   </div>
                   {!detail ? (
-                    <p className="text-xs text-gray-400">Lade…</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">Lade…</p>
                   ) : detail.api_keys.length === 0 ? (
-                    <p className="text-xs text-gray-400">Keine API Keys</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">Keine API Keys</p>
                   ) : (
                     <div className="space-y-2">
                       {detail.api_keys.map(k => (
                         <div key={k.id} className="text-sm">
-                          <p className="font-medium text-gray-800">{k.name}</p>
-                          <p className="text-xs font-mono text-gray-500">
+                          <p className="font-medium text-gray-800 dark:text-gray-200">{k.name}</p>
+                          <p className="text-xs font-mono text-gray-500 dark:text-gray-400">
                             {k.key_prefix}…
                             <span
                               className={clsx(
                                 'ml-2 text-xs',
-                                k.last_used_at ? 'text-emerald-600' : 'text-gray-400',
+                                k.last_used_at ? 'text-emerald-600' : 'text-gray-400 dark:text-gray-500',
                               )}
                             >
                               {k.last_used_at

@@ -21,10 +21,10 @@ interface UserItem {
 const ROLES = ['super_admin', 'tenant_admin', 'tenant_operator', 'tenant_viewer']
 
 const roleBadge: Record<string, string> = {
-  super_admin: 'bg-purple-100 text-purple-800',
-  tenant_admin: 'bg-blue-100 text-blue-800',
-  tenant_operator: 'bg-green-100 text-green-800',
-  tenant_viewer: 'bg-gray-100 text-gray-600',
+  super_admin: 'bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300',
+  tenant_admin: 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300',
+  tenant_operator: 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300',
+  tenant_viewer: 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400',
 }
 
 // ── Add User Modal ─────────────────────────────────────────────────────────────
@@ -65,40 +65,40 @@ function AddUserModal({ onClose, onSaved }: AddUserModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-gray-900">Benutzer anlegen</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Benutzer anlegen</h2>
+          <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><X className="w-5 h-5" /></button>
         </div>
 
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">E-Mail *</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">E-Mail *</label>
             <input value={form.email} onChange={set('email')} type="email" placeholder="max@example.com"
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Anzeigename *</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Anzeigename *</label>
             <input value={form.display_name} onChange={set('display_name')} placeholder="Max Mustermann"
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Passwort *</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Passwort *</label>
             <input value={form.password} onChange={set('password')} type="password"
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Rolle</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Rolle</label>
               <select value={form.role} onChange={set('role')}
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none">
+                className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none">
                 {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Tenant-Zugriff</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Tenant-Zugriff</label>
               <select value={form.tenant_access} onChange={set('tenant_access')}
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none">
+                className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none">
                 <option value="all">Alle Tenants</option>
                 <option value="selected">Ausgewählte Tenants</option>
               </select>
@@ -107,20 +107,20 @@ function AddUserModal({ onClose, onSaved }: AddUserModalProps) {
 
           {form.tenant_access === 'selected' && (
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Tenants auswählen</label>
-              <div className="border border-gray-300 rounded-lg max-h-32 overflow-y-auto p-2 space-y-1">
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Tenants auswählen</label>
+              <div className="border border-gray-300 dark:border-gray-600 rounded-lg max-h-32 overflow-y-auto p-2 space-y-1">
                 {tenants.map(t => (
-                  <label key={t.id} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-gray-50 cursor-pointer">
+                  <label key={t.id} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={selectedTenants.includes(t.id)}
                       onChange={() => toggleTenant(t.id)}
-                      className="rounded border-gray-300 text-overseer-600 focus:ring-overseer-500"
+                      className="rounded border-gray-300 dark:border-gray-600 text-overseer-600 focus:ring-overseer-500"
                     />
-                    <span className="text-sm text-gray-700">{t.name}</span>
+                    <span className="text-sm text-gray-700 dark:text-gray-300">{t.name}</span>
                   </label>
                 ))}
-                {tenants.length === 0 && <p className="text-xs text-gray-400 px-2">Keine Tenants vorhanden</p>}
+                {tenants.length === 0 && <p className="text-xs text-gray-400 dark:text-gray-500 px-2">Keine Tenants vorhanden</p>}
               </div>
             </div>
           )}
@@ -129,7 +129,7 @@ function AddUserModal({ onClose, onSaved }: AddUserModalProps) {
 
         <div className="flex gap-3 mt-6">
           <button onClick={onClose}
-            className="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">
+            className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
             Abbrechen
           </button>
           <button
@@ -165,12 +165,12 @@ function SetPasswordModal({ userId, email, onClose }: SetPasswordModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm mx-4 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-sm mx-4 p-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-gray-900">Passwort setzen</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Passwort setzen</h2>
+          <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><X className="w-5 h-5" /></button>
         </div>
-        <p className="text-sm text-gray-500 mb-4">{email}</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{email}</p>
         {done ? (
           <>
             <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 mb-4">Passwort gesetzt.</p>
@@ -180,11 +180,11 @@ function SetPasswordModal({ userId, email, onClose }: SetPasswordModalProps) {
           <>
             <input value={password} onChange={e => setPassword(e.target.value)} type="password"
               placeholder="Neues Passwort"
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none mb-3" />
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none mb-3" />
             {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3">{error}</p>}
             <div className="flex gap-3">
               <button onClick={onClose}
-                className="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">Abbrechen</button>
+                className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Abbrechen</button>
               <button
                 onClick={() => mutation.mutate()}
                 disabled={mutation.isPending || !password}
@@ -250,8 +250,8 @@ export default function UsersPage() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <Users className="w-7 h-7 text-overseer-600" />
-          <h1 className="text-2xl font-bold text-gray-900">Benutzer</h1>
-          <span className="text-sm text-gray-500 ml-2">{users.length}</span>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Benutzer</h1>
+          <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">{users.length}</span>
         </div>
         <button
           onClick={() => setShowAdd(true)}
@@ -262,11 +262,11 @@ export default function UsersPage() {
         </button>
       </div>
 
-      {isLoading && <div className="text-gray-400 text-sm">Lade…</div>}
+      {isLoading && <div className="text-gray-400 dark:text-gray-500 text-sm">Lade…</div>}
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide border-b border-gray-100">
+          <thead className="bg-gray-50 dark:bg-gray-900 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide border-b border-gray-100 dark:border-gray-800">
             <tr>
               <th className="px-6 py-3 text-left">Benutzer</th>
               <th className="px-6 py-3 text-left">Rolle</th>
@@ -276,12 +276,12 @@ export default function UsersPage() {
               <th className="px-6 py-3"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
             {users.map(u => (
-              <tr key={u.id} className={clsx('hover:bg-gray-50', !u.active && 'opacity-50')}>
+              <tr key={u.id} className={clsx('hover:bg-gray-50 dark:hover:bg-gray-700', !u.active && 'opacity-50')}>
                 <td className="px-6 py-3">
-                  <p className="font-medium text-gray-900">{u.display_name}</p>
-                  <p className="text-xs text-gray-400">{u.email}</p>
+                  <p className="font-medium text-gray-900 dark:text-gray-100">{u.display_name}</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">{u.email}</p>
                 </td>
                 <td className="px-6 py-3">
                   <select
@@ -289,31 +289,31 @@ export default function UsersPage() {
                     onChange={e => roleChangeMutation.mutate({ id: u.id, role: e.target.value })}
                     className={clsx(
                       'text-xs font-semibold px-2 py-0.5 rounded border-0 outline-none cursor-pointer',
-                      roleBadge[u.role] ?? 'bg-gray-100 text-gray-600',
+                      roleBadge[u.role] ?? 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400',
                     )}
                   >
                     {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
                   </select>
                 </td>
-                <td className="px-6 py-3 text-xs text-gray-500">
+                <td className="px-6 py-3 text-xs text-gray-500 dark:text-gray-400">
                   {u.tenant_access === 'all' ? (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded bg-blue-100 text-blue-700 font-medium">Alle</span>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-medium">Alle</span>
                   ) : u.tenant_ids.length > 0 ? (
                     <span title={u.tenant_ids.map(id => tenantNames[id] || id).join(', ')}>
                       {u.tenant_ids.slice(0, 2).map(id => tenantNames[id] || id.slice(0, 8)).join(', ')}
                       {u.tenant_ids.length > 2 && ` +${u.tenant_ids.length - 2}`}
                     </span>
                   ) : (
-                    <span className="text-gray-400">–</span>
+                    <span className="text-gray-400 dark:text-gray-500">–</span>
                   )}
                 </td>
-                <td className="px-6 py-3 text-gray-400 text-xs">
+                <td className="px-6 py-3 text-gray-400 dark:text-gray-500 text-xs">
                   {u.last_login_at ? formatDateTime(u.last_login_at) : 'noch nie'}
                 </td>
                 <td className="px-6 py-3">
                   <span className={clsx(
                     'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium',
-                    u.active ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500',
+                    u.active ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400',
                   )}>
                     {u.active ? 'Aktiv' : 'Inaktiv'}
                   </span>
@@ -323,7 +323,7 @@ export default function UsersPage() {
                     <button
                       onClick={() => setPwTarget({ id: u.id, email: u.email })}
                       title="Passwort setzen"
-                      className="text-gray-300 hover:text-overseer-500 transition-colors"
+                      className="text-gray-300 dark:text-gray-600 hover:text-overseer-500 transition-colors"
                     >
                       <Key className="w-3.5 h-3.5" />
                     </button>
@@ -331,7 +331,7 @@ export default function UsersPage() {
                       <button
                         onClick={() => setDeactivateTarget({ id: u.id, email: u.email })}
                         title="Deaktivieren"
-                        className="text-gray-300 hover:text-red-500 transition-colors"
+                        className="text-gray-300 dark:text-gray-600 hover:text-red-500 transition-colors"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>

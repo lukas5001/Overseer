@@ -32,47 +32,47 @@ interface DeadLetter {
 
 const ACTION_COLORS: Record<string, string> = {
   // Auth
-  login: 'bg-blue-100 text-blue-800',
-  login_failed: 'bg-red-100 text-red-800',
+  login: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+  login_failed: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
   // CRUD – create
-  host_create: 'bg-emerald-100 text-emerald-800',
-  service_create: 'bg-emerald-100 text-emerald-800',
-  tenant_create: 'bg-emerald-100 text-emerald-800',
-  user_create: 'bg-emerald-100 text-emerald-800',
-  collector_create: 'bg-emerald-100 text-emerald-800',
-  notification_channel_create: 'bg-emerald-100 text-emerald-800',
-  downtime_create: 'bg-blue-100 text-blue-800',
+  host_create: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
+  service_create: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
+  tenant_create: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
+  user_create: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
+  collector_create: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
+  notification_channel_create: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
+  downtime_create: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
   // CRUD – update
-  host_update: 'bg-sky-100 text-sky-800',
-  service_update: 'bg-sky-100 text-sky-800',
-  tenant_update: 'bg-sky-100 text-sky-800',
-  user_update: 'bg-sky-100 text-sky-800',
-  notification_channel_update: 'bg-sky-100 text-sky-800',
+  host_update: 'bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300',
+  service_update: 'bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300',
+  tenant_update: 'bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300',
+  user_update: 'bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300',
+  notification_channel_update: 'bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300',
   // CRUD – delete
-  host_delete: 'bg-red-100 text-red-800',
-  service_delete: 'bg-red-100 text-red-800',
-  user_delete: 'bg-red-100 text-red-800',
-  collector_delete: 'bg-red-100 text-red-800',
-  notification_channel_delete: 'bg-red-100 text-red-800',
-  downtime_delete: 'bg-red-100 text-red-800',
+  host_delete: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
+  service_delete: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
+  user_delete: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
+  collector_delete: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
+  notification_channel_delete: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
+  downtime_delete: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
   // Security
-  user_password_change: 'bg-orange-100 text-orange-800',
-  '2fa_enable': 'bg-purple-100 text-purple-800',
-  '2fa_disable': 'bg-purple-100 text-purple-800',
+  user_password_change: 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300',
+  '2fa_enable': 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300',
+  '2fa_disable': 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300',
   // Status
-  acknowledge: 'bg-amber-100 text-amber-800',
-  unacknowledge: 'bg-gray-100 text-gray-600',
-  bulk_acknowledge: 'bg-amber-100 text-amber-800',
+  acknowledge: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
+  unacknowledge: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400',
+  bulk_acknowledge: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
   // Minor (shown when toggled on)
-  preference_update: 'bg-gray-50 text-gray-500',
-  saved_filter_create: 'bg-gray-50 text-gray-500',
-  saved_filter_update: 'bg-gray-50 text-gray-500',
-  saved_filter_delete: 'bg-gray-50 text-gray-500',
-  saved_filter_set_default: 'bg-gray-50 text-gray-500',
+  preference_update: 'bg-gray-50 text-gray-500 dark:bg-gray-900/30 dark:text-gray-400',
+  saved_filter_create: 'bg-gray-50 text-gray-500 dark:bg-gray-900/30 dark:text-gray-400',
+  saved_filter_update: 'bg-gray-50 text-gray-500 dark:bg-gray-900/30 dark:text-gray-400',
+  saved_filter_delete: 'bg-gray-50 text-gray-500 dark:bg-gray-900/30 dark:text-gray-400',
+  saved_filter_set_default: 'bg-gray-50 text-gray-500 dark:bg-gray-900/30 dark:text-gray-400',
 }
 
 function actionBadge(action: string) {
-  const color = ACTION_COLORS[action] ?? 'bg-gray-100 text-gray-600'
+  const color = ACTION_COLORS[action] ?? 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
   return (
     <span className={clsx('inline-block px-2 py-0.5 rounded text-xs font-medium', color)}>
       {action}
@@ -118,24 +118,24 @@ function AuditLogTab() {
           value={filterAction}
           onChange={(e) => { setFilterAction(e.target.value); setOffset(0) }}
           placeholder="Filter nach Aktion (z.B. host_create)"
-          className="text-sm border border-gray-300 rounded-lg px-3 py-2 w-64 focus:ring-2 focus:ring-overseer-500 outline-none"
+          className="text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 w-64 focus:ring-2 focus:ring-overseer-500 outline-none"
         />
-        <label className="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer select-none">
+        <label className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 cursor-pointer select-none">
           <input
             type="checkbox"
             checked={includeMinor}
             onChange={(e) => { setIncludeMinor(e.target.checked); setOffset(0) }}
-            className="w-3.5 h-3.5 rounded border-gray-300 text-overseer-600 focus:ring-overseer-500"
+            className="w-3.5 h-3.5 rounded border-gray-300 dark:border-gray-600 text-overseer-600 focus:ring-overseer-500"
           />
           Nebenaktionen
         </label>
-        <span className="text-xs text-gray-400">{total} Eintr&auml;ge</span>
+        <span className="text-xs text-gray-400 dark:text-gray-500">{total} Eintr&auml;ge</span>
       </div>
 
-      {isLoading && <div className="text-gray-400 text-sm">Lade...</div>}
+      {isLoading && <div className="text-gray-400 dark:text-gray-500 text-sm">Lade...</div>}
 
       {!isLoading && entries.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-16 text-gray-400 gap-3">
+        <div className="flex flex-col items-center justify-center py-16 text-gray-400 dark:text-gray-500 gap-3">
           <ScrollText className="w-10 h-10" />
           <p className="text-sm">Keine Audit-Eintr&auml;ge</p>
         </div>
@@ -145,7 +145,7 @@ function AuditLogTab() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-200 text-left text-xs text-gray-500 uppercase tracking-wider">
+              <tr className="border-b border-gray-200 dark:border-gray-700 text-left text-xs text-gray-500 uppercase tracking-wider">
                 <th className="px-3 py-2">Zeitpunkt</th>
                 <th className="px-3 py-2">Akteur</th>
                 <th className="px-3 py-2">Aktion</th>
@@ -156,15 +156,15 @@ function AuditLogTab() {
             </thead>
             <tbody>
               {entries.map((e) => (
-                <tr key={e.id} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="px-3 py-2.5 text-gray-500 whitespace-nowrap">{formatDateTime(e.created_at)}</td>
-                  <td className="px-3 py-2.5 text-gray-700">{e.actor_email ?? '–'}</td>
+                <tr key={e.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <td className="px-3 py-2.5 text-gray-500 dark:text-gray-400 whitespace-nowrap">{formatDateTime(e.created_at)}</td>
+                  <td className="px-3 py-2.5 text-gray-700 dark:text-gray-300 dark:text-gray-600">{e.actor_email ?? '–'}</td>
                   <td className="px-3 py-2.5">{actionBadge(e.action)}</td>
-                  <td className="px-3 py-2.5 text-gray-500">{e.target_type ?? '–'}</td>
-                  <td className="px-3 py-2.5 font-mono text-xs text-gray-400 max-w-[12rem] truncate" title={e.target_id ?? ''}>
+                  <td className="px-3 py-2.5 text-gray-500 dark:text-gray-400">{e.target_type ?? '–'}</td>
+                  <td className="px-3 py-2.5 font-mono text-xs text-gray-400 dark:text-gray-500 max-w-[12rem] truncate" title={e.target_id ?? ''}>
                     {e.target_id ?? '–'}
                   </td>
-                  <td className="px-3 py-2.5 font-mono text-xs text-gray-400 max-w-[16rem] truncate" title={JSON.stringify(e.detail)}>
+                  <td className="px-3 py-2.5 font-mono text-xs text-gray-400 dark:text-gray-500 max-w-[16rem] truncate" title={JSON.stringify(e.detail)}>
                     {Object.keys(e.detail).length > 0 ? JSON.stringify(e.detail) : '–'}
                   </td>
                 </tr>
@@ -180,15 +180,15 @@ function AuditLogTab() {
           <button
             onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
             disabled={offset === 0}
-            className="flex items-center gap-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50"
+            className="flex items-center gap-1 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-300"
           >
             <ChevronLeft className="w-4 h-4" /> Zur&uuml;ck
           </button>
-          <span className="text-xs text-gray-500">Seite {page} von {totalPages}</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400">Seite {page} von {totalPages}</span>
           <button
             onClick={() => setOffset(offset + PAGE_SIZE)}
             disabled={page >= totalPages}
-            className="flex items-center gap-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50"
+            className="flex items-center gap-1 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-300"
           >
             Weiter <ChevronRight className="w-4 h-4" />
           </button>
@@ -217,10 +217,10 @@ function DeadLettersTab() {
 
   return (
     <div>
-      {isLoading && <div className="text-gray-400 text-sm">Lade...</div>}
+      {isLoading && <div className="text-gray-400 dark:text-gray-500 text-sm">Lade...</div>}
 
       {!isLoading && letters.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-16 text-gray-400 gap-3">
+        <div className="flex flex-col items-center justify-center py-16 text-gray-400 dark:text-gray-500 gap-3">
           <AlertTriangle className="w-10 h-10" />
           <p className="text-sm">Keine Dead Letters</p>
         </div>
@@ -236,9 +236,9 @@ function DeadLettersTab() {
                     <span className="inline-block px-2 py-0.5 rounded bg-red-100 text-red-700 text-xs font-medium">
                       Dead Letter
                     </span>
-                    <span className="text-xs text-gray-400 font-mono">{dl.stream_id}</span>
+                    <span className="text-xs text-gray-400 dark:text-gray-500 font-mono">{dl.stream_id}</span>
                     {dl.delivery_count && (
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-gray-400 dark:text-gray-500">
                         {dl.delivery_count}x versucht
                       </span>
                     )}
@@ -248,13 +248,13 @@ function DeadLettersTab() {
                     <p className="text-sm text-red-600 font-mono leading-snug break-all">{dl.error}</p>
                   )}
 
-                  <div className="flex items-center gap-3 text-xs text-gray-400">
+                  <div className="flex items-center gap-3 text-xs text-gray-400 dark:text-gray-500">
                     {dl.original_id && <span>Original: <span className="font-mono">{dl.original_id}</span></span>}
                     {dl.failed_at && <span>Fehlgeschlagen: {formatDateTime(dl.failed_at)}</span>}
                   </div>
 
                   {dl.data_preview && (
-                    <pre className="text-xs text-gray-400 bg-gray-50 rounded-lg p-2 mt-1 overflow-x-auto max-w-full">
+                    <pre className="text-xs text-gray-400 bg-gray-50 dark:bg-gray-900 rounded-lg p-2 mt-1 overflow-x-auto max-w-full">
                       {dl.data_preview}
                     </pre>
                   )}
@@ -301,11 +301,11 @@ export default function AuditLogPage() {
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <ScrollText className="w-7 h-7 text-overseer-600" />
-        <h1 className="text-2xl font-bold text-gray-900">Audit Log</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Audit Log</h1>
       </div>
 
       {/* Tab strip */}
-      <div className="flex gap-1 mb-5 bg-gray-100 p-1 rounded-lg w-fit">
+      <div className="flex gap-1 mb-5 bg-gray-100 dark:bg-gray-700 p-1 rounded-lg w-fit">
         {([
           { key: 'audit' as TabMode, label: 'Audit Log' },
           { key: 'dead-letters' as TabMode, label: 'Dead Letters' },
@@ -316,8 +316,8 @@ export default function AuditLogPage() {
             className={clsx(
               'px-4 py-1.5 rounded-md text-sm font-medium transition-colors',
               tab === t.key
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700',
+                ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200',
             )}
           >
             {t.label}

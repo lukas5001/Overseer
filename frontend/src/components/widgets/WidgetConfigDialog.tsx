@@ -100,29 +100,29 @@ export default function WidgetConfigDialog({ widget, open, onClose, onChange, va
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
       <div
-        className="bg-gray-800 border border-gray-700 rounded-xl w-full max-w-lg max-h-[80vh] flex flex-col"
+        className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl w-full max-w-lg max-h-[80vh] flex flex-col"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-700">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3">
-            <h2 className="text-base font-semibold text-white">Widget konfigurieren</h2>
-            <span className="text-[10px] bg-gray-700 text-gray-400 px-2 py-0.5 rounded-full uppercase">
+            <h2 className="text-base font-semibold text-gray-900 dark:text-white">Widget konfigurieren</h2>
+            <span className="text-[10px] bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-full uppercase">
               {localWidget.type}
             </span>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-white">
+          <button onClick={onClose} className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Title */}
         <div className="px-4 pt-3">
-          <label className="block text-xs text-gray-400 mb-1">Titel</label>
+          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Titel</label>
           <input
             value={localWidget.title}
             onChange={e => update({ title: e.target.value })}
-            className="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-blue-500"
+            className="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-blue-500"
           />
         </div>
 
@@ -137,7 +137,7 @@ export default function WidgetConfigDialog({ widget, open, onClose, onChange, va
                   'px-3 py-1.5 text-xs rounded-md transition-colors',
                   tab === t
                     ? 'bg-blue-600 text-white'
-                    : 'text-gray-400 hover:text-white bg-gray-700'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-gray-100 dark:bg-gray-700'
                 )}
               >
                 {t === 'data' ? 'Daten' : 'Darstellung'}
@@ -151,11 +151,11 @@ export default function WidgetConfigDialog({ widget, open, onClose, onChange, va
           {isSummaryType ? (
             /* Summary config: just field picker */
             <div>
-              <label className="block text-xs text-gray-400 mb-1">Feld</label>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Feld</label>
               <select
                 value={ds.field || ''}
                 onChange={e => updateDataSource({ field: e.target.value })}
-                className="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-1.5 text-sm text-gray-200"
+                className="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm text-gray-700 dark:text-gray-200"
               >
                 <option value="total">Total</option>
                 <option value="total_hosts">Total Hosts</option>
@@ -166,12 +166,12 @@ export default function WidgetConfigDialog({ widget, open, onClose, onChange, va
                 <option value="no_data">No Data</option>
               </select>
               <div className="mt-3">
-                <label className="block text-xs text-gray-400 mb-1">Farbe</label>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Farbe</label>
                 <input
                   type="color"
                   value={opts.color || '#ffffff'}
                   onChange={e => updateOptions({ color: e.target.value })}
-                  className="w-10 h-8 bg-transparent border border-gray-600 rounded cursor-pointer"
+                  className="w-10 h-8 bg-transparent border border-gray-300 dark:border-gray-600 rounded cursor-pointer"
                 />
               </div>
             </div>
@@ -179,7 +179,7 @@ export default function WidgetConfigDialog({ widget, open, onClose, onChange, va
             <>
               {/* Host filter */}
               <div>
-                <label className="block text-xs text-gray-400 mb-1">Host</label>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Host</label>
                 <select
                   value={selectedHostId}
                   onChange={e => {
@@ -191,7 +191,7 @@ export default function WidgetConfigDialog({ widget, open, onClose, onChange, va
                       updateDataSource({ service_ids: [], host_ids: val ? [val] : [] })
                     }
                   }}
-                  className="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-1.5 text-sm text-gray-200"
+                  className="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm text-gray-700 dark:text-gray-200"
                 >
                   <option value="">Alle Hosts</option>
                   {variables.filter(v => v.query === 'all_hosts' || v.type === 'custom').map(v => (
@@ -205,40 +205,40 @@ export default function WidgetConfigDialog({ widget, open, onClose, onChange, va
 
               {/* Service selection */}
               <div>
-                <label className="block text-xs text-gray-400 mb-1">
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
                   Services {ds.service_ids?.length ? `(${ds.service_ids.length} gewählt)` : ''}
                 </label>
-                <div className="max-h-48 overflow-y-auto bg-gray-900 border border-gray-600 rounded-lg">
+                <div className="max-h-48 overflow-y-auto bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg">
                   {services?.map(s => (
                     <label
                       key={s.id}
-                      className="flex items-center gap-2 px-3 py-1.5 hover:bg-gray-800 cursor-pointer"
+                      className="flex items-center gap-2 px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
                     >
                       <input
                         type="checkbox"
                         checked={ds.service_ids?.includes(s.id) || false}
                         onChange={() => toggleServiceId(s.id)}
-                        className="rounded border-gray-600"
+                        className="rounded border-gray-300 dark:border-gray-600"
                       />
-                      <span className="text-sm text-gray-300 truncate">
+                      <span className="text-sm text-gray-600 dark:text-gray-300 truncate">
                         {s.host} — {s.name}
                       </span>
-                      <span className="text-[10px] text-gray-500 ml-auto">{s.check_type}</span>
+                      <span className="text-[10px] text-gray-400 dark:text-gray-500 ml-auto">{s.check_type}</span>
                     </label>
                   ))}
                   {(!services || services.length === 0) && (
-                    <p className="text-xs text-gray-500 p-3 text-center">Keine Services gefunden</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 p-3 text-center">Keine Services gefunden</p>
                   )}
                 </div>
               </div>
 
               {/* Aggregation */}
               <div>
-                <label className="block text-xs text-gray-400 mb-1">Aggregation</label>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Aggregation</label>
                 <select
                   value={ds.aggregation || 'last'}
                   onChange={e => updateDataSource({ aggregation: e.target.value as any })}
-                  className="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-1.5 text-sm text-gray-200"
+                  className="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm text-gray-700 dark:text-gray-200"
                 >
                   {AGGREGATIONS.map(a => (
                     <option key={a.value} value={a.value}>{a.label}</option>
@@ -251,11 +251,11 @@ export default function WidgetConfigDialog({ widget, open, onClose, onChange, va
             <>
               {/* Unit */}
               <div>
-                <label className="block text-xs text-gray-400 mb-1">Einheit</label>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Einheit</label>
                 <select
                   value={opts.unit || ''}
                   onChange={e => updateOptions({ unit: e.target.value })}
-                  className="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-1.5 text-sm text-gray-200"
+                  className="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm text-gray-700 dark:text-gray-200"
                 >
                   {UNITS.map(u => (
                     <option key={u.label} value={u.value}>{u.label}</option>
@@ -265,11 +265,11 @@ export default function WidgetConfigDialog({ widget, open, onClose, onChange, va
 
               {/* Decimals */}
               <div>
-                <label className="block text-xs text-gray-400 mb-1">Dezimalstellen</label>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Dezimalstellen</label>
                 <select
                   value={opts.decimals ?? 1}
                   onChange={e => updateOptions({ decimals: Number(e.target.value) })}
-                  className="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-1.5 text-sm text-gray-200"
+                  className="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm text-gray-700 dark:text-gray-200"
                 >
                   <option value={0}>0</option>
                   <option value={1}>1</option>
@@ -282,21 +282,21 @@ export default function WidgetConfigDialog({ widget, open, onClose, onChange, va
               {localWidget.type === 'gauge' && (
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs text-gray-400 mb-1">Min</label>
+                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Min</label>
                     <input
                       type="number"
                       value={opts.min ?? 0}
                       onChange={e => updateOptions({ min: Number(e.target.value) })}
-                      className="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-1.5 text-sm text-gray-200"
+                      className="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm text-gray-700 dark:text-gray-200"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-400 mb-1">Max</label>
+                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Max</label>
                     <input
                       type="number"
                       value={opts.max ?? 100}
                       onChange={e => updateOptions({ max: Number(e.target.value) })}
-                      className="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-1.5 text-sm text-gray-200"
+                      className="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm text-gray-700 dark:text-gray-200"
                     />
                   </div>
                 </div>
@@ -305,21 +305,21 @@ export default function WidgetConfigDialog({ widget, open, onClose, onChange, va
               {/* Line chart specific */}
               {localWidget.type === 'line_chart' && (
                 <div className="flex items-center gap-4">
-                  <label className="flex items-center gap-2 text-sm text-gray-300">
+                  <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                     <input
                       type="checkbox"
                       checked={opts.fill || false}
                       onChange={e => updateOptions({ fill: e.target.checked })}
-                      className="rounded border-gray-600"
+                      className="rounded border-gray-300 dark:border-gray-600"
                     />
                     Fläche füllen
                   </label>
-                  <label className="flex items-center gap-2 text-sm text-gray-300">
+                  <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                     <input
                       type="checkbox"
                       checked={opts.stacked || false}
                       onChange={e => updateOptions({ stacked: e.target.checked })}
-                      className="rounded border-gray-600"
+                      className="rounded border-gray-300 dark:border-gray-600"
                     />
                     Gestapelt
                   </label>
@@ -328,12 +328,12 @@ export default function WidgetConfigDialog({ widget, open, onClose, onChange, va
 
               {/* Sparkline for stat */}
               {localWidget.type === 'stat' && (
-                <label className="flex items-center gap-2 text-sm text-gray-300">
+                <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                   <input
                     type="checkbox"
                     checked={opts.showSparkline !== false}
                     onChange={e => updateOptions({ showSparkline: e.target.checked })}
-                    className="rounded border-gray-600"
+                    className="rounded border-gray-300 dark:border-gray-600"
                   />
                   Sparkline anzeigen
                 </label>
@@ -343,7 +343,7 @@ export default function WidgetConfigDialog({ widget, open, onClose, onChange, va
               {(localWidget.type === 'stat' || localWidget.type === 'gauge') && (
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-xs text-gray-400">Schwellwerte</label>
+                    <label className="text-xs text-gray-500 dark:text-gray-400">Schwellwerte</label>
                     <button
                       onClick={addThreshold}
                       className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1"
@@ -354,22 +354,22 @@ export default function WidgetConfigDialog({ widget, open, onClose, onChange, va
                   <div className="space-y-2">
                     {(opts.thresholds || []).map((t, i) => (
                       <div key={i} className="flex items-center gap-2">
-                        <span className="text-xs text-gray-500 w-4">≥</span>
+                        <span className="text-xs text-gray-400 dark:text-gray-500 w-4">≥</span>
                         <input
                           type="number"
                           value={t.value}
                           onChange={e => updateThreshold(i, { value: Number(e.target.value) })}
-                          className="flex-1 bg-gray-900 border border-gray-600 rounded px-2 py-1 text-sm text-gray-200"
+                          className="flex-1 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm text-gray-700 dark:text-gray-200"
                         />
                         <input
                           type="color"
                           value={t.color}
                           onChange={e => updateThreshold(i, { color: e.target.value })}
-                          className="w-8 h-7 bg-transparent border border-gray-600 rounded cursor-pointer"
+                          className="w-8 h-7 bg-transparent border border-gray-300 dark:border-gray-600 rounded cursor-pointer"
                         />
                         <button
                           onClick={() => removeThreshold(i)}
-                          className="text-gray-500 hover:text-red-400"
+                          className="text-gray-400 dark:text-gray-500 hover:text-red-400"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -382,12 +382,12 @@ export default function WidgetConfigDialog({ widget, open, onClose, onChange, va
               {/* Color for stat */}
               {localWidget.type === 'stat' && (
                 <div>
-                  <label className="block text-xs text-gray-400 mb-1">Standard-Farbe</label>
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Standard-Farbe</label>
                   <input
                     type="color"
                     value={opts.color || '#ffffff'}
                     onChange={e => updateOptions({ color: e.target.value })}
-                    className="w-10 h-8 bg-transparent border border-gray-600 rounded cursor-pointer"
+                    className="w-10 h-8 bg-transparent border border-gray-300 dark:border-gray-600 rounded cursor-pointer"
                   />
                 </div>
               )}
@@ -396,7 +396,7 @@ export default function WidgetConfigDialog({ widget, open, onClose, onChange, va
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end p-4 border-t border-gray-700">
+        <div className="flex justify-end p-4 border-t border-gray-200 dark:border-gray-700">
           <button
             onClick={onClose}
             className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors"

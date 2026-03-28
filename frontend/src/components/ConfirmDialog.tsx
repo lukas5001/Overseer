@@ -45,8 +45,8 @@ export default function ConfirmDialog({
 
   if (!open) return null
 
-  const iconBg = variant === 'danger' ? 'bg-red-100' : variant === 'warning' ? 'bg-amber-100' : 'bg-blue-100'
-  const iconColor = variant === 'danger' ? 'text-red-600' : variant === 'warning' ? 'text-amber-600' : 'text-blue-600'
+  const iconBg = variant === 'danger' ? 'bg-red-100 dark:bg-red-900/40' : variant === 'warning' ? 'bg-amber-100 dark:bg-amber-900/40' : 'bg-blue-100 dark:bg-blue-900/40'
+  const iconColor = variant === 'danger' ? 'text-red-600 dark:text-red-400' : variant === 'warning' ? 'text-amber-600 dark:text-amber-400' : 'text-blue-600 dark:text-blue-400'
   const btnClass = variant === 'danger'
     ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500'
     : variant === 'warning'
@@ -55,9 +55,9 @@ export default function ConfirmDialog({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/40" onClick={onCancel} />
-      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6 animate-in fade-in zoom-in-95 duration-150">
-        <button onClick={onCancel} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+      <div className="absolute inset-0 bg-black/40 dark:bg-black/60" onClick={onCancel} />
+      <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md mx-4 p-6 animate-in fade-in zoom-in-95 duration-150">
+        <button onClick={onCancel} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
           <X className="w-5 h-5" />
         </button>
 
@@ -66,8 +66,8 @@ export default function ConfirmDialog({
             {variant === 'danger' ? <Trash2 className={clsx('w-5 h-5', iconColor)} /> : <AlertTriangle className={clsx('w-5 h-5', iconColor)} />}
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-base font-semibold text-gray-900">{title}</h3>
-            <p className="mt-1.5 text-sm text-gray-600 whitespace-pre-line">{message}</p>
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white">{title}</h3>
+            <p className="mt-1.5 text-sm text-gray-600 dark:text-gray-300 whitespace-pre-line">{message}</p>
           </div>
         </div>
 
@@ -75,7 +75,7 @@ export default function ConfirmDialog({
           <button
             onClick={onCancel}
             disabled={loading}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300"
+            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300 dark:focus:ring-offset-gray-800"
           >
             {cancelLabel}
           </button>

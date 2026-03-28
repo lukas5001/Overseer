@@ -139,24 +139,24 @@ export default function LoginPage({ onLogin }: Props) {
 
   return (
     <div className="min-h-screen bg-overseer-900 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 w-full max-w-md">
         <div className="flex flex-col items-center mb-8">
           <Shield className="w-12 h-12 text-overseer-600 mb-3" />
-          <h1 className="text-2xl font-bold text-gray-900">Overseer</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Overseer</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             {twoFA ? 'Zwei-Faktor-Authentifizierung' : 'Monitoring System Login'}
           </p>
         </div>
 
         {twoFA ? (
           <form onSubmit={handleVerify} className="space-y-4">
-            <div className="flex items-center gap-3 bg-gray-50 rounded-lg px-4 py-3 mb-2">
+            <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-900 rounded-lg px-4 py-3 mb-2">
               {twoFA.method === 'totp' ? (
                 <Smartphone className="w-5 h-5 text-overseer-600 flex-shrink-0" />
               ) : (
                 <Mail className="w-5 h-5 text-overseer-600 flex-shrink-0" />
               )}
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 {twoFA.method === 'totp'
                   ? 'Geben Sie den Code aus Ihrer Authenticator-App ein.'
                   : 'Ein Code wurde an Ihre E-Mail-Adresse gesendet.'}
@@ -164,13 +164,13 @@ export default function LoginPage({ onLogin }: Props) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Code</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Code</label>
               <input
                 ref={codeRef}
                 type="text"
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-overseer-500 focus:border-transparent outline-none text-center text-2xl tracking-[0.3em] font-mono"
+                className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-overseer-500 focus:border-transparent outline-none dark:bg-gray-700 dark:text-gray-200 text-center text-2xl tracking-[0.3em] font-mono"
                 placeholder="000000"
                 maxLength={6}
                 inputMode="numeric"
@@ -197,7 +197,7 @@ export default function LoginPage({ onLogin }: Props) {
               <button
                 type="button"
                 onClick={handleBack}
-                className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Zurück
@@ -217,13 +217,13 @@ export default function LoginPage({ onLogin }: Props) {
           <>
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">E-Mail</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">E-Mail</label>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   onBlur={(e) => discoverAuth(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-overseer-500 focus:border-transparent outline-none"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-overseer-500 focus:border-transparent outline-none dark:bg-gray-700 dark:text-gray-200"
                   placeholder="admin@overseer.local"
                   required
                 />
@@ -242,19 +242,19 @@ export default function LoginPage({ onLogin }: Props) {
                   </button>
                   <div className="relative">
                     <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-gray-200" />
+                      <div className="w-full border-t border-gray-200 dark:border-gray-700" />
                     </div>
                     <div className="relative flex justify-center text-xs">
-                      <span className="bg-white px-2 text-gray-400">oder mit Passwort</span>
+                      <span className="bg-white dark:bg-gray-800 px-2 text-gray-400 dark:text-gray-500">oder mit Passwort</span>
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Passwort</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Passwort</label>
                     <input
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-overseer-500 focus:border-transparent outline-none"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-overseer-500 focus:border-transparent outline-none dark:bg-gray-700 dark:text-gray-200"
                       placeholder="Passwort"
                     />
                   </div>
@@ -275,12 +275,12 @@ export default function LoginPage({ onLogin }: Props) {
                 <>
                   {/* LDAP or local — show password field */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Passwort</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Passwort</label>
                     <input
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-overseer-500 focus:border-transparent outline-none"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-overseer-500 focus:border-transparent outline-none dark:bg-gray-700 dark:text-gray-200"
                       placeholder={sso?.auth_type === 'ldap' ? 'LDAP-Passwort' : 'admin123'}
                       required
                     />
@@ -306,7 +306,7 @@ export default function LoginPage({ onLogin }: Props) {
               )}
             </form>
             {!sso && (
-              <p className="text-xs text-center text-gray-400 mt-6">
+              <p className="text-xs text-center text-gray-400 dark:text-gray-500 mt-6">
                 Demo: admin@overseer.local / admin123
               </p>
             )}

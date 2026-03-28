@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Settings, User as UserIcon, ShieldCheck, Sliders } from 'lucide-react'
+import { Settings, User as UserIcon, ShieldCheck, Sliders, Sun, Moon } from 'lucide-react'
 import clsx from 'clsx'
 import { api } from '../api/client'
+import { getTheme, setTheme, type Theme } from '../lib/theme'
 import type { User } from '../types'
 import ConfirmDialog from '../components/ConfirmDialog'
 
@@ -36,18 +37,18 @@ function ProfileTab({ user }: { user: User }) {
   return (
     <div className="space-y-6">
       {/* Display Name */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="font-semibold text-gray-800 mb-4">Profil</h3>
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-4">Profil</h3>
         <div className="space-y-3 max-w-md">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">E-Mail</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">E-Mail</label>
             <input type="email" value={user.email} disabled
-              className="w-full text-sm border border-gray-200 bg-gray-50 rounded-lg px-3 py-2 text-gray-500" />
+              className="w-full text-sm border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 rounded-lg px-3 py-2 text-gray-500 dark:text-gray-400" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Anzeigename</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Anzeigename</label>
             <input type="text" value={displayName} onChange={e => setDisplayName(e.target.value)}
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
           </div>
           <button onClick={() => updateProfile.mutate()} disabled={updateProfile.isPending}
             className="px-4 py-2 bg-overseer-600 text-white text-sm rounded-lg hover:bg-overseer-700 disabled:opacity-60">
@@ -57,23 +58,23 @@ function ProfileTab({ user }: { user: User }) {
       </div>
 
       {/* Password Change */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="font-semibold text-gray-800 mb-4">Passwort ändern</h3>
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-4">Passwort ändern</h3>
         <div className="space-y-3 max-w-md">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Aktuelles Passwort</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Aktuelles Passwort</label>
             <input type="password" value={currentPw} onChange={e => setCurrentPw(e.target.value)}
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Neues Passwort</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Neues Passwort</label>
             <input type="password" value={newPw} onChange={e => setNewPw(e.target.value)}
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Passwort bestätigen</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Passwort bestätigen</label>
             <input type="password" value={confirmPw} onChange={e => setConfirmPw(e.target.value)}
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
           </div>
           {newPw && confirmPw && newPw !== confirmPw && (
             <p className="text-xs text-red-500">Passwörter stimmen nicht überein</p>
@@ -130,8 +131,8 @@ function TwoFATab({ user }: { user: User }) {
   const statusColor = user.two_fa_method !== 'none' ? 'text-emerald-800 bg-emerald-100' : 'text-gray-600 bg-gray-100'
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6">
-      <h3 className="font-semibold text-gray-800 mb-4">Zwei-Faktor-Authentifizierung</h3>
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+      <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-4">Zwei-Faktor-Authentifizierung</h3>
 
       <div className="mb-6">
         <span className={clsx('px-3 py-1 rounded-full text-xs font-medium', statusColor)}>{statusLabel}</span>
@@ -145,7 +146,7 @@ function TwoFATab({ user }: { user: User }) {
             TOTP einrichten
           </button>
           <button onClick={() => enableEmail2fa.mutate()} disabled={enableEmail2fa.isPending}
-            className="px-4 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50 disabled:opacity-60 ml-3">
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-60 ml-3">
             Email-2FA aktivieren
           </button>
         </div>
@@ -161,9 +162,9 @@ function TwoFATab({ user }: { user: User }) {
             <code className="block text-xs bg-gray-100 p-3 rounded-lg break-all">{qrData}</code>
           )}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Bestätigungscode</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Bestätigungscode</label>
             <input type="text" value={code} onChange={e => setCode(e.target.value)} placeholder="123456"
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
           </div>
           <button onClick={() => verifyTotp.mutate()} disabled={verifyTotp.isPending || code.length < 6}
             className="px-4 py-2 bg-overseer-600 text-white text-sm rounded-lg hover:bg-overseer-700 disabled:opacity-60">
@@ -206,6 +207,15 @@ function PreferencesTab() {
   const qc = useQueryClient()
   const [pollingInterval, setPollingInterval] = useState('15')
   const [message, setMessage] = useState<string | null>(null)
+  const [currentTheme, setCurrentTheme] = useState<Theme>(getTheme())
+
+  function handleThemeChange(theme: Theme) {
+    // Add transition class, change theme, remove class after animation
+    document.documentElement.classList.add('theme-transition')
+    setTheme(theme)
+    setCurrentTheme(theme)
+    setTimeout(() => document.documentElement.classList.remove('theme-transition'), 300)
+  }
 
   const savePref = useMutation({
     mutationFn: () => api.put('/api/v1/auth/preferences', { polling_interval: parseInt(pollingInterval) }).then(r => r.data),
@@ -213,24 +223,58 @@ function PreferencesTab() {
   })
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6">
-      <h3 className="font-semibold text-gray-800 mb-4">Präferenzen</h3>
-      <div className="max-w-md space-y-3">
-        <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Polling-Interval</label>
-          <select value={pollingInterval} onChange={e => setPollingInterval(e.target.value)}
-            className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500">
-            <option value="15">15 Sekunden</option>
-            <option value="30">30 Sekunden</option>
-            <option value="60">60 Sekunden</option>
-            <option value="0">Manuell</option>
-          </select>
+    <div className="space-y-6">
+      {/* Theme */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-4">Darstellung</h3>
+        <div className="flex gap-3">
+          <button
+            onClick={() => handleThemeChange('light')}
+            className={clsx(
+              'flex items-center gap-2 px-4 py-3 rounded-lg border-2 transition-colors text-sm font-medium',
+              currentTheme === 'light'
+                ? 'border-overseer-500 bg-overseer-50 text-overseer-700 dark:bg-overseer-900/30 dark:text-overseer-400'
+                : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-500'
+            )}
+          >
+            <Sun className="w-5 h-5" />
+            Light
+          </button>
+          <button
+            onClick={() => handleThemeChange('dark')}
+            className={clsx(
+              'flex items-center gap-2 px-4 py-3 rounded-lg border-2 transition-colors text-sm font-medium',
+              currentTheme === 'dark'
+                ? 'border-overseer-500 bg-overseer-50 text-overseer-700 dark:bg-overseer-900/30 dark:text-overseer-400'
+                : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-500'
+            )}
+          >
+            <Moon className="w-5 h-5" />
+            Dark
+          </button>
         </div>
-        <button onClick={() => savePref.mutate()} disabled={savePref.isPending}
-          className="px-4 py-2 bg-overseer-600 text-white text-sm rounded-lg hover:bg-overseer-700 disabled:opacity-60">
-          Speichern
-        </button>
-        {message && <p className="text-sm text-emerald-600">{message}</p>}
+      </div>
+
+      {/* Polling */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-4">Polling</h3>
+        <div className="max-w-md space-y-3">
+          <div>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Polling-Interval</label>
+            <select value={pollingInterval} onChange={e => setPollingInterval(e.target.value)}
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500">
+              <option value="15">15 Sekunden</option>
+              <option value="30">30 Sekunden</option>
+              <option value="60">60 Sekunden</option>
+              <option value="0">Manuell</option>
+            </select>
+          </div>
+          <button onClick={() => savePref.mutate()} disabled={savePref.isPending}
+            className="px-4 py-2 bg-overseer-600 text-white text-sm rounded-lg hover:bg-overseer-700 disabled:opacity-60">
+            Speichern
+          </button>
+          {message && <p className="text-sm text-emerald-600">{message}</p>}
+        </div>
       </div>
     </div>
   )
@@ -260,16 +304,16 @@ export default function SettingsPage() {
     <div className="p-8 max-w-3xl">
       <div className="flex items-center gap-3 mb-6">
         <Settings className="w-7 h-7 text-overseer-600" />
-        <h1 className="text-2xl font-bold text-gray-900">Einstellungen</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Einstellungen</h1>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200 mb-6">
+      <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
         <div className="flex gap-6">
           {tabs.map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)}
               className={clsx('flex items-center gap-1.5 pb-3 text-sm font-medium border-b-2 transition-colors',
-                activeTab === tab.key ? 'border-overseer-600 text-overseer-600' : 'border-transparent text-gray-500 hover:text-gray-700')}>
+                activeTab === tab.key ? 'border-overseer-600 text-overseer-600' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300')}>
               <tab.icon className="w-4 h-4" /> {tab.label}
             </button>
           ))}

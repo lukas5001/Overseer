@@ -105,40 +105,40 @@ function HostSelector({ value, onChange, hosts }: HostSelectorProps) {
 
   return (
     <div className="relative">
-      <label className="block text-xs font-medium text-gray-600 mb-1">
-        Host <span className="font-normal text-gray-400">(optional)</span>
+      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+        Host <span className="font-normal text-gray-400 dark:text-gray-500">(optional)</span>
       </label>
       {value ? (
-        <div className="flex items-center gap-2 text-sm border border-gray-300 rounded-lg px-3 py-2 bg-gray-50">
-          <Server className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-          <span className="flex-1 truncate text-gray-700">{selectedLabel}</span>
-          <button onClick={clear} className="text-gray-400 hover:text-gray-600">
+        <div className="flex items-center gap-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-gray-50 dark:bg-gray-900 dark:text-gray-300 dark:text-gray-600">
+          <Server className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 flex-shrink-0" />
+          <span className="flex-1 truncate text-gray-700 dark:text-gray-300 dark:text-gray-600">{selectedLabel}</span>
+          <button onClick={clear} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
       ) : (
         <div
           onClick={() => setOpen(!open)}
-          className="flex items-center gap-2 text-sm border border-gray-300 rounded-lg px-3 py-2 cursor-pointer hover:border-overseer-400"
+          className="flex items-center gap-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded-lg px-3 py-2 cursor-pointer hover:border-overseer-400"
         >
-          <Search className="w-3.5 h-3.5 text-gray-400" />
-          <span className="text-gray-400">Host suchen…</span>
+          <Search className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
+          <span className="text-gray-400 dark:text-gray-500">Host suchen…</span>
         </div>
       )}
       {open && (
-        <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-hidden">
-          <div className="p-2 border-b border-gray-100">
+        <div className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-64 overflow-hidden">
+          <div className="p-2 border-b border-gray-100 dark:border-gray-800">
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Hostname, Tenant…"
-              className="w-full text-sm px-2 py-1.5 border border-gray-200 rounded focus:ring-1 focus:ring-overseer-500 outline-none"
+              className="w-full text-sm px-2 py-1.5 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded focus:ring-1 focus:ring-overseer-500 outline-none"
               autoFocus
             />
           </div>
           <div className="overflow-y-auto max-h-48">
             {filtered.length === 0 && (
-              <p className="px-3 py-2 text-xs text-gray-400">Keine Hosts gefunden</p>
+              <p className="px-3 py-2 text-xs text-gray-400 dark:text-gray-500">Keine Hosts gefunden</p>
             )}
             {filtered.map(h => (
               <button
@@ -146,10 +146,10 @@ function HostSelector({ value, onChange, hosts }: HostSelectorProps) {
                 onClick={() => select(h)}
                 className="w-full text-left px-3 py-2 text-sm hover:bg-overseer-50 flex items-center gap-2"
               >
-                <Server className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                <Server className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 flex-shrink-0" />
                 <div className="min-w-0">
-                  <p className="font-medium text-gray-800 truncate">{h.display_name || h.hostname}</p>
-                  <p className="text-xs text-gray-400 truncate">{h.tenant_name}{h.display_name ? ` · ${h.hostname}` : ''}</p>
+                  <p className="font-medium text-gray-800 dark:text-gray-200 truncate">{h.display_name || h.hostname}</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{h.tenant_name}{h.display_name ? ` · ${h.hostname}` : ''}</p>
                 </div>
               </button>
             ))}
@@ -215,40 +215,40 @@ function ServiceSelector({ value, onChange, hostId, hosts }: ServiceSelectorProp
 
   return (
     <div className="relative">
-      <label className="block text-xs font-medium text-gray-600 mb-1">
-        Service <span className="font-normal text-gray-400">(optional)</span>
+      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+        Service <span className="font-normal text-gray-400 dark:text-gray-500">(optional)</span>
       </label>
       {value ? (
-        <div className="flex items-center gap-2 text-sm border border-gray-300 rounded-lg px-3 py-2 bg-gray-50">
-          <Layers className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-          <span className="flex-1 truncate text-gray-700">{selectedLabel}</span>
-          <button onClick={clear} className="text-gray-400 hover:text-gray-600">
+        <div className="flex items-center gap-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-gray-50 dark:bg-gray-900 dark:text-gray-300 dark:text-gray-600">
+          <Layers className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 flex-shrink-0" />
+          <span className="flex-1 truncate text-gray-700 dark:text-gray-300 dark:text-gray-600">{selectedLabel}</span>
+          <button onClick={clear} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
       ) : (
         <div
           onClick={() => setOpen(!open)}
-          className="flex items-center gap-2 text-sm border border-gray-300 rounded-lg px-3 py-2 cursor-pointer hover:border-overseer-400"
+          className="flex items-center gap-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded-lg px-3 py-2 cursor-pointer hover:border-overseer-400"
         >
-          <Search className="w-3.5 h-3.5 text-gray-400" />
-          <span className="text-gray-400">{hostId ? 'Service wählen…' : 'Erst Host wählen oder hier suchen…'}</span>
+          <Search className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
+          <span className="text-gray-400 dark:text-gray-500">{hostId ? 'Service wählen…' : 'Erst Host wählen oder hier suchen…'}</span>
         </div>
       )}
       {open && (
-        <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-hidden">
-          <div className="p-2 border-b border-gray-100">
+        <div className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-64 overflow-hidden">
+          <div className="p-2 border-b border-gray-100 dark:border-gray-800">
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Service suchen…"
-              className="w-full text-sm px-2 py-1.5 border border-gray-200 rounded focus:ring-1 focus:ring-overseer-500 outline-none"
+              className="w-full text-sm px-2 py-1.5 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded focus:ring-1 focus:ring-overseer-500 outline-none"
               autoFocus
             />
           </div>
           <div className="overflow-y-auto max-h-48">
             {filtered.length === 0 && (
-              <p className="px-3 py-2 text-xs text-gray-400">
+              <p className="px-3 py-2 text-xs text-gray-400 dark:text-gray-500">
                 {!hostId && search.length < 2 ? 'Mind. 2 Zeichen eingeben' : 'Keine Services gefunden'}
               </p>
             )}
@@ -258,10 +258,10 @@ function ServiceSelector({ value, onChange, hostId, hosts }: ServiceSelectorProp
                 onClick={() => select(s)}
                 className="w-full text-left px-3 py-2 text-sm hover:bg-overseer-50 flex items-center gap-2"
               >
-                <Layers className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                <Layers className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 flex-shrink-0" />
                 <div className="min-w-0">
-                  <p className="font-medium text-gray-800 truncate">{s.name}</p>
-                  {s.host_hostname && <p className="text-xs text-gray-400 truncate">{s.host_hostname}</p>}
+                  <p className="font-medium text-gray-800 dark:text-gray-200 truncate">{s.name}</p>
+                  {s.host_hostname && <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{s.host_hostname}</p>}
                 </div>
               </button>
             ))}
@@ -323,10 +323,10 @@ function AddDowntimeModal({ onClose, onSaved }: AddDowntimeModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-gray-900">Downtime anlegen</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Downtime anlegen</h2>
+          <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -347,40 +347,40 @@ function AddDowntimeModal({ onClose, onSaved }: AddDowntimeModalProps) {
             hosts={hosts}
           />
 
-          <p className="text-xs text-gray-400 -mt-1">Mindestens Host oder Service muss gewählt werden.</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 -mt-1">Mindestens Host oder Service muss gewählt werden.</p>
 
           {/* Date inputs with European preview */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Beginn *</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Beginn *</label>
               <input
                 type="datetime-local"
                 value={startAt}
                 onChange={e => setStartAt(e.target.value)}
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none"
+                className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none"
               />
-              <p className="text-xs text-gray-400 mt-0.5">{displayEuropeanDate(startAt)}</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{displayEuropeanDate(startAt)}</p>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Ende *</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Ende *</label>
               <input
                 type="datetime-local"
                 value={endAt}
                 onChange={e => setEndAt(e.target.value)}
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none"
+                className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none"
               />
-              <p className="text-xs text-gray-400 mt-0.5">{displayEuropeanDate(endAt)}</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{displayEuropeanDate(endAt)}</p>
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Kommentar</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Kommentar</label>
             <textarea
               value={comment}
               onChange={e => setComment(e.target.value)}
               rows={3}
               placeholder="Wartungsfenster für …"
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none resize-none"
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none resize-none"
             />
           </div>
 
@@ -392,7 +392,7 @@ function AddDowntimeModal({ onClose, onSaved }: AddDowntimeModalProps) {
         <div className="flex gap-3 mt-6">
           <button
             onClick={onClose}
-            className="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50"
+            className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
           >
             Abbrechen
           </button>
@@ -459,8 +459,8 @@ export default function DowntimesPage() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <Clock className="w-7 h-7 text-overseer-600" />
-          <h1 className="text-2xl font-bold text-gray-900">Downtimes</h1>
-          <span className="text-sm text-gray-500 ml-2">{downtimes.length}</span>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Downtimes</h1>
+          <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">{downtimes.length}</span>
         </div>
         <button
           onClick={() => setShowAdd(true)}
@@ -472,7 +472,7 @@ export default function DowntimesPage() {
       </div>
 
       {/* Tab strip */}
-      <div className="flex gap-1 mb-5 bg-gray-100 p-1 rounded-lg w-fit">
+      <div className="flex gap-1 mb-5 bg-gray-100 dark:bg-gray-700 p-1 rounded-lg w-fit">
         {(['active', 'all'] as TabMode[]).map(t => (
           <button
             key={t}
@@ -480,8 +480,8 @@ export default function DowntimesPage() {
             className={clsx(
               'px-4 py-1.5 rounded-md text-sm font-medium transition-colors',
               tab === t
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700',
+                ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200',
             )}
           >
             {t === 'active' ? 'Aktiv' : 'Alle'}
@@ -489,11 +489,11 @@ export default function DowntimesPage() {
         ))}
       </div>
 
-      {isLoading && <div className="text-gray-400 text-sm">Lade…</div>}
+      {isLoading && <div className="text-gray-400 dark:text-gray-500 text-sm">Lade…</div>}
 
       {/* Empty state */}
       {!isLoading && downtimes.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-20 text-gray-400 gap-3">
+        <div className="flex flex-col items-center justify-center py-20 text-gray-400 dark:text-gray-500 gap-3">
           <Clock className="w-10 h-10" />
           <p className="text-sm">Keine Downtimes</p>
         </div>
@@ -508,7 +508,7 @@ export default function DowntimesPage() {
             return (
               <div
                 key={dt.id}
-                className="bg-white rounded-xl border border-gray-200 px-5 py-4"
+                className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 px-5 py-4"
               >
                 <div className="flex items-start justify-between gap-4">
                   {/* Left: scope + times + comment */}
@@ -534,28 +534,28 @@ export default function DowntimesPage() {
                         className={clsx(
                           'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium',
                           dt.active
-                            ? 'bg-emerald-100 text-emerald-700'
-                            : 'bg-gray-100 text-gray-500',
+                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+                            : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400',
                         )}
                       >
                         {dt.active ? 'Aktiv' : 'Inaktiv'}
                       </span>
 
                       {/* Relative time */}
-                      <span className="text-xs text-gray-400">{formatRelativeTime(dt)}</span>
+                      <span className="text-xs text-gray-400 dark:text-gray-500">{formatRelativeTime(dt)}</span>
                     </div>
 
                     {/* Time range */}
-                    <div className="flex items-center gap-1 text-xs text-gray-500">
-                      <Clock className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" />
+                    <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                      <Clock className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600 flex-shrink-0" />
                       <span>{formatDateTime(dt.start_at)}</span>
-                      <span className="text-gray-300">–</span>
+                      <span className="text-gray-300 dark:text-gray-600">–</span>
                       <span>{formatDateTime(dt.end_at)}</span>
                     </div>
 
                     {/* Comment */}
                     {dt.comment && (
-                      <p className="text-sm text-gray-700 leading-snug">{dt.comment}</p>
+                      <p className="text-sm text-gray-700 dark:text-gray-300 leading-snug">{dt.comment}</p>
                     )}
                   </div>
 

@@ -52,25 +52,25 @@ function ScriptModal({ onClose, existing, tenants }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl mx-4 p-6 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-3xl mx-4 p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-gray-900">{existing ? 'Script bearbeiten' : 'Neues Script'}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{existing ? 'Script bearbeiten' : 'Neues Script'}</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 dark:text-gray-600"><X className="w-5 h-5" /></button>
         </div>
 
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Name *</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Name *</label>
               <input type="text" value={name} onChange={e => setName(e.target.value)}
                 placeholder="check_backup_status"
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+                className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
             </div>
             {!existing && (
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Tenant *</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Tenant *</label>
                 <select value={tenantId} onChange={e => setTenantId(e.target.value)}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none">
+                  className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none">
                   {tenants.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                 </select>
               </div>
@@ -78,41 +78,41 @@ function ScriptModal({ onClose, existing, tenants }: {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Beschreibung</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Beschreibung</label>
             <input type="text" value={description} onChange={e => setDescription(e.target.value)}
               placeholder="Prüft ob das letzte Backup erfolgreich war"
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Interpreter</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Interpreter</label>
               <select value={interpreter} onChange={e => setInterpreter(e.target.value)}
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none">
+                className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none">
                 {INTERPRETERS.map(i => <option key={i.value} value={i.value}>{i.label}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Output-Format</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Output-Format</label>
               <select value={expectedOutput} onChange={e => setExpectedOutput(e.target.value)}
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none">
+                className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none">
                 {OUTPUT_FORMATS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
               </select>
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Script *</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Script *</label>
             <textarea value={scriptBody} onChange={e => setScriptBody(e.target.value)}
               rows={14}
               placeholder={interpreter === 'powershell'
                 ? '# Nagios-Format: Exit-Code 0=OK, 1=WARNING, 2=CRITICAL\n$result = Get-Service -Name "MSSQLSERVER"\nif ($result.Status -eq "Running") {\n    Write-Output "OK - SQL Server running | uptime=1"\n    exit 0\n} else {\n    Write-Output "CRITICAL - SQL Server stopped"\n    exit 2\n}'
                 : '#!/bin/bash\n# Nagios-Format: Exit-Code 0=OK, 1=WARNING, 2=CRITICAL\necho "OK - check passed | value=42"\nexit 0'}
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none font-mono leading-relaxed resize-y" />
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none font-mono leading-relaxed resize-y" />
           </div>
 
           {/* Output format hints */}
-          <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-500">
+          <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 text-xs text-gray-500 dark:text-gray-400">
             {expectedOutput === 'nagios' && (
               <><b>Nagios-Format:</b> Exit-Code bestimmt den Status (0=OK, 1=WARNING, 2=CRITICAL, 3=UNKNOWN). Optional Perfdata nach &quot;|&quot;: <code>label=value[unit]</code></>
             )}
@@ -128,7 +128,7 @@ function ScriptModal({ onClose, existing, tenants }: {
 
           <div className="flex justify-end gap-2 pt-2">
             <button onClick={onClose}
-              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100 transition-colors">
+              className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
               Abbrechen
             </button>
             <button onClick={() => mutation.mutate()} disabled={!name || !scriptBody || mutation.isPending}
@@ -177,11 +177,11 @@ export default function ScriptsPage() {
 
   const interpreterBadge = (i: string) => {
     const colors: Record<string, string> = {
-      powershell: 'bg-blue-100 text-blue-800',
-      bash: 'bg-green-100 text-green-800',
-      python: 'bg-yellow-100 text-yellow-800',
+      powershell: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+      bash: 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
+      python: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
     }
-    return colors[i] ?? 'bg-gray-100 text-gray-800'
+    return colors[i] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
   }
 
   return (
@@ -190,8 +190,8 @@ export default function ScriptsPage() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <FileCode2 className="w-6 h-6 text-overseer-500" />
-          <h1 className="text-2xl font-bold text-gray-900">Monitoring Scripts</h1>
-          <span className="text-sm text-gray-500">{filtered.length} Scripts</span>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Monitoring Scripts</h1>
+          <span className="text-sm text-gray-500 dark:text-gray-400">{filtered.length} Scripts</span>
         </div>
         <button onClick={() => { setEditing(undefined); setShowModal(true) }}
           className="flex items-center gap-2 px-4 py-2 text-sm text-white bg-overseer-600 hover:bg-overseer-700 rounded-lg transition-colors">
@@ -202,12 +202,12 @@ export default function ScriptsPage() {
       {/* Filters */}
       <div className="flex gap-3 mb-4">
         <select value={filterTenant} onChange={e => setFilterTenant(e.target.value)}
-          className="text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500">
+          className="text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500">
           <option value="">Alle Tenants</option>
           {tenants.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
         </select>
         <select value={filterInterpreter} onChange={e => setFilterInterpreter(e.target.value)}
-          className="text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500">
+          className="text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500">
           <option value="">Alle Interpreter</option>
           {INTERPRETERS.map(i => <option key={i.value} value={i.value}>{i.label}</option>)}
         </select>
@@ -215,18 +215,18 @@ export default function ScriptsPage() {
 
       {/* Table */}
       {isLoading ? (
-        <div className="text-center py-12 text-gray-400">Lade Scripts...</div>
+        <div className="text-center py-12 text-gray-400 dark:text-gray-500">Lade Scripts...</div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-12 text-gray-400">
+        <div className="text-center py-12 text-gray-400 dark:text-gray-500">
           <FileCode2 className="w-12 h-12 mx-auto mb-3 opacity-30" />
           <p>Noch keine Scripts angelegt.</p>
           <p className="text-sm mt-1">Scripts werden zentral verwaltet und vom Agent auf den Zielrechnern ausgeführt.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <tr className="bg-gray-50 dark:bg-gray-900 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 <th className="px-4 py-3">Name</th>
                 <th className="px-4 py-3">Beschreibung</th>
                 <th className="px-4 py-3">Interpreter</th>
@@ -235,33 +235,33 @@ export default function ScriptsPage() {
                 <th className="px-4 py-3 text-right">Aktionen</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
               {filtered.map(s => (
-                <tr key={s.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3 font-medium text-gray-900">{s.name}</td>
-                  <td className="px-4 py-3 text-gray-500 max-w-xs truncate">{s.description || '—'}</td>
+                <tr key={s.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                  <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">{s.name}</td>
+                  <td className="px-4 py-3 text-gray-500 dark:text-gray-400 max-w-xs truncate">{s.description || '—'}</td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${interpreterBadge(s.interpreter)}`}>
                       {s.interpreter}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-gray-500">{s.expected_output}</td>
-                  <td className="px-4 py-3 text-gray-500">{tenantMap[s.tenant_id] ?? '—'}</td>
+                  <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{s.expected_output}</td>
+                  <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{tenantMap[s.tenant_id] ?? '—'}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
                       <button onClick={() => navigator.clipboard.writeText(s.id)}
                         title="ID kopieren"
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+                        className="p-1.5 rounded-lg text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                         <Copy className="w-4 h-4" />
                       </button>
                       <button onClick={() => { setEditing(s); setShowModal(true) }}
                         title="Bearbeiten"
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-overseer-600 hover:bg-gray-100 transition-colors">
+                        className="p-1.5 rounded-lg text-gray-400 dark:text-gray-500 hover:text-overseer-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                         <Pencil className="w-4 h-4" />
                       </button>
                       <button onClick={() => setDeleting(s)}
                         title="Löschen"
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-gray-100 transition-colors">
+                        className="p-1.5 rounded-lg text-gray-400 dark:text-gray-500 hover:text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>

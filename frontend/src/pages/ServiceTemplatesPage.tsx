@@ -58,32 +58,32 @@ function TemplateCheckCard({ check, index, onUpdate, onRemove }: {
   }
 
   return (
-    <div className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
+    <div className="bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-100" onClick={() => setExpanded(!expanded)}>
-        {expanded ? <ChevronDown className="w-3.5 h-3.5 text-gray-400" /> : <ChevronRight className="w-3.5 h-3.5 text-gray-400" />}
-        <span className="text-sm font-medium text-gray-700 flex-1">
-          {check.name || <span className="text-gray-400 italic">Unbenannt</span>}
-          <span className="text-xs text-gray-400 ml-2">{def?.label ?? check.check_type}</span>
+      <div className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700" onClick={() => setExpanded(!expanded)}>
+        {expanded ? <ChevronDown className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" /> : <ChevronRight className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />}
+        <span className="text-sm font-medium text-gray-700 dark:text-gray-300 flex-1">
+          {check.name || <span className="text-gray-400 dark:text-gray-500 italic">Unbenannt</span>}
+          <span className="text-xs text-gray-400 dark:text-gray-500 ml-2">{def?.label ?? check.check_type}</span>
         </span>
-        <button onClick={e => { e.stopPropagation(); onRemove(index) }} className="text-gray-400 hover:text-red-500 p-0.5">
+        <button onClick={e => { e.stopPropagation(); onRemove(index) }} className="text-gray-400 dark:text-gray-500 hover:text-red-500 p-0.5">
           <Trash2 className="w-3.5 h-3.5" />
         </button>
       </div>
 
       {expanded && (
-        <div className="px-3 pb-3 space-y-3 border-t border-gray-200 pt-3">
+        <div className="px-3 pb-3 space-y-3 border-t border-gray-200 dark:border-gray-700 pt-3">
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-xs text-gray-500">Name</label>
+              <label className="text-xs text-gray-500 dark:text-gray-400">Name</label>
               <input type="text" value={check.name} onChange={e => onUpdate(index, 'name', e.target.value)}
                 placeholder={def?.label ?? 'Check-Name'}
-                className="w-full text-sm border border-gray-300 rounded px-2 py-1.5 outline-none focus:ring-2 focus:ring-overseer-500" />
+                className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded px-2 py-1.5 outline-none focus:ring-2 focus:ring-overseer-500" />
             </div>
             <div>
-              <label className="text-xs text-gray-500">Typ</label>
+              <label className="text-xs text-gray-500 dark:text-gray-400">Typ</label>
               <select value={check.check_type} onChange={e => handleTypeChange(e.target.value)}
-                className="w-full text-sm border border-gray-300 rounded px-2 py-1.5 outline-none focus:ring-2 focus:ring-overseer-500">
+                className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded px-2 py-1.5 outline-none focus:ring-2 focus:ring-overseer-500">
                 {grouped.map(g => (
                   <optgroup key={g.category} label={g.label}>
                     {g.types.map(t => <option key={t.key} value={t.key}>{t.label}</option>)}
@@ -119,24 +119,24 @@ function TemplateCheckCard({ check, index, onUpdate, onRemove }: {
 
           <div className="grid grid-cols-3 gap-2">
             <div>
-              <label className="text-xs text-gray-500">Intervall (s)</label>
+              <label className="text-xs text-gray-500 dark:text-gray-400">Intervall (s)</label>
               <input type="number" min={10} value={check.interval_seconds ?? 60}
                 onChange={e => onUpdate(index, 'interval_seconds', parseInt(e.target.value) || 60)}
-                className="w-full text-sm border border-gray-300 rounded px-2 py-1.5 outline-none" />
+                className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded px-2 py-1.5 outline-none" />
             </div>
             {!isDisk && (
               <>
                 <div>
-                  <label className="text-xs text-gray-500">Warn</label>
+                  <label className="text-xs text-gray-500 dark:text-gray-400">Warn</label>
                   <input type="number" value={check.threshold_warn ?? ''}
                     onChange={e => onUpdate(index, 'threshold_warn', e.target.value ? parseFloat(e.target.value) : null)}
-                    className="w-full text-sm border border-gray-300 rounded px-2 py-1.5 outline-none" />
+                    className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded px-2 py-1.5 outline-none" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500">Crit</label>
+                  <label className="text-xs text-gray-500 dark:text-gray-400">Crit</label>
                   <input type="number" value={check.threshold_crit ?? ''}
                     onChange={e => onUpdate(index, 'threshold_crit', e.target.value ? parseFloat(e.target.value) : null)}
-                    className="w-full text-sm border border-gray-300 rounded px-2 py-1.5 outline-none" />
+                    className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded px-2 py-1.5 outline-none" />
                 </div>
               </>
             )}
@@ -193,30 +193,30 @@ function TemplateModal({ onClose, existing }: { onClose: () => void; existing?: 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl mx-4 p-6 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-2xl mx-4 p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-gray-900">{existing ? 'Template bearbeiten' : 'Neues Template'}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{existing ? 'Template bearbeiten' : 'Neues Template'}</h2>
+          <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><X className="w-5 h-5" /></button>
         </div>
 
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Name *</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Name *</label>
               <input type="text" value={name} onChange={e => setName(e.target.value)} required placeholder="Windows Server Basic"
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+                className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Beschreibung</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Beschreibung</label>
               <input type="text" value={description} onChange={e => setDescription(e.target.value)} placeholder="Standard-Checks für Windows"
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+                className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
             </div>
           </div>
 
           {/* Checks */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-xs font-medium text-gray-600">Checks ({checks.length})</label>
+              <label className="text-xs font-medium text-gray-600 dark:text-gray-400">Checks ({checks.length})</label>
               <button onClick={addCheck} className="text-xs text-overseer-600 hover:text-overseer-700 font-medium inline-flex items-center gap-1">
                 <Plus className="w-3 h-3" /> Check hinzufügen
               </button>
@@ -238,7 +238,7 @@ function TemplateModal({ onClose, existing }: { onClose: () => void; existing?: 
         </div>
 
         <div className="flex gap-3 mt-6">
-          <button onClick={onClose} className="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">Abbrechen</button>
+          <button onClick={onClose} className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Abbrechen</button>
           <button onClick={() => mutation.mutate()} disabled={mutation.isPending || !name}
             className="flex-1 py-2 rounded-lg bg-overseer-600 text-white text-sm font-medium hover:bg-overseer-700 disabled:opacity-60">
             {mutation.isPending ? 'Speichern…' : 'Speichern'}
@@ -270,10 +270,10 @@ function ApplyModal({ templateId, onClose }: { templateId: string; onClose: () =
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-gray-900">Template anwenden</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Template anwenden</h2>
+          <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><X className="w-5 h-5" /></button>
         </div>
 
         {result ? (
@@ -289,9 +289,9 @@ function ApplyModal({ templateId, onClose }: { templateId: string; onClose: () =
           <>
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Ziel-Host</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Ziel-Host</label>
                 <select value={hostId} onChange={e => setHostId(e.target.value)}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500">
+                  className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500">
                   <option value="">– Host auswählen –</option>
                   {hosts.map(h => (
                     <option key={h.id} value={h.id}>
@@ -303,7 +303,7 @@ function ApplyModal({ templateId, onClose }: { templateId: string; onClose: () =
               {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}
             </div>
             <div className="flex gap-3 mt-6">
-              <button onClick={onClose} className="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">Abbrechen</button>
+              <button onClick={onClose} className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Abbrechen</button>
               <button onClick={() => mutation.mutate()} disabled={mutation.isPending || !hostId}
                 className="flex-1 py-2 rounded-lg bg-overseer-600 text-white text-sm font-medium hover:bg-overseer-700 disabled:opacity-60">
                 {mutation.isPending ? 'Anwenden…' : 'Anwenden'}
@@ -348,8 +348,8 @@ export default function ServiceTemplatesPage() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <FileCode2 className="w-7 h-7 text-overseer-600" />
-          <h1 className="text-2xl font-bold text-gray-900">Service-Templates</h1>
-          <span className="text-sm text-gray-500 ml-2">{templates.length} Templates</span>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Service-Templates</h1>
+          <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">{templates.length} Templates</span>
         </div>
         <button onClick={() => setShowModal(true)}
           className="inline-flex items-center gap-2 px-4 py-2 bg-overseer-600 text-white text-sm font-medium rounded-lg hover:bg-overseer-700">
@@ -357,11 +357,11 @@ export default function ServiceTemplatesPage() {
         </button>
       </div>
 
-      {isLoading && <div className="text-gray-400 text-sm">Lade…</div>}
+      {isLoading && <div className="text-gray-400 dark:text-gray-500 text-sm">Lade…</div>}
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
+          <thead className="bg-gray-50 dark:bg-gray-900 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
             <tr>
               <th className="px-6 py-3 text-left">Name</th>
               <th className="px-6 py-3 text-left">Beschreibung</th>
@@ -369,15 +369,15 @@ export default function ServiceTemplatesPage() {
               <th className="px-6 py-3 text-right">Aktionen</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
             {templates.map(t => (
-              <tr key={t.id} className="hover:bg-gray-50">
-                <td className="px-6 py-3 font-medium text-gray-900">{t.name}</td>
-                <td className="px-6 py-3 text-gray-500 text-xs max-w-xs truncate">{t.description || '–'}</td>
-                <td className="px-6 py-3 text-gray-600">
+              <tr key={t.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <td className="px-6 py-3 font-medium text-gray-900 dark:text-gray-100">{t.name}</td>
+                <td className="px-6 py-3 text-gray-500 dark:text-gray-400 text-xs max-w-xs truncate">{t.description || '–'}</td>
+                <td className="px-6 py-3 text-gray-600 dark:text-gray-400">
                   <div className="flex flex-wrap gap-1">
                     {t.checks.map((c, i) => (
-                      <span key={i} className="inline-flex items-center text-[11px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                      <span key={i} className="inline-flex items-center text-[11px] bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-1.5 py-0.5 rounded">
                         {getCheckTypeLabel(c.check_type)}
                       </span>
                     ))}
@@ -389,11 +389,11 @@ export default function ServiceTemplatesPage() {
                       className="inline-flex items-center gap-1 text-xs text-overseer-600 hover:text-overseer-700 font-medium">
                       <Play className="w-3.5 h-3.5" /> Anwenden
                     </button>
-                    <button onClick={() => setEditTemplate(t)} className="text-xs text-gray-500 hover:text-gray-700">
+                    <button onClick={() => setEditTemplate(t)} className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
                       Bearbeiten
                     </button>
                     <button onClick={() => setDeleteTarget(t.id)}
-                      className="text-gray-400 hover:text-red-500">
+                      className="text-gray-400 dark:text-gray-500 hover:text-red-500">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
@@ -403,7 +403,7 @@ export default function ServiceTemplatesPage() {
           </tbody>
         </table>
         {templates.length === 0 && !isLoading && (
-          <div className="p-8 text-center text-gray-400 text-sm">Keine Templates vorhanden.</div>
+          <div className="p-8 text-center text-gray-400 dark:text-gray-500 text-sm">Keine Templates vorhanden.</div>
         )}
       </div>
 

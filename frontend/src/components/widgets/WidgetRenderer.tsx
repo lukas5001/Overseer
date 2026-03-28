@@ -164,11 +164,11 @@ export default function WidgetRenderer({
 
   if (!widgetDef) {
     return (
-      <div className="h-full flex flex-col bg-gray-800 border border-gray-700 rounded-lg overflow-hidden">
-        <div className="px-3 py-2 border-b border-gray-700">
-          <span className="text-sm font-medium text-gray-200">{widget.title}</span>
+      <div className="h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+        <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-700">
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{widget.title}</span>
         </div>
-        <div className="flex-1 flex items-center justify-center text-gray-500 text-sm">
+        <div className="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400 text-sm">
           Unbekannter Widget-Typ: {widget.type}
         </div>
       </div>

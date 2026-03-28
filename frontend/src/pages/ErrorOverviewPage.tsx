@@ -56,11 +56,11 @@ interface SavedFilter {
 type SortKey = 'status' | 'duration' | 'host' | 'service' | 'tenant' | 'last_check'
 
 const statusConfig: Record<string, { label: string; bg: string; text: string; border: string; order: number }> = {
-  CRITICAL: { label: 'CRITICAL', bg: 'bg-red-100',     text: 'text-red-800',     border: 'border-red-300',     order: 0 },
-  WARNING:  { label: 'WARNING',  bg: 'bg-amber-100',   text: 'text-amber-800',   border: 'border-amber-300',   order: 1 },
-  NO_DATA:  { label: 'NO DATA',  bg: 'bg-orange-100',  text: 'text-orange-800',  border: 'border-orange-300',  order: 2 },
-  UNKNOWN:  { label: 'UNKNOWN',  bg: 'bg-gray-100',    text: 'text-gray-700',    border: 'border-gray-300',    order: 3 },
-  OK:       { label: 'OK',       bg: 'bg-emerald-100', text: 'text-emerald-800', border: 'border-emerald-300', order: 4 },
+  CRITICAL: { label: 'CRITICAL', bg: 'bg-red-100 dark:bg-red-900/40',         text: 'text-red-800 dark:text-red-300',         border: 'border-red-300',     order: 0 },
+  WARNING:  { label: 'WARNING',  bg: 'bg-amber-100 dark:bg-amber-900/40',     text: 'text-amber-800 dark:text-amber-300',     border: 'border-amber-300',   order: 1 },
+  NO_DATA:  { label: 'NO DATA',  bg: 'bg-orange-100 dark:bg-orange-900/40',   text: 'text-orange-800 dark:text-orange-300',   border: 'border-orange-300',  order: 2 },
+  UNKNOWN:  { label: 'UNKNOWN',  bg: 'bg-gray-100 dark:bg-gray-700',          text: 'text-gray-700 dark:text-gray-300',       border: 'border-gray-300 dark:border-gray-600',    order: 3 },
+  OK:       { label: 'OK',       bg: 'bg-emerald-100 dark:bg-emerald-900/40', text: 'text-emerald-800 dark:text-emerald-300', border: 'border-emerald-300', order: 4 },
 }
 
 const sortOptions: { key: SortKey; label: string }[] = [
@@ -93,25 +93,25 @@ function AckModal({ error, onClose, onSaved }: AckModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
             <CheckCheck className="w-5 h-5 text-blue-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Acknowledge</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Acknowledge</h2>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="bg-gray-50 rounded-lg px-4 py-3 mb-5 text-sm">
-          <p className="font-medium text-gray-800">{error.host_display_name || error.host_hostname}</p>
-          <p className="text-gray-500">{error.service_name} &middot; {error.tenant_name}</p>
+        <div className="bg-gray-50 dark:bg-gray-900 rounded-lg px-4 py-3 mb-5 text-sm">
+          <p className="font-medium text-gray-800 dark:text-gray-200">{error.host_display_name || error.host_hostname}</p>
+          <p className="text-gray-500 dark:text-gray-400">{error.service_name} &middot; {error.tenant_name}</p>
         </div>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
               Kommentar <span className="text-red-500">*</span>
             </label>
             <textarea
@@ -119,7 +119,7 @@ function AckModal({ error, onClose, onSaved }: AckModalProps) {
               onChange={e => setComment(e.target.value)}
               rows={3}
               placeholder="Grund für Acknowledge..."
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none"
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none"
               autoFocus
             />
           </div>
@@ -130,7 +130,7 @@ function AckModal({ error, onClose, onSaved }: AckModalProps) {
 
         <div className="flex gap-3 mt-6">
           <button onClick={onClose}
-            className="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">
+            className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
             Abbrechen
           </button>
           <button
@@ -166,22 +166,22 @@ function BulkAckModal({ serviceIds, onClose, onSaved }: BulkAckModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
             <CheckCheck className="w-5 h-5 text-blue-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Bulk Acknowledge ({serviceIds.length})</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Bulk Acknowledge ({serviceIds.length})</h2>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"><X className="w-5 h-5" /></button>
         </div>
 
-        <div className="bg-gray-50 rounded-lg px-4 py-3 mb-5 text-sm text-gray-600">
+        <div className="bg-gray-50 dark:bg-gray-900 rounded-lg px-4 py-3 mb-5 text-sm text-gray-600 dark:text-gray-400">
           {serviceIds.length} ausgewählte Probleme acknowledgen.
         </div>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
               Kommentar <span className="text-red-500">*</span>
             </label>
             <textarea
@@ -189,7 +189,7 @@ function BulkAckModal({ serviceIds, onClose, onSaved }: BulkAckModalProps) {
               onChange={e => setComment(e.target.value)}
               rows={3}
               placeholder="Grund für Acknowledge..."
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none"
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none"
               autoFocus
             />
           </div>
@@ -198,7 +198,7 @@ function BulkAckModal({ serviceIds, onClose, onSaved }: BulkAckModalProps) {
 
         <div className="flex gap-3 mt-6">
           <button onClick={onClose}
-            className="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">Abbrechen</button>
+            className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Abbrechen</button>
           <button
             onClick={() => mutation.mutate()}
             disabled={mutation.isPending || !comment.trim()}
@@ -246,47 +246,47 @@ function DowntimeModal({ error, onClose, onSaved }: DowntimeModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
             <BellOff className="w-5 h-5 text-overseer-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Downtime eintragen</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Downtime eintragen</h2>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="bg-gray-50 rounded-lg px-4 py-3 mb-5 text-sm">
-          <p className="font-medium text-gray-800">{error.host_display_name || error.host_hostname}</p>
-          <p className="text-gray-500">{error.service_name} &middot; {error.tenant_name}</p>
+        <div className="bg-gray-50 dark:bg-gray-900 rounded-lg px-4 py-3 mb-5 text-sm">
+          <p className="font-medium text-gray-800 dark:text-gray-200">{error.host_display_name || error.host_hostname}</p>
+          <p className="text-gray-500 dark:text-gray-400">{error.service_name} &middot; {error.tenant_name}</p>
         </div>
 
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Von</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Von</label>
               <input type="datetime-local" value={startAt} onChange={e => setStartAt(e.target.value)}
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 focus:border-transparent outline-none" />
+                className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 focus:border-transparent outline-none" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Bis</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Bis</label>
               <input type="datetime-local" value={endAt} onChange={e => setEndAt(e.target.value)}
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 focus:border-transparent outline-none" />
+                className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 focus:border-transparent outline-none" />
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Kommentar</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Kommentar</label>
             <textarea value={comment} onChange={e => setComment(e.target.value)} rows={2}
               placeholder="z.B. Geplante Wartung – Switch-Update"
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 focus:border-transparent outline-none resize-none" />
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 focus:border-transparent outline-none resize-none" />
           </div>
           {error_ && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error_}</p>}
         </div>
 
         <div className="flex gap-3 mt-6">
           <button onClick={onClose}
-            className="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">Abbrechen</button>
+            className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Abbrechen</button>
           <button onClick={() => mutation.mutate()} disabled={mutation.isPending}
             className="flex-1 py-2 rounded-lg bg-overseer-600 text-white text-sm font-medium hover:bg-overseer-700 disabled:opacity-60">
             {mutation.isPending ? 'Speichern…' : 'Downtime speichern'}
@@ -327,44 +327,44 @@ function BulkDowntimeModal({ serviceIds, onClose, onSaved }: BulkDowntimeModalPr
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
             <BellOff className="w-5 h-5 text-overseer-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Bulk-Downtime ({serviceIds.length})</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Bulk-Downtime ({serviceIds.length})</h2>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"><X className="w-5 h-5" /></button>
         </div>
 
-        <div className="bg-gray-50 rounded-lg px-4 py-3 mb-5 text-sm text-gray-600">
+        <div className="bg-gray-50 dark:bg-gray-900 rounded-lg px-4 py-3 mb-5 text-sm text-gray-600 dark:text-gray-400">
           Downtime für {serviceIds.length} ausgewählte Services eintragen.
         </div>
 
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Von</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Von</label>
               <input type="datetime-local" value={startAt} onChange={e => setStartAt(e.target.value)}
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+                className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Bis</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Bis</label>
               <input type="datetime-local" value={endAt} onChange={e => setEndAt(e.target.value)}
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+                className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Kommentar</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Kommentar</label>
             <textarea value={comment} onChange={e => setComment(e.target.value)} rows={2}
               placeholder="z.B. Geplante Wartung"
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none resize-none" />
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none resize-none" />
           </div>
           {error_ && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error_}</p>}
         </div>
 
         <div className="flex gap-3 mt-6">
           <button onClick={onClose}
-            className="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">Abbrechen</button>
+            className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Abbrechen</button>
           <button onClick={() => mutation.mutate()} disabled={mutation.isPending}
             className="flex-1 py-2 rounded-lg bg-overseer-600 text-white text-sm font-medium hover:bg-overseer-700 disabled:opacity-60">
             {mutation.isPending ? 'Speichern…' : 'Downtime speichern'}
@@ -425,26 +425,26 @@ function SaveFilterModal({ onClose, onSaved, hiddenTenants, activeStatuses, sear
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm mx-4 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-sm mx-4 p-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-gray-900">{editFilter ? 'Filter bearbeiten' : 'Filter speichern'}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{editFilter ? 'Filter bearbeiten' : 'Filter speichern'}</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"><X className="w-5 h-5" /></button>
         </div>
 
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Name *</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Name *</label>
             <input value={name} onChange={e => setName(e.target.value)} placeholder="z.B. Nur kritische Tenants"
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" autoFocus />
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" autoFocus />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Beschreibung</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Beschreibung</label>
             <input value={description} onChange={e => setDescription(e.target.value)} placeholder="Optional"
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none" />
           </div>
 
-          <div className="bg-gray-50 rounded-lg px-3 py-2 text-xs text-gray-500 space-y-1">
-            <p className="font-medium text-gray-600">Aktuelle Filtereinstellungen:</p>
+          <div className="bg-gray-50 dark:bg-gray-900 rounded-lg px-3 py-2 text-xs text-gray-500 dark:text-gray-400 space-y-1">
+            <p className="font-medium text-gray-600 dark:text-gray-400">Aktuelle Filtereinstellungen:</p>
             {hiddenTenants.size > 0 && <p>{hiddenTenants.size} Tenant(s) ausgeblendet</p>}
             {!isDefault && <p>Status: {allStatuses.filter(s => activeStatuses.has(s)).join(', ')}</p>}
             {search && <p>Suche: "{search}"</p>}
@@ -458,7 +458,7 @@ function SaveFilterModal({ onClose, onSaved, hiddenTenants, activeStatuses, sear
 
         <div className="flex gap-3 mt-5">
           <button onClick={onClose}
-            className="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">Abbrechen</button>
+            className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Abbrechen</button>
           <button onClick={() => mutation.mutate()} disabled={mutation.isPending || !name.trim()}
             className="flex-1 py-2 rounded-lg bg-overseer-600 text-white text-sm font-medium hover:bg-overseer-700 disabled:opacity-60">
             {mutation.isPending ? 'Speichern…' : 'Speichern'}
@@ -489,32 +489,32 @@ function TenantTogglePanel({ tenants, hiddenTenants, onToggle, onClose, errorCou
   }, [tenants, search])
 
   return (
-    <div className="absolute z-20 mt-1 right-0 w-80 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
-      <div className="p-3 border-b border-gray-100 flex items-center justify-between">
-        <p className="text-sm font-semibold text-gray-700">Tenants ein-/ausblenden</p>
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
+    <div className="absolute z-20 mt-1 right-0 w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden">
+      <div className="p-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+        <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Tenants ein-/ausblenden</p>
+        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"><X className="w-4 h-4" /></button>
       </div>
-      <div className="px-3 py-2 border-b border-gray-100">
+      <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700">
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Tenant suchen…"
-          className="w-full text-sm px-2 py-1.5 border border-gray-200 rounded focus:ring-1 focus:ring-overseer-500 outline-none" />
+          className="w-full text-sm px-2 py-1.5 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded focus:ring-1 focus:ring-overseer-500 outline-none" />
       </div>
-      <div className="overflow-y-auto max-h-64 divide-y divide-gray-50">
+      <div className="overflow-y-auto max-h-64 divide-y divide-gray-50 dark:divide-gray-700">
         {filtered.map(t => {
           const count = errorCountByTenant[t.id] ?? 0
           const isHidden = hiddenTenants.has(t.id)
           return (
-            <label key={t.id} className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 cursor-pointer">
+            <label key={t.id} className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
               <input
                 type="checkbox"
                 checked={!isHidden}
                 onChange={() => onToggle(t.id)}
                 className="w-4 h-4 rounded border-gray-300 text-overseer-600 focus:ring-overseer-500"
               />
-              <span className={clsx('text-sm flex-1', isHidden ? 'text-gray-400 line-through' : 'text-gray-700')}>
+              <span className={clsx('text-sm flex-1', isHidden ? 'text-gray-400 dark:text-gray-500 line-through' : 'text-gray-700 dark:text-gray-300')}>
                 {t.name}
               </span>
               {count > 0 && (
-                <span className="text-xs px-1.5 py-0.5 rounded-full bg-red-100 text-red-800 font-medium">{count}</span>
+                <span className="text-xs px-1.5 py-0.5 rounded-full bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300 font-medium">{count}</span>
               )}
             </label>
           )
@@ -914,11 +914,11 @@ export default function ErrorOverviewPage() {
             Alle ACK ({selected.size})
           </button>
           <button onClick={() => setBulkDowntime(true)}
-            className="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors font-medium flex items-center gap-1">
+            className="text-xs px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium flex items-center gap-1">
             <BellOff className="w-3 h-3" /> Downtime ({selected.size})
           </button>
           <button onClick={() => setSelected(new Set())}
-            className="text-xs text-gray-400 hover:text-gray-600 ml-auto">
+            className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 ml-auto">
             Auswahl aufheben
           </button>
         </div>
@@ -928,11 +928,11 @@ export default function ErrorOverviewPage() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <AlertTriangle className="w-7 h-7 text-red-500" />
-          <h1 className="text-2xl font-bold text-gray-900">Fehlerübersicht</h1>
-          <span className="text-sm text-gray-500 ml-2">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Fehlerübersicht</h1>
+          <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">
             {filtered.length}{filtered.length !== errors.length ? ` / ${errors.length}` : ''} {filtered.length === 1 ? 'Eintrag' : 'Einträge'}
             {!showAcknowledged && ackedCount > 0 && (
-              <span className="text-gray-400"> ({ackedCount} ACK ausgeblendet)</span>
+              <span className="text-gray-400 dark:text-gray-500"> ({ackedCount} ACK ausgeblendet)</span>
             )}
           </span>
         </div>
@@ -941,29 +941,29 @@ export default function ErrorOverviewPage() {
             href="/tv"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 hover:text-gray-800 transition-colors"
+            className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
             title="TV-Modus in neuem Tab öffnen"
           >
             <Tv className="w-4 h-4" />
             TV
           </a>
           {activeStatuses.has('CRITICAL') && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-red-100 text-red-800">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300">
               {criticalCount} Critical
             </span>
           )}
           {activeStatuses.has('WARNING') && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300">
               {warningCount} Warning
             </span>
           )}
           {activeStatuses.has('UNKNOWN') && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
               {unknownCount} Unknown
             </span>
           )}
           {activeStatuses.has('OK') && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300">
               {okCount} OK
             </span>
           )}
@@ -973,12 +973,12 @@ export default function ErrorOverviewPage() {
       {/* Filter bar */}
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Host, Service, Tenant…"
-            className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-overseer-500 outline-none"
+            className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg focus:ring-2 focus:ring-overseer-500 outline-none"
           />
         </div>
         <div className="flex items-center gap-1">
@@ -993,7 +993,7 @@ export default function ErrorOverviewPage() {
                   'text-xs px-2.5 py-1.5 rounded-lg border font-medium transition-colors',
                   active
                     ? `${cfg.bg} ${cfg.text} border-current`
-                    : 'border-gray-200 text-gray-400 bg-white hover:bg-gray-50'
+                    : 'border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700'
                 )}
               >
                 {cfg.label}
@@ -1004,11 +1004,11 @@ export default function ErrorOverviewPage() {
 
         {/* Sort */}
         <div className="flex items-center gap-1">
-          <ArrowUpDown className="w-4 h-4 text-gray-400" />
+          <ArrowUpDown className="w-4 h-4 text-gray-400 dark:text-gray-500" />
           <select
             value={sortKey}
             onChange={e => handleSort(e.target.value as SortKey)}
-            className="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none"
+            className="text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-overseer-500 outline-none"
           >
             {sortOptions.map(o => (
               <option key={o.key} value={o.key}>{o.label}</option>
@@ -1016,7 +1016,7 @@ export default function ErrorOverviewPage() {
           </select>
           <button
             onClick={() => setSortAsc(!sortAsc)}
-            className="text-xs px-2 py-2 rounded-lg border border-gray-300 text-gray-500 hover:bg-gray-50"
+            className="text-xs px-2 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
             title={sortAsc ? 'Aufsteigend' : 'Absteigend'}
           >
             {sortAsc ? '↑' : '↓'}
@@ -1032,12 +1032,12 @@ export default function ErrorOverviewPage() {
                 ? 'border-blue-500 bg-blue-100 text-blue-800'
                 : showAcknowledged
                   ? 'border-blue-300 bg-blue-50 text-blue-800'
-                  : 'border-gray-300 text-gray-500 hover:bg-gray-50',
+                  : 'border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700',
             )}
           >
             <CheckCheck className="w-4 h-4" />
             ACK
-            {ackedCount > 0 && <span className="text-xs text-gray-400">({ackedCount})</span>}
+            {ackedCount > 0 && <span className="text-xs text-gray-400 dark:text-gray-500">({ackedCount})</span>}
           </button>
           <button
             onClick={() => { if (onlyAck) { setOnlyAck(false) } else { setOnlyAck(true); setShowAcknowledged(true) } }}
@@ -1045,7 +1045,7 @@ export default function ErrorOverviewPage() {
               'text-xs px-2 py-2 rounded-r-lg border transition-colors',
               onlyAck
                 ? 'border-blue-500 bg-blue-600 text-white'
-                : 'border-gray-300 text-gray-400 hover:text-blue-600 hover:bg-gray-50',
+                : 'border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500 hover:text-blue-600 hover:bg-gray-50 dark:hover:bg-gray-700',
             )}
             title={onlyAck ? 'Show only aufheben' : 'Nur acknowledged anzeigen'}
           >
@@ -1062,12 +1062,12 @@ export default function ErrorOverviewPage() {
                 ? 'border-purple-500 bg-purple-100 text-purple-800'
                 : showDowntime
                   ? 'border-purple-300 bg-purple-50 text-purple-700'
-                  : 'border-gray-300 text-gray-500 hover:bg-gray-50',
+                  : 'border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700',
             )}
           >
             <BellOff className="w-4 h-4" />
             Downtimes
-            {downtimeCount > 0 && <span className="text-xs text-gray-400">({downtimeCount})</span>}
+            {downtimeCount > 0 && <span className="text-xs text-gray-400 dark:text-gray-500">({downtimeCount})</span>}
           </button>
           <button
             onClick={() => { if (onlyDowntime) { setOnlyDowntime(false) } else { setOnlyDowntime(true); setShowDowntime(true) } }}
@@ -1075,7 +1075,7 @@ export default function ErrorOverviewPage() {
               'text-xs px-2 py-2 rounded-r-lg border transition-colors',
               onlyDowntime
                 ? 'border-purple-500 bg-purple-600 text-white'
-                : 'border-gray-300 text-gray-400 hover:text-purple-600 hover:bg-gray-50',
+                : 'border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500 hover:text-purple-600 hover:bg-gray-50 dark:hover:bg-gray-700',
             )}
             title={onlyDowntime ? 'Show only aufheben' : 'Nur Downtimes anzeigen'}
           >
@@ -1091,7 +1091,7 @@ export default function ErrorOverviewPage() {
               'flex items-center gap-1.5 text-sm px-3 py-2 rounded-lg border transition-colors',
               hiddenTenantCount > 0
                 ? 'border-amber-300 bg-amber-50 text-amber-700'
-                : 'border-gray-300 text-gray-500 hover:bg-gray-50',
+                : 'border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700',
             )}
           >
             <Filter className="w-4 h-4" />
@@ -1116,7 +1116,7 @@ export default function ErrorOverviewPage() {
         {(hiddenTenantCount > 0 || activeStatuses.size !== 4 || !['CRITICAL', 'WARNING', 'NO_DATA', 'UNKNOWN'].every(s => activeStatuses.has(s)) || search || showAcknowledged || showDowntime || onlyAck || onlyDowntime) && (
           <button
             onClick={() => { setSearch(''); setHiddenTenants(new Set()); setActiveStatuses(new Set(['CRITICAL', 'WARNING', 'NO_DATA', 'UNKNOWN'])); setShowAcknowledged(false); setShowDowntime(false); setOnlyAck(false); setOnlyDowntime(false) }}
-            className="text-xs text-gray-500 hover:text-gray-700 underline"
+            className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 underline"
           >
             Filter zurücksetzen
           </button>
@@ -1136,7 +1136,7 @@ export default function ErrorOverviewPage() {
                   'text-xs px-3 py-1.5 rounded-lg border transition-colors',
                   isDefault
                     ? 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
-                    : 'border-gray-200 text-gray-600 hover:bg-overseer-50 hover:border-overseer-300 hover:text-overseer-700',
+                    : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-overseer-50 hover:border-overseer-300 hover:text-overseer-700',
                 )}
               >
                 {isDefault && <Star className="w-3 h-3 inline mr-1 fill-amber-400 text-amber-400" />}
@@ -1180,7 +1180,7 @@ export default function ErrorOverviewPage() {
         })}
         <button
           onClick={() => { setEditFilter(null); setShowSaveFilter(true) }}
-          className="text-xs px-3 py-1.5 rounded-lg border border-dashed border-gray-300 text-gray-400 hover:text-overseer-600 hover:border-overseer-400 transition-colors flex items-center gap-1"
+          className="text-xs px-3 py-1.5 rounded-lg border border-dashed border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500 hover:text-overseer-600 hover:border-overseer-400 transition-colors flex items-center gap-1"
         >
           <Save className="w-3 h-3" />
           Aktuellen Filter speichern
@@ -1193,13 +1193,13 @@ export default function ErrorOverviewPage() {
           <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mb-4">
             <CheckCheck className="w-8 h-8 text-emerald-600" />
           </div>
-          <h2 className="text-xl font-semibold text-gray-900">Alles in Ordnung</h2>
-          <p className="text-gray-500 mt-1">Keine aktuellen Probleme.</p>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Alles in Ordnung</h2>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Keine aktuellen Probleme.</p>
         </div>
       )}
       {!isLoading && filtered.length === 0 && errors.length > 0 && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <p className="text-gray-400">Keine Ergebnisse für den aktuellen Filter.</p>
+          <p className="text-gray-400 dark:text-gray-500">Keine Ergebnisse für den aktuellen Filter.</p>
           {!showAcknowledged && !onlyAck && ackedCount > 0 && (
             <button
               onClick={() => setShowAcknowledged(true)}
@@ -1220,7 +1220,7 @@ export default function ErrorOverviewPage() {
             onChange={toggleAll}
             className="w-4 h-4 rounded border-gray-300 text-overseer-600 focus:ring-overseer-500"
           />
-          <span className="text-xs text-gray-400">Alle auswählen</span>
+          <span className="text-xs text-gray-400 dark:text-gray-500">Alle auswählen</span>
         </div>
       )}
       <div className="space-y-2">
@@ -1233,7 +1233,7 @@ export default function ErrorOverviewPage() {
             <div
               key={error.service_id}
               className={clsx(
-                'rounded-lg border bg-white transition-colors',
+                'rounded-lg border bg-white dark:bg-gray-800 transition-colors',
                 config.border,
                 error.status === 'CRITICAL' && !error.acknowledged && 'border-red-400',
                 error.acknowledged && 'opacity-70',
@@ -1262,30 +1262,30 @@ export default function ErrorOverviewPage() {
 
                 {/* Host info */}
                 <div className="flex items-center gap-2 min-w-[200px]">
-                  <HostIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                  <HostIcon className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
                   <div>
                     <Link
                       to={`/hosts/${error.host_id}`}
-                      className="text-sm font-semibold text-gray-900 hover:text-overseer-600 hover:underline"
+                      className="text-sm font-semibold text-gray-900 dark:text-gray-100 hover:text-overseer-600 hover:underline"
                     >
                       {error.host_display_name || error.host_hostname}
                     </Link>
-                    <p className="text-xs text-gray-500">{error.tenant_name}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{error.tenant_name}</p>
                   </div>
                 </div>
 
                 {/* Check info */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-800">{error.service_name}</p>
-                  <p className="text-xs text-gray-500 truncate">{error.status_message}</p>
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{error.service_name}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{error.status_message}</p>
                 </div>
 
                 {/* Value */}
                 {error.value !== null && (
                   <div className="text-right min-w-[80px]">
                     {error.status === 'NO_DATA' ? (
-                      <p className="text-xs text-gray-400">
-                        <span className="text-gray-300">zuletzt</span> {error.value}{error.unit}
+                      <p className="text-xs text-gray-400 dark:text-gray-500">
+                        <span className="text-gray-300 dark:text-gray-600">zuletzt</span> {error.value}{error.unit}
                       </p>
                     ) : (
                       <p className={clsx('text-sm font-bold', config.text)}>
@@ -1297,7 +1297,7 @@ export default function ErrorOverviewPage() {
 
                 {/* Duration + Status History */}
                 <StatusHistoryPopover serviceId={error.service_id} stateChangedAt={error.last_state_change_at}>
-                  <div className="flex items-center gap-1 text-xs text-gray-400 min-w-[110px] cursor-default">
+                  <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 min-w-[110px] cursor-default">
                     <Clock className="w-3.5 h-3.5 flex-shrink-0" />
                     {error.last_state_change_at
                       ? 'seit ' + formatDistanceToNow(new Date(error.last_state_change_at), { locale: de })
@@ -1309,7 +1309,7 @@ export default function ErrorOverviewPage() {
                 <Link
                   to={`/logs?host_ids=${error.host_id}&severity=0,1,2,3,4${error.last_state_change_at ? `&from=${new Date(new Date(error.last_state_change_at).getTime() - 5 * 60000).toISOString()}&to=${new Date().toISOString()}` : '&time=60'}`}
                   title="Logs anzeigen"
-                  className="text-gray-300 hover:text-blue-500 transition-colors"
+                  className="text-gray-300 dark:text-gray-600 hover:text-blue-500 transition-colors"
                 >
                   <Scroll className="w-4 h-4" />
                 </Link>
@@ -1318,7 +1318,7 @@ export default function ErrorOverviewPage() {
                 <button
                   onClick={() => setDowntimeTarget(error)}
                   title="Downtime eintragen"
-                  className="text-gray-300 hover:text-overseer-500 transition-colors"
+                  className="text-gray-300 dark:text-gray-600 hover:text-overseer-500 transition-colors"
                 >
                   <BellOff className="w-4 h-4" />
                 </button>
@@ -1339,7 +1339,7 @@ export default function ErrorOverviewPage() {
                     <button
                       onClick={() => unackMutation.mutate(error.service_id)}
                       disabled={isUnacking}
-                      className="text-xs text-gray-400 hover:text-gray-600 underline disabled:opacity-50"
+                      className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 underline disabled:opacity-50"
                     >
                       {isUnacking ? '…' : 'aufheben'}
                     </button>
@@ -1363,7 +1363,7 @@ export default function ErrorOverviewPage() {
                     {error.acknowledged_at && (
                       <span className="text-blue-400"> · {formatDistanceToNow(new Date(error.acknowledged_at), { locale: de, addSuffix: true })}</span>
                     )}
-                    <span className="text-gray-500"> — {error.acknowledge_comment}</span>
+                    <span className="text-gray-500 dark:text-gray-400"> — {error.acknowledge_comment}</span>
                   </p>
                 </div>
               )}

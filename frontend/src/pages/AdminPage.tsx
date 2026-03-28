@@ -30,7 +30,7 @@ function SystemTab() {
     <div className="grid grid-cols-3 gap-4">
       {cards.map(c => (
         <div key={c.label} className={clsx('rounded-xl p-5 border', c.ok ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200')}>
-          <p className="text-xs font-medium text-gray-500 uppercase">{c.label}</p>
+          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{c.label}</p>
           <div className="flex items-center gap-2 mt-2">
             {c.ok ? <Check className="w-5 h-5 text-emerald-600" /> : <AlertCircle className="w-5 h-5 text-red-500" />}
             <span className={clsx('text-lg font-bold', c.ok ? 'text-emerald-700' : 'text-red-700')}>{c.value}</span>
@@ -77,10 +77,10 @@ function UsersTab() {
 
       {showModal && <NewUserModal onClose={() => setShowModal(false)} />}
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        {isLoading ? <div className="p-8 text-center text-gray-400">Lade…</div> : (
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        {isLoading ? <div className="p-8 text-center text-gray-400 dark:text-gray-500">Lade…</div> : (
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
+            <thead className="bg-gray-50 dark:bg-gray-900 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
               <tr>
                 <th className="px-6 py-3 text-left">E-Mail</th>
                 <th className="px-6 py-3 text-left">Name</th>
@@ -89,20 +89,20 @@ function UsersTab() {
                 <th className="px-6 py-3 text-right">Aktion</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
               {users.map(u => (
-                <tr key={u.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-3 font-medium text-gray-900">{u.email}</td>
-                  <td className="px-6 py-3 text-gray-500">{u.display_name ?? '–'}</td>
+                <tr key={u.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <td className="px-6 py-3 font-medium text-gray-900 dark:text-gray-100">{u.email}</td>
+                  <td className="px-6 py-3 text-gray-500 dark:text-gray-400">{u.display_name ?? '–'}</td>
                   <td className="px-6 py-3">
                     <select value={u.role} onChange={e => updateRole.mutate({ id: u.id, role: e.target.value })}
-                      className="text-xs border border-gray-300 rounded px-2 py-1 outline-none focus:ring-1 focus:ring-overseer-500">
+                      className="text-xs border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded px-2 py-1 outline-none focus:ring-1 focus:ring-overseer-500">
                       {roles.map(r => <option key={r} value={r}>{r}</option>)}
                     </select>
                   </td>
                   <td className="px-6 py-3 text-center">
                     <span className={clsx('px-2 py-0.5 rounded text-xs font-medium',
-                      u.active ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700')}>
+                      u.active ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-red-100 text-red-700')}>
                       {u.active ? 'Aktiv' : 'Deaktiviert'}
                     </span>
                   </td>
@@ -137,26 +137,26 @@ function NewUserModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-gray-900">Neuer User</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Neuer User</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 dark:text-gray-600"><X className="w-5 h-5" /></button>
         </div>
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">E-Mail</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">E-Mail</label>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Passwort</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Passwort</label>
             <input type="password" value={password} onChange={e => setPassword(e.target.value)} required
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Rolle</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Rolle</label>
             <select value={role} onChange={e => setRole(e.target.value as UserRole)}
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500">
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500">
               <option value="super_admin">Super Admin</option>
               <option value="tenant_admin">Tenant Admin</option>
               <option value="tenant_operator">Operator</option>
@@ -166,7 +166,7 @@ function NewUserModal({ onClose }: { onClose: () => void }) {
           {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}
         </div>
         <div className="flex gap-3 mt-6">
-          <button onClick={onClose} className="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">Abbrechen</button>
+          <button onClick={onClose} className="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">Abbrechen</button>
           <button onClick={() => mutation.mutate()} disabled={mutation.isPending || !email || !password}
             className="flex-1 py-2 rounded-lg bg-overseer-600 text-white text-sm font-medium hover:bg-overseer-700 disabled:opacity-60">
             {mutation.isPending ? 'Erstellen…' : 'User erstellen'}
@@ -221,25 +221,25 @@ function BackupTab() {
 
   return (
     <div className="space-y-4">
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="font-semibold text-gray-800 mb-4">Export</h3>
-        <p className="text-sm text-gray-500 mb-3">Exportiert alle Konfiguration (ohne Secrets und Check-Results) als JSON.</p>
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-4">Export</h3>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">Exportiert alle Konfiguration (ohne Secrets und Check-Results) als JSON.</p>
         <button onClick={() => exportMutation.mutate()} disabled={exportMutation.isPending}
           className="inline-flex items-center gap-2 px-4 py-2 bg-overseer-600 text-white text-sm rounded-lg hover:bg-overseer-700 disabled:opacity-60">
           <Download className="w-4 h-4" /> {exportMutation.isPending ? 'Exportieren…' : 'Export JSON'}
         </button>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="font-semibold text-gray-800 mb-4">Import</h3>
-        <p className="text-sm text-gray-500 mb-3">Importiert Konfiguration aus einer Export-Datei.</p>
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-4">Import</h3>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">Importiert Konfiguration aus einer Export-Datei.</p>
         <input type="file" ref={fileRef} accept=".json" onChange={handleFile} className="hidden" />
         <button onClick={() => fileRef.current?.click()} disabled={importMutation.isPending}
-          className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50 disabled:opacity-60">
+          className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-60">
           <Upload className="w-4 h-4" /> {importMutation.isPending ? 'Importieren…' : 'Import JSON'}
         </button>
         {importResult && (
-          <pre className="mt-3 text-xs bg-gray-50 p-3 rounded-lg overflow-auto max-h-48">{importResult}</pre>
+          <pre className="mt-3 text-xs bg-gray-50 dark:bg-gray-900 p-3 rounded-lg overflow-auto max-h-48">{importResult}</pre>
         )}
       </div>
     </div>
@@ -259,10 +259,10 @@ function AuditTab() {
   })
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      {isLoading ? <div className="p-8 text-center text-gray-400">Lade…</div> : (
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+      {isLoading ? <div className="p-8 text-center text-gray-400 dark:text-gray-500">Lade…</div> : (
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
+          <thead className="bg-gray-50 dark:bg-gray-900 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
             <tr>
               <th className="px-6 py-3 text-left">Zeitpunkt</th>
               <th className="px-6 py-3 text-left">User</th>
@@ -271,18 +271,18 @@ function AuditTab() {
               <th className="px-6 py-3 text-left">Details</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
             {logs.map(log => (
-              <tr key={log.id} className="hover:bg-gray-50">
-                <td className="px-6 py-3 text-xs text-gray-500 whitespace-nowrap">
+              <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <td className="px-6 py-3 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
                   {format(new Date(log.created_at), 'dd.MM.yyyy HH:mm:ss')}
                 </td>
-                <td className="px-6 py-3 text-gray-700 text-xs">{log.actor_email ?? '–'}</td>
+                <td className="px-6 py-3 text-gray-700 dark:text-gray-300 text-xs">{log.actor_email ?? '–'}</td>
                 <td className="px-6 py-3">
-                  <span className="px-2 py-0.5 bg-gray-100 rounded text-xs font-medium text-gray-700">{log.action}</span>
+                  <span className="px-2 py-0.5 bg-gray-100 rounded text-xs font-medium text-gray-700 dark:text-gray-300 dark:text-gray-600">{log.action}</span>
                 </td>
-                <td className="px-6 py-3 text-xs text-gray-500">{log.target_type ?? '–'}</td>
-                <td className="px-6 py-3 text-xs text-gray-400 max-w-xs truncate">
+                <td className="px-6 py-3 text-xs text-gray-500 dark:text-gray-400">{log.target_type ?? '–'}</td>
+                <td className="px-6 py-3 text-xs text-gray-400 dark:text-gray-500 dark:text-gray-400 max-w-xs truncate">
                   {log.detail ? JSON.stringify(log.detail).slice(0, 80) : '–'}
                 </td>
               </tr>
@@ -291,10 +291,10 @@ function AuditTab() {
         </table>
       )}
       {logs.length === 0 && !isLoading && (
-        <div className="p-8 text-center text-gray-400 text-sm">Keine Audit-Einträge.</div>
+        <div className="p-8 text-center text-gray-400 dark:text-gray-500 text-sm">Keine Audit-Einträge.</div>
       )}
       {logs.length >= limit && (
-        <div className="px-6 py-3 border-t border-gray-100 flex justify-end">
+        <div className="px-6 py-3 border-t border-gray-100 dark:border-gray-800 flex justify-end">
           <button onClick={() => setOffset(prev => prev + limit)}
             className="text-xs text-overseer-600 hover:text-overseer-700 font-medium">
             Nächste Seite
@@ -356,7 +356,7 @@ function SsoTab() {
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <p className="text-sm text-gray-500">Identity Provider Konfigurationen für SSO</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">Identity Provider Konfigurationen für SSO</p>
         <button onClick={() => { setEditing(null); setShowModal(true) }}
           className="inline-flex items-center gap-2 px-4 py-2 bg-overseer-600 text-white text-sm font-medium rounded-lg hover:bg-overseer-700">
           <Plus className="w-4 h-4" /> Neuer IdP
@@ -365,12 +365,12 @@ function SsoTab() {
 
       {showModal && <IdpModal config={editing} onClose={() => { setShowModal(false); setEditing(null) }} />}
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        {isLoading ? <div className="p-8 text-center text-gray-400">Lade…</div> : configs.length === 0 ? (
-          <div className="p-8 text-center text-gray-400 text-sm">Keine IdP-Konfigurationen vorhanden.</div>
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        {isLoading ? <div className="p-8 text-center text-gray-400 dark:text-gray-500">Lade…</div> : configs.length === 0 ? (
+          <div className="p-8 text-center text-gray-400 dark:text-gray-500 text-sm">Keine IdP-Konfigurationen vorhanden.</div>
         ) : (
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
+            <thead className="bg-gray-50 dark:bg-gray-900 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
               <tr>
                 <th className="px-6 py-3 text-left">Name</th>
                 <th className="px-6 py-3 text-left">Typ</th>
@@ -380,39 +380,39 @@ function SsoTab() {
                 <th className="px-6 py-3 text-right">Aktionen</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
               {configs.map(c => (
-                <tr key={c.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-3 font-medium text-gray-900">{c.name}</td>
+                <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <td className="px-6 py-3 font-medium text-gray-900 dark:text-gray-100">{c.name}</td>
                   <td className="px-6 py-3">
                     <span className={clsx('px-2 py-0.5 rounded text-xs font-medium',
-                      c.auth_type === 'oidc' ? 'bg-blue-100 text-blue-800' :
-                      c.auth_type === 'saml' ? 'bg-purple-100 text-purple-800' :
-                      'bg-amber-100 text-amber-800')}>
+                      c.auth_type === 'oidc' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300' :
+                      c.auth_type === 'saml' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300' :
+                      'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300')}>
                       {authTypeLabel[c.auth_type] || c.auth_type}
                     </span>
                   </td>
-                  <td className="px-6 py-3 text-gray-500 text-xs">
+                  <td className="px-6 py-3 text-gray-500 dark:text-gray-400 text-xs">
                     {c.email_domains?.join(', ') || '–'}
                   </td>
                   <td className="px-6 py-3 text-center">
-                    {c.jit_provisioning ? <Check className="w-4 h-4 text-emerald-500 mx-auto" /> : <X className="w-4 h-4 text-gray-300 mx-auto" />}
+                    {c.jit_provisioning ? <Check className="w-4 h-4 text-emerald-500 mx-auto" /> : <X className="w-4 h-4 text-gray-300 dark:text-gray-600 mx-auto" />}
                   </td>
                   <td className="px-6 py-3 text-center">
                     <button onClick={() => toggleActive.mutate({ id: c.id, is_active: !c.is_active })}
                       className={clsx('px-2 py-0.5 rounded text-xs font-medium cursor-pointer',
-                        c.is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800')}>
+                        c.is_active ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300')}>
                       {c.is_active ? 'Aktiv' : 'Inaktiv'}
                     </button>
                   </td>
                   <td className="px-6 py-3 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <button onClick={() => { setEditing(c); setShowModal(true) }}
-                        className="p-1 text-gray-400 hover:text-overseer-600" title="Bearbeiten">
+                        className="p-1 text-gray-400 dark:text-gray-500 hover:text-overseer-600" title="Bearbeiten">
                         <Pencil className="w-4 h-4" />
                       </button>
                       <button onClick={() => { if (confirm('IdP-Konfiguration löschen?')) deleteMutation.mutate(c.id) }}
-                        className="p-1 text-gray-400 hover:text-red-600" title="Löschen">
+                        className="p-1 text-gray-400 dark:text-gray-500 hover:text-red-600" title="Löschen">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -514,32 +514,32 @@ function IdpModal({ config, onClose }: { config: IdpConfig | null; onClose: () =
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 overflow-y-auto py-8">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-lg mx-4 p-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-gray-900">{isEdit ? 'IdP bearbeiten' : 'Neuer IdP'}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{isEdit ? 'IdP bearbeiten' : 'Neuer IdP'}</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 dark:text-gray-600"><X className="w-5 h-5" /></button>
         </div>
         <div className="space-y-4 max-h-[65vh] overflow-y-auto pr-1">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Name</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Name</label>
             <input type="text" value={name} onChange={e => setName(e.target.value)}
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
           </div>
 
           {!isEdit && (
             <>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Tenant</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Tenant</label>
                 <select value={tenantId} onChange={e => setTenantId(e.target.value)}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500">
+                  className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500">
                   <option value="">– Auswählen –</option>
                   {tenants.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Auth-Typ</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Auth-Typ</label>
                 <select value={authType} onChange={e => setAuthType(e.target.value)}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500">
+                  className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500">
                   <option value="oidc">OIDC (OpenID Connect)</option>
                   <option value="saml">SAML 2.0</option>
                   <option value="ldap">LDAP / Active Directory</option>
@@ -549,30 +549,30 @@ function IdpModal({ config, onClose }: { config: IdpConfig | null; onClose: () =
           )}
 
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">E-Mail-Domains (kommagetrennt)</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">E-Mail-Domains (kommagetrennt)</label>
             <input type="text" value={emailDomains} onChange={e => setEmailDomains(e.target.value)}
               placeholder="example.com, corp.example.com"
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
           </div>
 
           {/* OIDC fields */}
           {authType === 'oidc' && (
             <>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Discovery URL</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Discovery URL</label>
                 <input type="url" value={oidcDiscoveryUrl} onChange={e => setOidcDiscoveryUrl(e.target.value)}
                   placeholder="https://login.microsoftonline.com/.../.well-known/openid-configuration"
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+                  className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Client ID</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Client ID</label>
                 <input type="text" value={oidcClientId} onChange={e => setOidcClientId(e.target.value)}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+                  className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Client Secret {isEdit && '(leer = unverändert)'}</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Client Secret {isEdit && '(leer = unverändert)'}</label>
                 <input type="password" value={oidcClientSecret} onChange={e => setOidcClientSecret(e.target.value)}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+                  className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
               </div>
             </>
           )}
@@ -581,16 +581,16 @@ function IdpModal({ config, onClose }: { config: IdpConfig | null; onClose: () =
           {authType === 'saml' && (
             <>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Metadata URL</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Metadata URL</label>
                 <input type="url" value={samlMetadataUrl} onChange={e => setSamlMetadataUrl(e.target.value)}
                   placeholder="https://idp.example.com/metadata.xml"
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+                  className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Entity ID (SP)</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Entity ID (SP)</label>
                 <input type="text" value={samlEntityId} onChange={e => setSamlEntityId(e.target.value)}
                   placeholder="https://overseer.dailycrust.it/api/v1/sso/saml/acs"
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+                  className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
               </div>
             </>
           )}
@@ -599,51 +599,51 @@ function IdpModal({ config, onClose }: { config: IdpConfig | null; onClose: () =
           {authType === 'ldap' && (
             <>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">LDAP URL</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">LDAP URL</label>
                 <input type="text" value={ldapUrl} onChange={e => setLdapUrl(e.target.value)}
                   placeholder="ldaps://ldap.example.com:636"
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+                  className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Base DN</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Base DN</label>
                 <input type="text" value={ldapBaseDn} onChange={e => setLdapBaseDn(e.target.value)}
                   placeholder="DC=example,DC=com"
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+                  className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Bind DN (Service Account)</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Bind DN (Service Account)</label>
                 <input type="text" value={ldapBindDn} onChange={e => setLdapBindDn(e.target.value)}
                   placeholder="CN=svc-overseer,OU=ServiceAccounts,DC=example,DC=com"
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+                  className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Bind Password {isEdit && '(leer = unverändert)'}</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Bind Password {isEdit && '(leer = unverändert)'}</label>
                 <input type="password" value={ldapBindPassword} onChange={e => setLdapBindPassword(e.target.value)}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+                  className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">User Filter</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">User Filter</label>
                 <input type="text" value={ldapUserFilter} onChange={e => setLdapUserFilter(e.target.value)}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500 font-mono text-xs" />
+                  className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500 font-mono text-xs" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Group Attribute</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Group Attribute</label>
                 <input type="text" value={ldapGroupAttribute} onChange={e => setLdapGroupAttribute(e.target.value)}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+                  className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
               </div>
             </>
           )}
 
           {/* Common settings */}
           <div className="flex items-center gap-4 pt-2">
-            <label className="flex items-center gap-2 text-sm text-gray-700">
+            <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 dark:text-gray-600">
               <input type="checkbox" checked={jitProvisioning} onChange={e => setJitProvisioning(e.target.checked)}
-                className="rounded border-gray-300 text-overseer-600 focus:ring-overseer-500" />
+                className="rounded border-gray-300 dark:border-gray-600 text-overseer-600 focus:ring-overseer-500" />
               JIT-Provisioning
             </label>
-            <label className="flex items-center gap-2 text-sm text-gray-700">
+            <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 dark:text-gray-600">
               <input type="checkbox" checked={allowPasswordFallback} onChange={e => setAllowPasswordFallback(e.target.checked)}
-                className="rounded border-gray-300 text-overseer-600 focus:ring-overseer-500" />
+                className="rounded border-gray-300 dark:border-gray-600 text-overseer-600 focus:ring-overseer-500" />
               Passwort-Fallback
             </label>
           </div>
@@ -651,7 +651,7 @@ function IdpModal({ config, onClose }: { config: IdpConfig | null; onClose: () =
           {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}
         </div>
         <div className="flex gap-3 mt-6">
-          <button onClick={onClose} className="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">Abbrechen</button>
+          <button onClick={onClose} className="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">Abbrechen</button>
           <button onClick={handleSubmit} disabled={pending || (!isEdit && !tenantId)}
             className="flex-1 py-2 rounded-lg bg-overseer-600 text-white text-sm font-medium hover:bg-overseer-700 disabled:opacity-60">
             {pending ? 'Speichern…' : isEdit ? 'Speichern' : 'IdP erstellen'}
@@ -679,16 +679,16 @@ export default function AdminPage() {
     <div className="p-8">
       <div className="flex items-center gap-3 mb-6">
         <ShieldAlert className="w-7 h-7 text-overseer-600" />
-        <h1 className="text-2xl font-bold text-gray-900">Administration</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Administration</h1>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200 mb-6">
+      <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
         <div className="flex gap-6">
           {tabs.map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)}
               className={clsx('flex items-center gap-1.5 pb-3 text-sm font-medium border-b-2 transition-colors',
-                activeTab === tab.key ? 'border-overseer-600 text-overseer-600' : 'border-transparent text-gray-500 hover:text-gray-700')}>
+                activeTab === tab.key ? 'border-overseer-600 text-overseer-600' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200')}>
               <tab.icon className="w-4 h-4" /> {tab.label}
             </button>
           ))}

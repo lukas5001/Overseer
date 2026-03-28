@@ -25,18 +25,18 @@ export default function PublicStatusPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-pulse text-gray-400 text-lg">Loading...</div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="animate-pulse text-gray-400 dark:text-gray-500 text-lg">Loading...</div>
       </div>
     )
   }
 
   if (error || !data) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-300 mb-2">404</h1>
-          <p className="text-gray-500">Status page not found.</p>
+          <h1 className="text-4xl font-bold text-gray-300 dark:text-gray-600 mb-2">404</h1>
+          <p className="text-gray-500 dark:text-gray-400">Status page not found.</p>
         </div>
       </div>
     )
@@ -68,8 +68,8 @@ function StatusPageView({ data, slug }: { data: PublicStatusPageData; slug: stri
         {/* Header */}
         <div className="text-center space-y-2">
           {data.logo_url && <img src={data.logo_url} alt="" className="h-10 mx-auto" />}
-          <h1 className="text-2xl font-bold text-gray-900">{data.title}</h1>
-          {data.description && <p className="text-gray-500">{data.description}</p>}
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{data.title}</h1>
+          {data.description && <p className="text-gray-500 dark:text-gray-400">{data.description}</p>}
         </div>
 
         {/* Upcoming maintenance banner */}
@@ -111,12 +111,12 @@ function StatusPageView({ data, slug }: { data: PublicStatusPageData; slug: stri
         </div>
 
         {/* Components */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 divide-y divide-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
           {[...groups.entries()].map(([groupName, comps]) => (
             <div key={groupName}>
               {groupName && (
                 <div className="px-6 pt-4 pb-1">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">{groupName}</span>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">{groupName}</span>
                 </div>
               )}
               {comps.map(comp => (
@@ -129,7 +129,7 @@ function StatusPageView({ data, slug }: { data: PublicStatusPageData; slug: stri
         {/* Active incidents */}
         {data.active_incidents.length > 0 && (
           <div className="space-y-3">
-            <h2 className="text-lg font-semibold text-gray-900">Current Incidents</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Current Incidents</h2>
             {data.active_incidents.map(inc => (
               <IncidentCard key={inc.id} incident={inc} />
             ))}
@@ -139,7 +139,7 @@ function StatusPageView({ data, slug }: { data: PublicStatusPageData; slug: stri
         {/* Past incidents */}
         {data.past_incidents.length > 0 && (
           <div className="space-y-3">
-            <h2 className="text-lg font-semibold text-gray-900">Past Incidents</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Past Incidents</h2>
             {data.past_incidents.map(inc => (
               <IncidentCard key={inc.id} incident={inc} />
             ))}
@@ -150,7 +150,7 @@ function StatusPageView({ data, slug }: { data: PublicStatusPageData; slug: stri
         <SubscribeForm slug={slug} />
 
         {/* Footer */}
-        <div className="text-center text-xs text-gray-400 pt-4 pb-8">
+        <div className="text-center text-xs text-gray-400 dark:text-gray-500 pt-4 pb-8">
           Powered by Overseer
         </div>
       </div>
@@ -179,8 +179,8 @@ function SubscribeForm({ slug }: { slug: string }) {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-      <h3 className="font-semibold text-gray-900 mb-3">Subscribe to Updates</h3>
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5">
+      <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Subscribe to Updates</h3>
       {done ? (
         <p className="text-sm text-green-600">{message}</p>
       ) : (
@@ -191,12 +191,12 @@ function SubscribeForm({ slug }: { slug: string }) {
             onChange={e => setEmail(e.target.value)}
             placeholder="your@email.com"
             required
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-200"
           />
           <button
             type="submit"
             disabled={subscribeMut.isPending}
-            className="px-5 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 disabled:opacity-50"
+            className="px-5 py-2 bg-gray-900 dark:bg-gray-700 text-white rounded-lg text-sm font-medium hover:bg-gray-800 dark:hover:bg-gray-600 disabled:opacity-50"
           >
             Subscribe
           </button>
@@ -214,8 +214,8 @@ function ComponentRow({ comp }: { comp: PublicStatusPageData['components'][0] })
     <div className="px-6 py-4">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <span className="font-medium text-gray-900">{comp.name}</span>
-          {comp.description && <span className="text-sm text-gray-400">— {comp.description}</span>}
+          <span className="font-medium text-gray-900 dark:text-gray-100">{comp.name}</span>
+          {comp.description && <span className="text-sm text-gray-400 dark:text-gray-500">— {comp.description}</span>}
         </div>
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium" style={{ color: cfg.color }}>{cfg.label}</span>
@@ -227,7 +227,7 @@ function ComponentRow({ comp }: { comp: PublicStatusPageData['components'][0] })
       {comp.show_uptime && (
         <div className="flex items-center gap-1">
           <UptimeBar days={comp.uptime_90d} />
-          <span className="text-xs text-gray-500 ml-2 whitespace-nowrap">{comp.overall_uptime}%</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400 ml-2 whitespace-nowrap">{comp.overall_uptime}%</span>
         </div>
       )}
     </div>
@@ -307,27 +307,27 @@ function IncidentCard({ incident }: { incident: PublicStatusPageData['active_inc
   const impactColor = incident.impact === 'critical' ? '#ef4444' : incident.impact === 'major' ? '#f97316' : '#eab308'
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5">
       <div className="flex items-start gap-3">
         <div className="w-3 h-3 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: isResolved ? '#22c55e' : impactColor }} />
         <div className="flex-1">
-          <h3 className="font-semibold text-gray-900">{incident.title}</h3>
-          <p className="text-xs text-gray-400 mb-3">
+          <h3 className="font-semibold text-gray-900 dark:text-gray-100">{incident.title}</h3>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">
             {new Date(incident.created_at).toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' })}
             {isResolved && ' — Resolved'}
           </p>
 
           {incident.updates.length > 0 && (
-            <div className="border-l-2 border-gray-200 pl-4 space-y-3">
+            <div className="border-l-2 border-gray-200 dark:border-gray-700 pl-4 space-y-3">
               {incident.updates.map(u => (
                 <div key={u.id}>
                   <div className="flex items-center gap-2 text-sm">
-                    <span className="font-medium capitalize text-gray-700">{u.status}</span>
-                    <span className="text-gray-400 text-xs">
+                    <span className="font-medium capitalize text-gray-700 dark:text-gray-300">{u.status}</span>
+                    <span className="text-gray-400 dark:text-gray-500 text-xs">
                       {new Date(u.created_at).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-600 mt-0.5">{u.body}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">{u.body}</p>
                 </div>
               ))}
             </div>

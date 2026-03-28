@@ -19,19 +19,19 @@ function DeviceTypeIcon({ type }: { type: string | null }) {
     case 'server': return <Server className="w-4 h-4 text-blue-400" />
     case 'printer': return <Printer className="w-4 h-4 text-yellow-400" />
     case 'network_device': return <RouterIcon className="w-4 h-4 text-green-400" />
-    default: return <HelpCircle className="w-4 h-4 text-gray-400" />
+    default: return <HelpCircle className="w-4 h-4 text-gray-400 dark:text-gray-500" />
   }
 }
 
 function StatusBadge({ status }: { status: string }) {
   const colors: Record<string, string> = {
-    new: 'bg-blue-100 text-blue-800',
-    known: 'bg-green-100 text-green-800',
-    added: 'bg-emerald-100 text-emerald-800',
-    ignored: 'bg-gray-100 text-gray-600',
+    new: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+    known: 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
+    added: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
+    ignored: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400',
   }
   return (
-    <span className={clsx('px-2 py-0.5 rounded-full text-xs font-medium', colors[status] || 'bg-gray-100 text-gray-600')}>
+    <span className={clsx('px-2 py-0.5 rounded-full text-xs font-medium', colors[status] || 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400')}>
       {status === 'new' ? 'New' : status === 'known' ? 'Known' : status === 'added' ? 'Added' : status}
     </span>
   )
@@ -39,13 +39,13 @@ function StatusBadge({ status }: { status: string }) {
 
 function ScanStatusBadge({ status }: { status: string }) {
   const colors: Record<string, string> = {
-    pending: 'bg-yellow-100 text-yellow-800',
-    running: 'bg-blue-100 text-blue-800',
-    completed: 'bg-green-100 text-green-800',
-    failed: 'bg-red-100 text-red-800',
+    pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
+    running: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+    completed: 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
+    failed: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
   }
   return (
-    <span className={clsx('px-2 py-0.5 rounded-full text-xs font-medium', colors[status] || 'bg-gray-100 text-gray-600')}>
+    <span className={clsx('px-2 py-0.5 rounded-full text-xs font-medium', colors[status] || 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400')}>
       {status}
     </span>
   )
@@ -67,11 +67,11 @@ function ScanPanel({ collectors }: { collectors: Collector[] }) {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 mb-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Radar className="w-5 h-5 text-overseer-600" />
-          <h2 className="font-semibold text-gray-900">Network Discovery</h2>
+          <h2 className="font-semibold text-gray-900 dark:text-gray-100">Network Discovery</h2>
         </div>
         <button
           onClick={() => setExpanded(!expanded)}
@@ -84,28 +84,28 @@ function ScanPanel({ collectors }: { collectors: Collector[] }) {
       </div>
 
       {expanded && (
-        <div className="mt-4 pt-4 border-t border-gray-100 space-y-3">
+        <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">IP Range / CIDR *</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">IP Range / CIDR *</label>
               <input
                 type="text" value={target} onChange={e => setTarget(e.target.value)}
                 placeholder="192.168.1.0/24"
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500"
+                className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Ports</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Ports</label>
               <input
                 type="text" value={ports} onChange={e => setPorts(e.target.value)}
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500"
+                className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Collector *</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Collector *</label>
               <select
                 value={collectorId} onChange={e => setCollectorId(e.target.value)}
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500"
+                className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500"
               >
                 {collectors.map(c => (
                   <option key={c.id} value={c.id}>{c.name}</option>
@@ -183,44 +183,44 @@ function AddHostDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 p-6 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-lg mx-4 p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-gray-900">Add Host from Discovery</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Add Host from Discovery</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 dark:text-gray-600"><X className="w-5 h-5" /></button>
         </div>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Hostname *</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Hostname *</label>
             <input type="text" value={hostname} onChange={e => setHostname(e.target.value)}
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Display Name</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Display Name</label>
             <input type="text" value={displayName} onChange={e => setDisplayName(e.target.value)}
               placeholder="Optional"
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
           </div>
           {result.ip_address && (
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">IP Address</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">IP Address</label>
               <input type="text" value={result.ip_address} disabled
-                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 text-gray-500" />
+                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400" />
             </div>
           )}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Host Type *</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Host Type *</label>
             <select value={hostTypeId} onChange={e => setHostTypeId(e.target.value)}
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500">
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500">
               {hostTypes.map(ht => (
                 <option key={ht.id} value={ht.id}>{ht.name}</option>
               ))}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Collector</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Collector</label>
             <select value={collectorId} onChange={e => setCollectorId(e.target.value)}
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500">
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500">
               <option value="">None (Agent-managed)</option>
               {collectors.map(c => (
                 <option key={c.id} value={c.id}>{c.name}</option>
@@ -228,15 +228,15 @@ function AddHostDialog({
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Tags</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Tags</label>
             <input type="text" value={tags} onChange={e => setTags(e.target.value)}
               placeholder="tag1, tag2, ..."
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+              className="w-full text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
           </div>
 
           {result.suggested_checks.length > 0 && (
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-2">Suggested Checks</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 dark:text-gray-500 mb-2">Suggested Checks</label>
               <div className="flex flex-wrap gap-2">
                 {result.suggested_checks.map(c => (
                   <button
@@ -246,7 +246,7 @@ function AddHostDialog({
                       'px-3 py-1 rounded-lg text-xs font-medium border transition-colors',
                       selectedChecks.has(c)
                         ? 'bg-overseer-50 border-overseer-300 text-overseer-700'
-                        : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'
+                        : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                     )}
                   >
                     {selectedChecks.has(c) ? <Check className="w-3 h-3 inline mr-1" /> : null}
@@ -263,7 +263,7 @@ function AddHostDialog({
         </div>
 
         <div className="flex justify-end gap-2 mt-6">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">Cancel</button>
+          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">Cancel</button>
           <button
             onClick={handleAdd}
             disabled={!hostname || !hostTypeId || addHost.isPending}
@@ -334,8 +334,8 @@ export default function DiscoveryPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Discovery</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Discovery</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-500 mt-0.5">
             Auto-discovered devices and services
             {lastScan && (
               <> &middot; Last scan: {formatDistanceToNow(new Date(lastScan.created_at), { addSuffix: true, locale: de })}
@@ -353,15 +353,15 @@ export default function DiscoveryPage() {
         <div>
           <button
             onClick={() => setShowScans(!showScans)}
-            className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
+            className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 flex items-center gap-1"
           >
             {showScans ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
             Recent Scans ({scans.length})
           </button>
           {showScans && (
-            <div className="mt-2 bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="mt-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider">
+                <thead className="bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider">
                   <tr>
                     <th className="px-4 py-2 text-left">Target</th>
                     <th className="px-4 py-2 text-left">Status</th>
@@ -369,13 +369,13 @@ export default function DiscoveryPage() {
                     <th className="px-4 py-2 text-left">Started</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                   {scans.map(s => (
-                    <tr key={s.id} className="hover:bg-gray-50">
+                    <tr key={s.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                       <td className="px-4 py-2 font-mono text-xs">{s.target}</td>
                       <td className="px-4 py-2"><ScanStatusBadge status={s.status} /></td>
                       <td className="px-4 py-2">{s.hosts_found}</td>
-                      <td className="px-4 py-2 text-gray-500">
+                      <td className="px-4 py-2 text-gray-500 dark:text-gray-400">
                         {s.started_at && formatDistanceToNow(new Date(s.started_at), { addSuffix: true, locale: de })}
                       </td>
                     </tr>
@@ -389,7 +389,7 @@ export default function DiscoveryPage() {
 
       {/* Filters + Actions */}
       <div className="flex items-center gap-3 flex-wrap">
-        <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
+        <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-0.5">
           {[
             { label: 'New / Known', value: 'new,known' },
             { label: 'All', value: '' },
@@ -401,8 +401,8 @@ export default function DiscoveryPage() {
               className={clsx(
                 'px-3 py-1.5 rounded-md text-xs font-medium transition-colors',
                 statusFilter === f.value
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
+                  ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
               )}
             >
               {f.label}
@@ -412,7 +412,7 @@ export default function DiscoveryPage() {
 
         <select
           value={sourceFilter} onChange={e => setSourceFilter(e.target.value)}
-          className="text-xs border border-gray-300 rounded-lg px-2 py-1.5"
+          className="text-xs border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-2 py-1.5"
         >
           <option value="">All Sources</option>
           <option value="network_scan">Network Scan</option>
@@ -436,7 +436,7 @@ export default function DiscoveryPage() {
           onClick={() => setShowIgnored(!showIgnored)}
           className={clsx(
             'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors',
-            showIgnored ? 'bg-gray-100 border-gray-300 text-gray-700' : 'border-gray-200 text-gray-500 hover:bg-gray-50'
+            showIgnored ? 'bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300' : 'border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
           )}
         >
           {showIgnored ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
@@ -445,18 +445,18 @@ export default function DiscoveryPage() {
       </div>
 
       {/* Results Table */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
         {isLoading ? (
-          <div className="p-8 text-center text-gray-400 text-sm">Loading...</div>
+          <div className="p-8 text-center text-gray-400 dark:text-gray-500 text-sm">Loading...</div>
         ) : results.length === 0 ? (
-          <div className="p-8 text-center text-gray-400">
-            <Radar className="w-10 h-10 mx-auto mb-3 text-gray-300" />
+          <div className="p-8 text-center text-gray-400 dark:text-gray-500">
+            <Radar className="w-10 h-10 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
             <p className="text-sm">No discovery results yet.</p>
             <p className="text-xs mt-1">Start a network scan or wait for agent discovery data.</p>
           </div>
         ) : (
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider">
+            <thead className="bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider">
               <tr>
                 <th className="px-3 py-2 text-left w-8">
                   <input
@@ -477,9 +477,9 @@ export default function DiscoveryPage() {
                 <th className="px-3 py-2 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
               {results.map(r => (
-                <tr key={r.id} className="hover:bg-gray-50">
+                <tr key={r.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td className="px-3 py-2">
                     {r.status === 'new' && (
                       <input
@@ -492,8 +492,8 @@ export default function DiscoveryPage() {
                   </td>
                   <td className="px-3 py-2"><StatusBadge status={r.status} /></td>
                   <td className="px-3 py-2">
-                    <div className="font-medium text-gray-900">{r.ip_address || '—'}</div>
-                    {r.hostname && <div className="text-xs text-gray-500">{r.hostname}</div>}
+                    <div className="font-medium text-gray-900 dark:text-gray-100">{r.ip_address || '—'}</div>
+                    {r.hostname && <div className="text-xs text-gray-500 dark:text-gray-400">{r.hostname}</div>}
                     {r.matched_host_id && (
                       <a href={`/hosts/${r.matched_host_id}`} className="text-xs text-blue-600 hover:underline flex items-center gap-0.5">
                         <Link2 className="w-3 h-3" />{r.matched_hostname || 'Monitored'}
@@ -503,20 +503,20 @@ export default function DiscoveryPage() {
                   <td className="px-3 py-2">
                     <div className="flex items-center gap-1.5">
                       <DeviceTypeIcon type={r.device_type} />
-                      <span className="text-xs text-gray-600">{r.device_type || 'unknown'}</span>
+                      <span className="text-xs text-gray-600 dark:text-gray-400">{r.device_type || 'unknown'}</span>
                     </div>
-                    {r.vendor && <div className="text-xs text-gray-400">{r.vendor}</div>}
+                    {r.vendor && <div className="text-xs text-gray-400 dark:text-gray-500">{r.vendor}</div>}
                   </td>
-                  <td className="px-3 py-2 text-xs text-gray-500">{r.os_guess || '—'}</td>
+                  <td className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400">{r.os_guess || '—'}</td>
                   <td className="px-3 py-2">
                     <div className="flex flex-wrap gap-1">
                       {r.open_ports.slice(0, 6).map((p, i) => (
-                        <span key={i} className="px-1.5 py-0.5 bg-gray-100 rounded text-xs font-mono">
+                        <span key={i} className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-xs font-mono">
                           {p.port}{p.service ? `/${p.service}` : ''}
                         </span>
                       ))}
                       {r.open_ports.length > 6 && (
-                        <span className="text-xs text-gray-400">+{r.open_ports.length - 6}</span>
+                        <span className="text-xs text-gray-400 dark:text-gray-500">+{r.open_ports.length - 6}</span>
                       )}
                     </div>
                   </td>
@@ -529,10 +529,10 @@ export default function DiscoveryPage() {
                       ))}
                     </div>
                   </td>
-                  <td className="px-3 py-2 text-xs text-gray-500">
+                  <td className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400">
                     {r.source === 'agent_discovery' ? 'Agent' : 'Network'}
                   </td>
-                  <td className="px-3 py-2 text-xs text-gray-400">
+                  <td className="px-3 py-2 text-xs text-gray-400 dark:text-gray-500">
                     {formatDistanceToNow(new Date(r.last_seen_at), { addSuffix: true, locale: de })}
                   </td>
                   <td className="px-3 py-2 text-right">
@@ -546,7 +546,7 @@ export default function DiscoveryPage() {
                         </button>
                         <button
                           onClick={() => ignoreMutation.mutate(r.id)}
-                          className="px-2 py-1 text-xs font-medium text-gray-500 bg-gray-50 rounded-md hover:bg-gray-100"
+                          className="px-2 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
                         >
                           <Ban className="w-3 h-3 inline mr-0.5" />Ignore
                         </button>
@@ -570,12 +570,12 @@ export default function DiscoveryPage() {
 
       {/* Ignored List */}
       {showIgnored && (ignored as any[]).length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
-            <h3 className="text-sm font-semibold text-gray-700">Ignored Devices</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 dark:border-gray-700">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-600">Ignored Devices</h3>
           </div>
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider">
+            <thead className="bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider">
               <tr>
                 <th className="px-4 py-2 text-left">IP / Hostname</th>
                 <th className="px-4 py-2 text-left">Type</th>
@@ -583,14 +583,14 @@ export default function DiscoveryPage() {
                 <th className="px-4 py-2 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
               {(ignored as any[]).map((r: any) => (
-                <tr key={r.id} className="hover:bg-gray-50">
+                <tr key={r.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td className="px-4 py-2">
-                    <span className="text-gray-900">{r.ip_address || r.hostname || '—'}</span>
+                    <span className="text-gray-900 dark:text-gray-100">{r.ip_address || r.hostname || '—'}</span>
                   </td>
-                  <td className="px-4 py-2 text-xs text-gray-500">{r.device_type || 'unknown'}</td>
-                  <td className="px-4 py-2 text-xs text-gray-500">{r.source}</td>
+                  <td className="px-4 py-2 text-xs text-gray-500 dark:text-gray-400">{r.device_type || 'unknown'}</td>
+                  <td className="px-4 py-2 text-xs text-gray-500 dark:text-gray-400">{r.source}</td>
                   <td className="px-4 py-2 text-right">
                     <button
                       onClick={() => unignoreMutation.mutate(r.id)}
@@ -608,23 +608,23 @@ export default function DiscoveryPage() {
 
       {/* Agent Discovery Services */}
       {results.some(r => r.source === 'agent_discovery' && r.services.length > 0) && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
-            <h3 className="text-sm font-semibold text-gray-700">Agent-Discovered Services</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 dark:border-gray-700">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-600">Agent-Discovered Services</h3>
           </div>
           <div className="p-4">
             {results.filter(r => r.source === 'agent_discovery' && r.services.length > 0).map(r => (
               <div key={r.id} className="mb-4 last:mb-0">
-                <h4 className="text-sm font-medium text-gray-900 mb-2">{r.hostname}</h4>
+                <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">{r.hostname}</h4>
                 <div className="flex flex-wrap gap-2">
                   {r.services.map((svc, i) => (
-                    <div key={i} className="px-2 py-1 bg-gray-50 rounded-lg text-xs border border-gray-100">
+                    <div key={i} className="px-2 py-1 bg-gray-50 rounded-lg text-xs border border-gray-100 dark:border-gray-800">
                       <span className="font-medium">{svc.name}</span>
-                      <span className={clsx('ml-1.5', svc.status === 'running' ? 'text-green-600' : 'text-gray-400')}>
+                      <span className={clsx('ml-1.5', svc.status === 'running' ? 'text-green-600' : 'text-gray-400 dark:text-gray-500')}>
                         {svc.status}
                       </span>
                       {svc.ports && svc.ports.length > 0 && (
-                        <span className="ml-1 text-gray-400">:{svc.ports.join(',')}</span>
+                        <span className="ml-1 text-gray-400 dark:text-gray-500">:{svc.ports.join(',')}</span>
                       )}
                     </div>
                   ))}

@@ -14,11 +14,11 @@ interface StatusDef {
 }
 
 export const STATUS_CONFIG: Record<Status, StatusDef> = {
-  OK:       { icon: CheckCircle,   dot: 'bg-emerald-500', bg: 'bg-emerald-100', text: 'text-emerald-800', color: 'text-emerald-500', border: 'border-emerald-300', label: 'OK' },
-  WARNING:  { icon: AlertTriangle, dot: 'bg-amber-400',   bg: 'bg-amber-100',   text: 'text-amber-800',   color: 'text-amber-500',   border: 'border-amber-300',   label: 'WARNING' },
-  CRITICAL: { icon: XCircle,       dot: 'bg-red-500',     bg: 'bg-red-100',     text: 'text-red-800',     color: 'text-red-500',     border: 'border-red-300',     label: 'CRITICAL' },
-  UNKNOWN:  { icon: HelpCircle,    dot: 'bg-gray-400',    bg: 'bg-gray-100',    text: 'text-gray-700',    color: 'text-gray-400',    border: 'border-gray-300',    label: 'UNKNOWN' },
-  NO_DATA:  { icon: CircleDashed,  dot: 'bg-orange-400',  bg: 'bg-orange-100',  text: 'text-orange-800',  color: 'text-orange-500',  border: 'border-orange-300',  label: 'NO DATA' },
+  OK:       { icon: CheckCircle,   dot: 'bg-emerald-500', bg: 'bg-emerald-100 dark:bg-emerald-900/40', text: 'text-emerald-800 dark:text-emerald-300', color: 'text-emerald-500', border: 'border-emerald-300 dark:border-emerald-800', label: 'OK' },
+  WARNING:  { icon: AlertTriangle, dot: 'bg-amber-400',   bg: 'bg-amber-100 dark:bg-amber-900/40',     text: 'text-amber-800 dark:text-amber-300',     color: 'text-amber-500',   border: 'border-amber-300 dark:border-amber-800',   label: 'WARNING' },
+  CRITICAL: { icon: XCircle,       dot: 'bg-red-500',     bg: 'bg-red-100 dark:bg-red-900/40',         text: 'text-red-800 dark:text-red-300',         color: 'text-red-500',     border: 'border-red-300 dark:border-red-800',       label: 'CRITICAL' },
+  UNKNOWN:  { icon: HelpCircle,    dot: 'bg-gray-400',    bg: 'bg-gray-100 dark:bg-gray-700',          text: 'text-gray-700 dark:text-gray-300',       color: 'text-gray-400',    border: 'border-gray-300 dark:border-gray-600',    label: 'UNKNOWN' },
+  NO_DATA:  { icon: CircleDashed,  dot: 'bg-orange-400',  bg: 'bg-orange-100 dark:bg-orange-900/40',   text: 'text-orange-800 dark:text-orange-300',   color: 'text-orange-500',  border: 'border-orange-300 dark:border-orange-800', label: 'NO DATA' },
 }
 
 export function getStatusConfig(status: string): StatusDef {
