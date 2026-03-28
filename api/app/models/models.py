@@ -71,7 +71,7 @@ class User(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=True)
     email = Column(String(255), nullable=False, unique=True)
-    password_hash = Column(String(255), nullable=False)
+    password_hash = Column(String(255), nullable=True)
     display_name = Column(String(255), nullable=False)
     role = Column(UserRoleEnum, nullable=False, default="tenant_viewer")
     tenant_access = Column(String(20), nullable=False, default="selected")  # 'all' or 'selected'
@@ -85,6 +85,9 @@ class User(Base):
     two_fa_attempts = Column(Integer, nullable=False, default=0)
     two_fa_lockout_until = Column(DateTime(timezone=True), nullable=True)
     default_filter_id = Column(UUID(as_uuid=True), nullable=True)
+    auth_source = Column(String(20), nullable=False, default="local")  # local, oidc, saml, ldap
+    external_id = Column(Text, nullable=True)  # sub (OIDC), NameID (SAML), DN (LDAP)
+    idp_config_id = Column(UUID(as_uuid=True), nullable=True)  # which IdP config was used
     created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 

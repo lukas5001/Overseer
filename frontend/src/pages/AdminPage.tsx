@@ -2,14 +2,14 @@ import { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   ShieldAlert, Activity, Users, Download, Upload, FileText,
-  Plus, X, Check, AlertCircle,
+  Plus, X, Check, AlertCircle, KeyRound, Trash2, Pencil,
 } from 'lucide-react'
 import clsx from 'clsx'
 import { format } from 'date-fns'
 import { api } from '../api/client'
-import type { User, AuditLog, UserRole } from '../types'
+import type { User, AuditLog, UserRole, Tenant } from '../types'
 
-type Tab = 'system' | 'users' | 'backup' | 'audit'
+type Tab = 'system' | 'users' | 'sso' | 'backup' | 'audit'
 
 // ── System Tab ───────────────────────────────────────────────────────────────
 
@@ -305,6 +305,363 @@ function AuditTab() {
   )
 }
 
+// ── SSO Tab ─────────────────────────────────────────────────────────────────
+
+interface IdpConfig {
+  id: string
+  tenant_id: string
+  name: string
+  auth_type: 'oidc' | 'saml' | 'ldap'
+  email_domains: string[]
+  oidc_discovery_url?: string
+  oidc_client_id?: string
+  saml_metadata_url?: string
+  saml_entity_id?: string
+  ldap_url?: string
+  ldap_base_dn?: string
+  ldap_bind_dn?: string
+  ldap_user_filter?: string
+  ldap_group_attribute?: string
+  role_mapping?: Record<string, string>
+  jit_provisioning: boolean
+  allow_password_fallback: boolean
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+function SsoTab() {
+  const qc = useQueryClient()
+  const [showModal, setShowModal] = useState(false)
+  const [editing, setEditing] = useState<IdpConfig | null>(null)
+
+  const { data: configs = [], isLoading } = useQuery<IdpConfig[]>({
+    queryKey: ['idp-configs'],
+    queryFn: () => api.get('/api/v1/sso/idp-configs').then(r => r.data).catch(() => []),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => api.delete(`/api/v1/sso/idp-configs/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['idp-configs'] }),
+  })
+
+  const toggleActive = useMutation({
+    mutationFn: ({ id, is_active }: { id: string; is_active: boolean }) =>
+      api.patch(`/api/v1/sso/idp-configs/${id}`, { is_active }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['idp-configs'] }),
+  })
+
+  const authTypeLabel: Record<string, string> = { oidc: 'OIDC', saml: 'SAML', ldap: 'LDAP' }
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <p className="text-sm text-gray-500">Identity Provider Konfigurationen für SSO</p>
+        <button onClick={() => { setEditing(null); setShowModal(true) }}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-overseer-600 text-white text-sm font-medium rounded-lg hover:bg-overseer-700">
+          <Plus className="w-4 h-4" /> Neuer IdP
+        </button>
+      </div>
+
+      {showModal && <IdpModal config={editing} onClose={() => { setShowModal(false); setEditing(null) }} />}
+
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        {isLoading ? <div className="p-8 text-center text-gray-400">Lade…</div> : configs.length === 0 ? (
+          <div className="p-8 text-center text-gray-400 text-sm">Keine IdP-Konfigurationen vorhanden.</div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
+              <tr>
+                <th className="px-6 py-3 text-left">Name</th>
+                <th className="px-6 py-3 text-left">Typ</th>
+                <th className="px-6 py-3 text-left">E-Mail-Domains</th>
+                <th className="px-6 py-3 text-center">JIT</th>
+                <th className="px-6 py-3 text-center">Status</th>
+                <th className="px-6 py-3 text-right">Aktionen</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {configs.map(c => (
+                <tr key={c.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-3 font-medium text-gray-900">{c.name}</td>
+                  <td className="px-6 py-3">
+                    <span className={clsx('px-2 py-0.5 rounded text-xs font-medium',
+                      c.auth_type === 'oidc' ? 'bg-blue-100 text-blue-700' :
+                      c.auth_type === 'saml' ? 'bg-purple-100 text-purple-700' :
+                      'bg-amber-100 text-amber-700')}>
+                      {authTypeLabel[c.auth_type] || c.auth_type}
+                    </span>
+                  </td>
+                  <td className="px-6 py-3 text-gray-500 text-xs">
+                    {c.email_domains?.join(', ') || '–'}
+                  </td>
+                  <td className="px-6 py-3 text-center">
+                    {c.jit_provisioning ? <Check className="w-4 h-4 text-emerald-500 mx-auto" /> : <X className="w-4 h-4 text-gray-300 mx-auto" />}
+                  </td>
+                  <td className="px-6 py-3 text-center">
+                    <button onClick={() => toggleActive.mutate({ id: c.id, is_active: !c.is_active })}
+                      className={clsx('px-2 py-0.5 rounded text-xs font-medium cursor-pointer',
+                        c.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700')}>
+                      {c.is_active ? 'Aktiv' : 'Inaktiv'}
+                    </button>
+                  </td>
+                  <td className="px-6 py-3 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <button onClick={() => { setEditing(c); setShowModal(true) }}
+                        className="p-1 text-gray-400 hover:text-overseer-600" title="Bearbeiten">
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => { if (confirm('IdP-Konfiguration löschen?')) deleteMutation.mutate(c.id) }}
+                        className="p-1 text-gray-400 hover:text-red-600" title="Löschen">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function IdpModal({ config, onClose }: { config: IdpConfig | null; onClose: () => void }) {
+  const qc = useQueryClient()
+  const isEdit = !!config
+  const [authType, setAuthType] = useState<string>(config?.auth_type || 'oidc')
+  const [name, setName] = useState(config?.name || 'SSO')
+  const [tenantId, setTenantId] = useState(config?.tenant_id || '')
+  const [emailDomains, setEmailDomains] = useState(config?.email_domains?.join(', ') || '')
+  const [jitProvisioning, setJitProvisioning] = useState(config?.jit_provisioning ?? true)
+  const [allowPasswordFallback, setAllowPasswordFallback] = useState(config?.allow_password_fallback ?? false)
+
+  // OIDC
+  const [oidcDiscoveryUrl, setOidcDiscoveryUrl] = useState(config?.oidc_discovery_url || '')
+  const [oidcClientId, setOidcClientId] = useState(config?.oidc_client_id || '')
+  const [oidcClientSecret, setOidcClientSecret] = useState('')
+
+  // SAML
+  const [samlMetadataUrl, setSamlMetadataUrl] = useState(config?.saml_metadata_url || '')
+  const [samlEntityId, setSamlEntityId] = useState(config?.saml_entity_id || '')
+
+  // LDAP
+  const [ldapUrl, setLdapUrl] = useState(config?.ldap_url || '')
+  const [ldapBaseDn, setLdapBaseDn] = useState(config?.ldap_base_dn || '')
+  const [ldapBindDn, setLdapBindDn] = useState(config?.ldap_bind_dn || '')
+  const [ldapBindPassword, setLdapBindPassword] = useState('')
+  const [ldapUserFilter, setLdapUserFilter] = useState(config?.ldap_user_filter || '(&(objectClass=user)(mail={email}))')
+  const [ldapGroupAttribute, setLdapGroupAttribute] = useState(config?.ldap_group_attribute || 'memberOf')
+
+  const [error, setError] = useState<string | null>(null)
+
+  const { data: tenants = [] } = useQuery<Tenant[]>({
+    queryKey: ['tenants'],
+    queryFn: () => api.get('/api/v1/tenants/').then(r => r.data).catch(() => []),
+  })
+
+  const createMutation = useMutation({
+    mutationFn: (body: Record<string, unknown>) => api.post('/api/v1/sso/idp-configs', body),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['idp-configs'] }); onClose() },
+    onError: (e: any) => setError(e.response?.data?.detail ?? 'Fehler'),
+  })
+
+  const updateMutation = useMutation({
+    mutationFn: (body: Record<string, unknown>) => api.patch(`/api/v1/sso/idp-configs/${config!.id}`, body),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['idp-configs'] }); onClose() },
+    onError: (e: any) => setError(e.response?.data?.detail ?? 'Fehler'),
+  })
+
+  const handleSubmit = () => {
+    const domains = emailDomains.split(',').map(d => d.trim()).filter(Boolean)
+    const body: Record<string, unknown> = {
+      name,
+      email_domains: domains,
+      jit_provisioning: jitProvisioning,
+      allow_password_fallback: allowPasswordFallback,
+    }
+
+    if (!isEdit) {
+      body.tenant_id = tenantId
+      body.auth_type = authType
+    }
+
+    if (authType === 'oidc') {
+      body.oidc_discovery_url = oidcDiscoveryUrl || null
+      body.oidc_client_id = oidcClientId || null
+      if (oidcClientSecret) body.oidc_client_secret = oidcClientSecret
+    } else if (authType === 'saml') {
+      body.saml_metadata_url = samlMetadataUrl || null
+      body.saml_entity_id = samlEntityId || null
+    } else if (authType === 'ldap') {
+      body.ldap_url = ldapUrl || null
+      body.ldap_base_dn = ldapBaseDn || null
+      body.ldap_bind_dn = ldapBindDn || null
+      if (ldapBindPassword) body.ldap_bind_password = ldapBindPassword
+      body.ldap_user_filter = ldapUserFilter || null
+      body.ldap_group_attribute = ldapGroupAttribute || null
+    }
+
+    if (isEdit) {
+      updateMutation.mutate(body)
+    } else {
+      createMutation.mutate(body)
+    }
+  }
+
+  const pending = createMutation.isPending || updateMutation.isPending
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 overflow-y-auto py-8">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 p-6">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-lg font-semibold text-gray-900">{isEdit ? 'IdP bearbeiten' : 'Neuer IdP'}</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+        </div>
+        <div className="space-y-4 max-h-[65vh] overflow-y-auto pr-1">
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Name</label>
+            <input type="text" value={name} onChange={e => setName(e.target.value)}
+              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+          </div>
+
+          {!isEdit && (
+            <>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Tenant</label>
+                <select value={tenantId} onChange={e => setTenantId(e.target.value)}
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500">
+                  <option value="">– Auswählen –</option>
+                  {tenants.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Auth-Typ</label>
+                <select value={authType} onChange={e => setAuthType(e.target.value)}
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500">
+                  <option value="oidc">OIDC (OpenID Connect)</option>
+                  <option value="saml">SAML 2.0</option>
+                  <option value="ldap">LDAP / Active Directory</option>
+                </select>
+              </div>
+            </>
+          )}
+
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">E-Mail-Domains (kommagetrennt)</label>
+            <input type="text" value={emailDomains} onChange={e => setEmailDomains(e.target.value)}
+              placeholder="example.com, corp.example.com"
+              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+          </div>
+
+          {/* OIDC fields */}
+          {authType === 'oidc' && (
+            <>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Discovery URL</label>
+                <input type="url" value={oidcDiscoveryUrl} onChange={e => setOidcDiscoveryUrl(e.target.value)}
+                  placeholder="https://login.microsoftonline.com/.../.well-known/openid-configuration"
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Client ID</label>
+                <input type="text" value={oidcClientId} onChange={e => setOidcClientId(e.target.value)}
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Client Secret {isEdit && '(leer = unverändert)'}</label>
+                <input type="password" value={oidcClientSecret} onChange={e => setOidcClientSecret(e.target.value)}
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+              </div>
+            </>
+          )}
+
+          {/* SAML fields */}
+          {authType === 'saml' && (
+            <>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Metadata URL</label>
+                <input type="url" value={samlMetadataUrl} onChange={e => setSamlMetadataUrl(e.target.value)}
+                  placeholder="https://idp.example.com/metadata.xml"
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Entity ID (SP)</label>
+                <input type="text" value={samlEntityId} onChange={e => setSamlEntityId(e.target.value)}
+                  placeholder="https://overseer.dailycrust.it/api/v1/sso/saml/acs"
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+              </div>
+            </>
+          )}
+
+          {/* LDAP fields */}
+          {authType === 'ldap' && (
+            <>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">LDAP URL</label>
+                <input type="text" value={ldapUrl} onChange={e => setLdapUrl(e.target.value)}
+                  placeholder="ldaps://ldap.example.com:636"
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Base DN</label>
+                <input type="text" value={ldapBaseDn} onChange={e => setLdapBaseDn(e.target.value)}
+                  placeholder="DC=example,DC=com"
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Bind DN (Service Account)</label>
+                <input type="text" value={ldapBindDn} onChange={e => setLdapBindDn(e.target.value)}
+                  placeholder="CN=svc-overseer,OU=ServiceAccounts,DC=example,DC=com"
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Bind Password {isEdit && '(leer = unverändert)'}</label>
+                <input type="password" value={ldapBindPassword} onChange={e => setLdapBindPassword(e.target.value)}
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">User Filter</label>
+                <input type="text" value={ldapUserFilter} onChange={e => setLdapUserFilter(e.target.value)}
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500 font-mono text-xs" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Group Attribute</label>
+                <input type="text" value={ldapGroupAttribute} onChange={e => setLdapGroupAttribute(e.target.value)}
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+              </div>
+            </>
+          )}
+
+          {/* Common settings */}
+          <div className="flex items-center gap-4 pt-2">
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input type="checkbox" checked={jitProvisioning} onChange={e => setJitProvisioning(e.target.checked)}
+                className="rounded border-gray-300 text-overseer-600 focus:ring-overseer-500" />
+              JIT-Provisioning
+            </label>
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input type="checkbox" checked={allowPasswordFallback} onChange={e => setAllowPasswordFallback(e.target.checked)}
+                className="rounded border-gray-300 text-overseer-600 focus:ring-overseer-500" />
+              Passwort-Fallback
+            </label>
+          </div>
+
+          {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}
+        </div>
+        <div className="flex gap-3 mt-6">
+          <button onClick={onClose} className="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">Abbrechen</button>
+          <button onClick={handleSubmit} disabled={pending || (!isEdit && !tenantId)}
+            className="flex-1 py-2 rounded-lg bg-overseer-600 text-white text-sm font-medium hover:bg-overseer-700 disabled:opacity-60">
+            {pending ? 'Speichern…' : isEdit ? 'Speichern' : 'IdP erstellen'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Main Page ────────────────────────────────────────────────────────────────
 
 export default function AdminPage() {
@@ -313,6 +670,7 @@ export default function AdminPage() {
   const tabs: { key: Tab; label: string; icon: React.ElementType }[] = [
     { key: 'system', label: 'System', icon: Activity },
     { key: 'users', label: 'Users', icon: Users },
+    { key: 'sso', label: 'SSO', icon: KeyRound },
     { key: 'backup', label: 'Backup', icon: Download },
     { key: 'audit', label: 'Audit-Log', icon: FileText },
   ]
@@ -339,6 +697,7 @@ export default function AdminPage() {
 
       {activeTab === 'system' && <SystemTab />}
       {activeTab === 'users' && <UsersTab />}
+      {activeTab === 'sso' && <SsoTab />}
       {activeTab === 'backup' && <BackupTab />}
       {activeTab === 'audit' && <AuditTab />}
     </div>

@@ -63,12 +63,53 @@ async def _build_full_token(user: User, db: AsyncSession) -> str:
 
 @router.post("/login", response_model=LoginResponse)
 async def login(req: LoginRequest, db: AsyncSession = Depends(get_db)):
+    # Check if email domain has an LDAP IdP configured
+    email = req.email.strip().lower()
+    if "@" in email:
+        domain = email.split("@", 1)[1]
+        idp_result = await db.execute(
+            text("""
+                SELECT * FROM tenant_idp_config
+                WHERE :domain = ANY(email_domains) AND is_active = true AND auth_type = 'ldap'
+                LIMIT 1
+            """),
+            {"domain": domain},
+        )
+        ldap_idp = idp_result.fetchone()
+        if ldap_idp:
+            config = dict(ldap_idp._mapping)
+            from api.app.routers.sso import ldap_authenticate
+            ldap_user = await ldap_authenticate(email, req.password, config, db)
+            if ldap_user:
+                token = await _build_full_token(ldap_user, db)
+                await write_audit(db, user={"sub": str(ldap_user.id), "email": email}, action="login",
+                                  detail={"method": "ldap", "idp": config.get("name", "")})
+                await db.commit()
+                return LoginResponse(
+                    access_token=token,
+                    token_type="bearer",
+                    expires_in=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+                )
+            # LDAP auth failed — check if password fallback is allowed
+            if not config.get("allow_password_fallback", False):
+                await write_audit(db, user={"sub": None, "email": email}, action="login_failed",
+                                  detail={"reason": "ldap_auth_failed"})
+                await db.commit()
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+
     result = await db.execute(select(User).where(User.email == req.email, User.active == True))
     user = result.scalar_one_or_none()
 
     if not user:
         await write_audit(db, user={"sub": None, "email": req.email}, action="login_failed",
                           detail={"reason": "unknown_email", "email": req.email})
+        await db.commit()
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+
+    # SSO-only users (no local password) cannot log in with password
+    if not user.password_hash:
+        await write_audit(db, user={"sub": str(user.id), "email": user.email}, action="login_failed",
+                          detail={"reason": "sso_only_user"})
         await db.commit()
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
@@ -234,6 +275,7 @@ async def me(
         "tenant_id": str(u.tenant_id) if u.tenant_id else None,
         "tenant_access": getattr(u, "tenant_access", "selected"),
         "two_fa_method": u.two_fa_method or "none",
+        "auth_source": getattr(u, "auth_source", "local"),
         "default_filter_id": default_filter_id,
         "show_inactive": show_inactive,
     }

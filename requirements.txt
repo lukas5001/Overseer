@@ -16,6 +16,10 @@ pysnmp>=6.0.0
 alembic==1.13.0
 zstandard==0.23.0
 
+# SSO (OIDC + SAML + LDAP)
+authlib==1.4.1
+ldap3==2.9.1
+
 # PDF Report Engine
 weasyprint==62.3
 jinja2==3.1.4
