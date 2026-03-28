@@ -304,7 +304,7 @@ async def ingest_logs(request: Request):
 
     # Bulk insert into TimescaleDB
     tenant_id = tenant_info["tenant_id"]
-    host_id = int(tenant_info["host_id"])
+    host_id = tenant_info["host_id"]  # UUID string
 
     values_parts = []
     params = {}

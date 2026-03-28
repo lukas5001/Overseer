@@ -15,7 +15,7 @@ router = APIRouter()
 
 class LogSearchRequest(BaseModel):
     query: str | None = None
-    host_ids: list[int] | None = None
+    host_ids: list[str] | None = None
     services: list[str] | None = None
     severity_min: int | None = None  # 0=emergency..7=debug — min means "at least this severe" (lower number = more severe)
     severity_max: int | None = None
@@ -128,7 +128,7 @@ async def search_logs(
 
 @router.get("/stats")
 async def log_stats(
-    host_id: int | None = None,
+    host_id: str | None = None,
     hours: int = 24,
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(get_current_user),
@@ -194,7 +194,7 @@ async def log_stats(
 # ==================== Log Sources CRUD ====================
 
 class LogSourceCreate(BaseModel):
-    host_id: int
+    host_id: str           # UUID
     source_type: str       # 'file', 'journald', 'windows_eventlog'
     config: dict = {}
     enabled: bool = True

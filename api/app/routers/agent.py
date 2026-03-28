@@ -379,7 +379,7 @@ async def get_agent_config(
         text("""
             SELECT source_type, config
             FROM log_sources
-            WHERE host_id = CAST(:host_id AS integer)
+            WHERE host_id = CAST(:host_id AS uuid)
               AND tenant_id = CAST(:tenant_id AS uuid)
               AND enabled = true
         """),
