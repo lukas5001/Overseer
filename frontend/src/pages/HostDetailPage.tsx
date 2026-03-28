@@ -2579,6 +2579,7 @@ export default function HostDetailPage() {
                     </td>
                     <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                       <div className="flex items-center gap-2 justify-end">
+                        {meta?.check_mode === 'active' && (
                         <button
                           onClick={() => runCheckNow(svc.service_id)}
                           disabled={checkingNow[svc.service_id] === 'pending'}
@@ -2593,6 +2594,7 @@ export default function HostDetailPage() {
                         >
                           <Play className="w-4 h-4" />
                         </button>
+                        )}
                         {meta && (
                           <button
                             onClick={() => toggleServiceActiveMutation.mutate({ id: svc.service_id, active: !meta.active })}
