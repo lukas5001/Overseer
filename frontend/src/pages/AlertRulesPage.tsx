@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Bell, Plus, X, Trash2, ChevronUp, ChevronDown, Zap, TestTube2, Layers } from 'lucide-react'
+import { Bell, Plus, X, Trash2, ChevronUp, ChevronDown, Zap, TestTube2, Layers, FileText } from 'lucide-react'
 import clsx from 'clsx'
 import { api } from '../api/client'
 import type {
@@ -377,6 +377,246 @@ function GroupingSettingsPanel({ tenants }: { tenants: Tenant[] }) {
   )
 }
 
+// ── Log Alert Rule Modal ────────────────────────────────────────────────────
+
+interface LogAlertRule {
+  id: string
+  tenant_id: string
+  name: string
+  enabled: boolean
+  pattern: string
+  is_regex: boolean
+  host_ids: string[]
+  services: string[]
+  severity_min: number | null
+  condition_type: string
+  threshold_count: number
+  time_window_seconds: number
+  alert_severity: string
+  notification_channels: string[]
+  created_at: string
+  updated_at: string
+}
+
+const CONDITION_TYPES = [
+  { value: 'any_match', label: 'Jeder Treffer', desc: 'Sofort benachrichtigen beim ersten Treffer' },
+  { value: 'threshold', label: 'Schwellwert', desc: 'Benachrichtigen wenn >N Treffer in X Minuten' },
+  { value: 'absence', label: 'Abwesenheit', desc: 'Benachrichtigen wenn Pattern NICHT in X Minuten erscheint' },
+]
+
+interface LogRuleModalProps {
+  onClose: () => void
+  channels: NotificationChannel[]
+  existing?: LogAlertRule
+}
+
+function LogRuleModal({ onClose, channels, existing }: LogRuleModalProps) {
+  const qc = useQueryClient()
+  const [name, setName] = useState(existing?.name ?? '')
+  const [pattern, setPattern] = useState(existing?.pattern ?? '')
+  const [isRegex, setIsRegex] = useState(existing?.is_regex ?? false)
+  const [conditionType, setConditionType] = useState(existing?.condition_type ?? 'any_match')
+  const [thresholdCount, setThresholdCount] = useState(existing?.threshold_count ?? 10)
+  const [timeWindow, setTimeWindow] = useState(existing?.time_window_seconds ?? 300)
+  const [alertSeverity, setAlertSeverity] = useState(existing?.alert_severity ?? 'CRITICAL')
+  const [selectedChannels, setSelectedChannels] = useState<string[]>(existing?.notification_channels ?? [])
+  const [hostFilter, setHostFilter] = useState(existing?.host_ids?.join(', ') ?? '')
+  const [serviceFilter, setServiceFilter] = useState(existing?.services?.join(', ') ?? '')
+  const [severityMin, setSeverityMin] = useState<number | null>(existing?.severity_min ?? null)
+  const [error, setError] = useState<string | null>(null)
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const body = {
+        name,
+        pattern,
+        is_regex: isRegex,
+        condition_type: conditionType,
+        threshold_count: thresholdCount,
+        time_window_seconds: timeWindow,
+        alert_severity: alertSeverity,
+        notification_channels: selectedChannels,
+        host_ids: hostFilter.split(',').map(s => s.trim()).filter(Boolean),
+        services: serviceFilter.split(',').map(s => s.trim()).filter(Boolean),
+        severity_min: severityMin,
+      }
+      if (existing) {
+        return api.patch(`/api/v1/logs/alert-rules/${existing.id}`, body).then(r => r.data)
+      }
+      return api.post('/api/v1/logs/alert-rules', body).then(r => r.data)
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['log-alert-rules'] }); onClose() },
+    onError: (e: any) => setError(e.response?.data?.detail ?? 'Fehler'),
+  })
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-xl mx-4 p-6 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2">
+            <FileText className="w-5 h-5 text-overseer-600" />
+            <h2 className="text-lg font-semibold text-gray-900">{existing ? 'Log-Regel bearbeiten' : 'Neue Log-Alert-Regel'}</h2>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+        </div>
+
+        <div className="space-y-4">
+          {/* Name */}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Name *</label>
+            <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="z.B. OOM Detector"
+              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+          </div>
+
+          {/* Pattern */}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Pattern *</label>
+            <input type="text" value={pattern} onChange={e => setPattern(e.target.value)}
+              placeholder={isRegex ? 'error.*connection.*refused' : 'OutOfMemoryError'}
+              className="w-full text-sm font-mono border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+            <label className="flex items-center gap-2 mt-1.5 text-xs text-gray-500 cursor-pointer">
+              <input type="checkbox" checked={isRegex} onChange={e => setIsRegex(e.target.checked)}
+                className="rounded border-gray-300 text-overseer-600" />
+              Regex
+            </label>
+          </div>
+
+          {/* Condition Type */}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-2">Bedingung</label>
+            <div className="space-y-1.5">
+              {CONDITION_TYPES.map(ct => (
+                <button key={ct.value} onClick={() => setConditionType(ct.value)}
+                  className={clsx('w-full text-left px-3 py-2 rounded-lg text-sm border transition-colors',
+                    conditionType === ct.value
+                      ? 'border-overseer-500 bg-overseer-50 text-overseer-700'
+                      : 'border-gray-200 text-gray-600 hover:border-gray-300')}>
+                  <div className="font-medium">{ct.label}</div>
+                  <div className="text-xs text-gray-500">{ct.desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Threshold specific */}
+          {conditionType === 'threshold' && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Schwellwert (Treffer)</label>
+                <input type="number" min={1} value={thresholdCount} onChange={e => setThresholdCount(parseInt(e.target.value) || 1)}
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Zeitfenster</label>
+                <select value={timeWindow} onChange={e => setTimeWindow(parseInt(e.target.value))}
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500">
+                  <option value={60}>1 Minute</option>
+                  <option value={300}>5 Minuten</option>
+                  <option value={600}>10 Minuten</option>
+                  <option value={1800}>30 Minuten</option>
+                  <option value={3600}>1 Stunde</option>
+                </select>
+              </div>
+            </div>
+          )}
+
+          {/* Absence specific */}
+          {conditionType === 'absence' && (
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Erwartetes Intervall</label>
+              <select value={timeWindow} onChange={e => setTimeWindow(parseInt(e.target.value))}
+                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500">
+                <option value={300}>5 Minuten</option>
+                <option value={600}>10 Minuten</option>
+                <option value={1800}>30 Minuten</option>
+                <option value={3600}>1 Stunde</option>
+                <option value={86400}>24 Stunden</option>
+              </select>
+              <p className="text-xs text-gray-400 mt-1">Alert wenn das Pattern nicht innerhalb dieses Zeitraums erscheint.</p>
+            </div>
+          )}
+
+          {/* Alert Severity */}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-2">Alert-Severity</label>
+            <div className="flex gap-2">
+              <button onClick={() => setAlertSeverity('CRITICAL')}
+                className={clsx('px-3 py-1.5 rounded text-xs font-semibold',
+                  alertSeverity === 'CRITICAL' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-400')}>
+                Critical
+              </button>
+              <button onClick={() => setAlertSeverity('WARNING')}
+                className={clsx('px-3 py-1.5 rounded text-xs font-semibold',
+                  alertSeverity === 'WARNING' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-400')}>
+                Warning
+              </button>
+            </div>
+          </div>
+
+          {/* Scope: Hosts */}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Host-IDs (kommagetrennt, leer = alle)</label>
+            <input type="text" value={hostFilter} onChange={e => setHostFilter(e.target.value)}
+              placeholder="Leer = alle Hosts"
+              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+          </div>
+
+          {/* Scope: Services */}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Services (kommagetrennt, leer = alle)</label>
+            <input type="text" value={serviceFilter} onChange={e => setServiceFilter(e.target.value)}
+              placeholder="z.B. nginx, postgresql"
+              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500" />
+          </div>
+
+          {/* Min Severity Filter */}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Mindest-Log-Severity</label>
+            <select value={severityMin ?? ''} onChange={e => setSeverityMin(e.target.value ? parseInt(e.target.value) : null)}
+              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-overseer-500">
+              <option value="">Alle Severities</option>
+              <option value="0">Emergency (0)</option>
+              <option value="1">Alert (1)</option>
+              <option value="2">Critical (2)</option>
+              <option value="3">Error (3)</option>
+              <option value="4">Warning (4)</option>
+              <option value="5">Notice (5)</option>
+              <option value="6">Info (6)</option>
+            </select>
+          </div>
+
+          {/* Notification Channels */}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-2">Benachrichtigungskanäle</label>
+            <div className="space-y-1">
+              {channels.filter(c => c.active).map(ch => (
+                <label key={ch.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input type="checkbox" checked={selectedChannels.includes(ch.id)}
+                    onChange={() => setSelectedChannels(prev => prev.includes(ch.id) ? prev.filter(x => x !== ch.id) : [...prev, ch.id])}
+                    className="rounded border-gray-300" />
+                  <span className="text-gray-700">{ch.name}</span>
+                  <span className="text-xs text-gray-400">({ch.channel_type})</span>
+                </label>
+              ))}
+              {channels.length === 0 && <p className="text-xs text-gray-400">Keine Kanäle konfiguriert</p>}
+            </div>
+          </div>
+
+          {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}
+        </div>
+
+        <div className="flex gap-3 mt-6">
+          <button onClick={onClose} className="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">Abbrechen</button>
+          <button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !name || !pattern}
+            className="flex-1 py-2 rounded-lg bg-overseer-600 text-white text-sm font-medium hover:bg-overseer-700 disabled:opacity-60">
+            {saveMutation.isPending ? 'Speichern…' : 'Speichern'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Main Page ────────────────────────────────────────────────────────────────
 
 export default function AlertRulesPage() {
@@ -384,6 +624,9 @@ export default function AlertRulesPage() {
   const [showModal, setShowModal] = useState(false)
   const [editRule, setEditRule] = useState<AlertRule | undefined>()
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
+  const [showLogModal, setShowLogModal] = useState(false)
+  const [editLogRule, setEditLogRule] = useState<LogAlertRule | undefined>()
+  const [deleteLogTarget, setDeleteLogTarget] = useState<string | null>(null)
 
   const { data: rules = [], isLoading } = useQuery<AlertRule[]>({
     queryKey: ['alert-rules'],
@@ -413,6 +656,23 @@ export default function AlertRulesPage() {
 
   const testRule = useMutation({
     mutationFn: (id: string) => api.post(`/api/v1/alert-rules/${id}/test`),
+  })
+
+  // Log Alert Rules
+  const { data: logRules = [] } = useQuery<LogAlertRule[]>({
+    queryKey: ['log-alert-rules'],
+    queryFn: () => api.get('/api/v1/logs/alert-rules').then(r => r.data),
+  })
+
+  const toggleLogEnabled = useMutation({
+    mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) =>
+      api.patch(`/api/v1/logs/alert-rules/${id}`, { enabled }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['log-alert-rules'] }),
+  })
+
+  const deleteLogRule = useMutation({
+    mutationFn: (id: string) => api.delete(`/api/v1/logs/alert-rules/${id}`),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['log-alert-rules'] }); setDeleteLogTarget(null) },
   })
 
   const tenantNames: Record<string, string> = {}
@@ -517,6 +777,103 @@ export default function AlertRulesPage() {
         loading={deleteRule.isPending}
         onConfirm={() => deleteTarget && deleteRule.mutate(deleteTarget)}
         onCancel={() => setDeleteTarget(null)}
+      />
+
+      {/* ── Log Alert Rules Section ── */}
+      {(showLogModal || editLogRule) && (
+        <LogRuleModal
+          onClose={() => { setShowLogModal(false); setEditLogRule(undefined) }}
+          channels={channels}
+          existing={editLogRule}
+        />
+      )}
+
+      <div className="flex items-center justify-between mt-10 mb-4">
+        <div className="flex items-center gap-3">
+          <FileText className="w-6 h-6 text-overseer-600" />
+          <h2 className="text-xl font-bold text-gray-900">Log-Alert-Regeln</h2>
+          <span className="text-sm text-gray-500">{logRules.length} Regeln</span>
+        </div>
+        <button onClick={() => setShowLogModal(true)}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-overseer-600 text-white text-sm font-medium rounded-lg hover:bg-overseer-700">
+          <Plus className="w-4 h-4" /> Neue Log-Regel
+        </button>
+      </div>
+
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
+            <tr>
+              <th className="px-6 py-3 text-left">Name</th>
+              <th className="px-6 py-3 text-left">Pattern</th>
+              <th className="px-6 py-3 text-left">Bedingung</th>
+              <th className="px-6 py-3 text-center">Severity</th>
+              <th className="px-6 py-3 text-center">Kanäle</th>
+              <th className="px-6 py-3 text-center">Aktiv</th>
+              <th className="px-6 py-3 text-right">Aktionen</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {logRules.map(rule => (
+              <tr key={rule.id} className="hover:bg-gray-50">
+                <td className="px-6 py-3 font-medium text-gray-900">{rule.name}</td>
+                <td className="px-6 py-3">
+                  <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded font-mono text-gray-700">
+                    {rule.pattern.length > 40 ? rule.pattern.slice(0, 40) + '…' : rule.pattern}
+                  </code>
+                  {rule.is_regex && <span className="ml-1 text-[10px] text-purple-600 font-medium">REGEX</span>}
+                </td>
+                <td className="px-6 py-3 text-xs text-gray-600">
+                  {rule.condition_type === 'any_match' && 'Jeder Treffer'}
+                  {rule.condition_type === 'threshold' && `>${rule.threshold_count} in ${Math.floor(rule.time_window_seconds / 60)}min`}
+                  {rule.condition_type === 'absence' && `Nicht in ${Math.floor(rule.time_window_seconds / 60)}min`}
+                </td>
+                <td className="px-6 py-3 text-center">
+                  <span className={clsx('px-1.5 py-0.5 rounded text-xs font-semibold',
+                    rule.alert_severity === 'CRITICAL' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800')}>
+                    {rule.alert_severity}
+                  </span>
+                </td>
+                <td className="px-6 py-3 text-center text-gray-500">{rule.notification_channels.length}</td>
+                <td className="px-6 py-3 text-center">
+                  <button
+                    onClick={() => toggleLogEnabled.mutate({ id: rule.id, enabled: !rule.enabled })}
+                    className={clsx('w-10 h-5 rounded-full relative transition-colors',
+                      rule.enabled ? 'bg-overseer-600' : 'bg-gray-300')}>
+                    <span className={clsx('absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform',
+                      rule.enabled ? 'left-5' : 'left-0.5')} />
+                  </button>
+                </td>
+                <td className="px-6 py-3 text-right">
+                  <div className="flex items-center gap-2 justify-end">
+                    <button onClick={() => setEditLogRule(rule)} title="Bearbeiten" className="text-gray-400 hover:text-overseer-600">
+                      <Zap className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => setDeleteLogTarget(rule.id)} title="Löschen" className="text-gray-400 hover:text-red-500">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {logRules.length === 0 && (
+          <div className="p-8 text-center text-gray-400 text-sm">
+            Keine Log-Alert-Regeln konfiguriert. Log-Alerts überwachen Logdaten auf Muster und benachrichtigen bei Treffern.
+          </div>
+        )}
+      </div>
+
+      <ConfirmDialog
+        open={!!deleteLogTarget}
+        title="Log-Regel löschen"
+        message="Soll diese Log-Alert-Regel wirklich gelöscht werden?"
+        confirmLabel="Löschen"
+        variant="danger"
+        loading={deleteLogRule.isPending}
+        onConfirm={() => deleteLogTarget && deleteLogRule.mutate(deleteLogTarget)}
+        onCancel={() => setDeleteLogTarget(null)}
       />
     </div>
   )

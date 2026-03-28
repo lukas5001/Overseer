@@ -432,3 +432,225 @@ async def delete_log_source(
     await db.commit()
     if not result.fetchone():
         raise HTTPException(status_code=404, detail="Log source not found")
+
+
+# ==================== Log Alert Rules CRUD ====================
+
+class LogAlertRuleCreate(BaseModel):
+    name: str
+    pattern: str
+    is_regex: bool = False
+    host_ids: list[str] = []
+    services: list[str] = []
+    severity_min: int | None = None
+    condition_type: str = "any_match"
+    threshold_count: int = 1
+    time_window_seconds: int = 300
+    alert_severity: str = "CRITICAL"
+    notification_channels: list[str] = []
+    enabled: bool = True
+
+
+class LogAlertRuleUpdate(BaseModel):
+    name: str | None = None
+    pattern: str | None = None
+    is_regex: bool | None = None
+    host_ids: list[str] | None = None
+    services: list[str] | None = None
+    severity_min: int | None = None
+    condition_type: str | None = None
+    threshold_count: int | None = None
+    time_window_seconds: int | None = None
+    alert_severity: str | None = None
+    notification_channels: list[str] | None = None
+    enabled: bool | None = None
+
+
+@router.get("/alert-rules")
+async def list_log_alert_rules(
+    db: AsyncSession = Depends(get_db),
+    user: dict = Depends(get_current_user),
+):
+    """List all log alert rules for the tenant."""
+    tenant_id = user.get("tenant_id")
+    if not tenant_id:
+        raise HTTPException(status_code=403, detail="No tenant context")
+
+    result = await db.execute(
+        text("""
+            SELECT id, tenant_id, name, enabled, pattern, is_regex,
+                   host_ids, services, severity_min, condition_type,
+                   threshold_count, time_window_seconds, alert_severity,
+                   notification_channels, created_at, updated_at
+            FROM log_alert_rules
+            WHERE tenant_id = :tenant_id
+            ORDER BY name
+        """),
+        {"tenant_id": tenant_id},
+    )
+    return [dict(row._mapping) for row in result.fetchall()]
+
+
+@router.post("/alert-rules", status_code=201)
+async def create_log_alert_rule(
+    body: LogAlertRuleCreate,
+    db: AsyncSession = Depends(get_db),
+    user: dict = Depends(get_current_user),
+):
+    """Create a new log alert rule."""
+    tenant_id = user.get("tenant_id")
+    if not tenant_id:
+        raise HTTPException(status_code=403, detail="No tenant context")
+
+    if body.condition_type not in ("any_match", "threshold", "absence"):
+        raise HTTPException(status_code=400, detail="Invalid condition_type")
+    if body.alert_severity not in ("WARNING", "CRITICAL"):
+        raise HTTPException(status_code=400, detail="alert_severity must be WARNING or CRITICAL")
+
+    # Validate regex if is_regex
+    if body.is_regex:
+        import re
+        try:
+            re.compile(body.pattern)
+        except re.error as e:
+            raise HTTPException(status_code=400, detail=f"Invalid regex: {e}")
+
+    result = await db.execute(
+        text("""
+            INSERT INTO log_alert_rules
+                (tenant_id, name, pattern, is_regex, host_ids, services, severity_min,
+                 condition_type, threshold_count, time_window_seconds, alert_severity,
+                 notification_channels, enabled)
+            VALUES
+                (:tenant_id, :name, :pattern, :is_regex, :host_ids, :services, :severity_min,
+                 :condition_type, :threshold_count, :time_window_seconds, :alert_severity,
+                 :notification_channels, :enabled)
+            RETURNING id, tenant_id, name, enabled, pattern, is_regex,
+                      host_ids, services, severity_min, condition_type,
+                      threshold_count, time_window_seconds, alert_severity,
+                      notification_channels, created_at, updated_at
+        """),
+        {
+            "tenant_id": tenant_id,
+            "name": body.name,
+            "pattern": body.pattern,
+            "is_regex": body.is_regex,
+            "host_ids": body.host_ids or [],
+            "services": body.services or [],
+            "severity_min": body.severity_min,
+            "condition_type": body.condition_type,
+            "threshold_count": body.threshold_count,
+            "time_window_seconds": body.time_window_seconds,
+            "alert_severity": body.alert_severity,
+            "notification_channels": body.notification_channels or [],
+            "enabled": body.enabled,
+        },
+    )
+    await db.commit()
+    return dict(result.fetchone()._mapping)
+
+
+@router.patch("/alert-rules/{rule_id}")
+async def update_log_alert_rule(
+    rule_id: str,
+    body: LogAlertRuleUpdate,
+    db: AsyncSession = Depends(get_db),
+    user: dict = Depends(get_current_user),
+):
+    """Update a log alert rule."""
+    tenant_id = user.get("tenant_id")
+    if not tenant_id:
+        raise HTTPException(status_code=403, detail="No tenant context")
+
+    updates = []
+    params: dict = {"id": rule_id, "tenant_id": tenant_id}
+
+    if body.name is not None:
+        updates.append("name = :name")
+        params["name"] = body.name
+    if body.pattern is not None:
+        updates.append("pattern = :pattern")
+        params["pattern"] = body.pattern
+    if body.is_regex is not None:
+        updates.append("is_regex = :is_regex")
+        params["is_regex"] = body.is_regex
+        if body.is_regex and body.pattern:
+            import re
+            try:
+                re.compile(body.pattern)
+            except re.error as e:
+                raise HTTPException(status_code=400, detail=f"Invalid regex: {e}")
+    if body.host_ids is not None:
+        updates.append("host_ids = :host_ids")
+        params["host_ids"] = body.host_ids
+    if body.services is not None:
+        updates.append("services = :services")
+        params["services"] = body.services
+    if body.severity_min is not None:
+        updates.append("severity_min = :severity_min")
+        params["severity_min"] = body.severity_min
+    if body.condition_type is not None:
+        if body.condition_type not in ("any_match", "threshold", "absence"):
+            raise HTTPException(status_code=400, detail="Invalid condition_type")
+        updates.append("condition_type = :condition_type")
+        params["condition_type"] = body.condition_type
+    if body.threshold_count is not None:
+        updates.append("threshold_count = :threshold_count")
+        params["threshold_count"] = body.threshold_count
+    if body.time_window_seconds is not None:
+        updates.append("time_window_seconds = :time_window_seconds")
+        params["time_window_seconds"] = body.time_window_seconds
+    if body.alert_severity is not None:
+        if body.alert_severity not in ("WARNING", "CRITICAL"):
+            raise HTTPException(status_code=400, detail="alert_severity must be WARNING or CRITICAL")
+        updates.append("alert_severity = :alert_severity")
+        params["alert_severity"] = body.alert_severity
+    if body.notification_channels is not None:
+        updates.append("notification_channels = :notification_channels")
+        params["notification_channels"] = body.notification_channels
+    if body.enabled is not None:
+        updates.append("enabled = :enabled")
+        params["enabled"] = body.enabled
+
+    if not updates:
+        raise HTTPException(status_code=400, detail="No fields to update")
+
+    updates.append("updated_at = now()")
+    set_clause = ", ".join(updates)
+
+    result = await db.execute(
+        text(f"""
+            UPDATE log_alert_rules SET {set_clause}
+            WHERE id = CAST(:id AS uuid) AND tenant_id = :tenant_id
+            RETURNING id, tenant_id, name, enabled, pattern, is_regex,
+                      host_ids, services, severity_min, condition_type,
+                      threshold_count, time_window_seconds, alert_severity,
+                      notification_channels, created_at, updated_at
+        """),
+        params,
+    )
+    await db.commit()
+    row = result.fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Log alert rule not found")
+    return dict(row._mapping)
+
+
+@router.delete("/alert-rules/{rule_id}", status_code=204)
+async def delete_log_alert_rule(
+    rule_id: str,
+    db: AsyncSession = Depends(get_db),
+    user: dict = Depends(get_current_user),
+):
+    """Delete a log alert rule."""
+    tenant_id = user.get("tenant_id")
+    if not tenant_id:
+        raise HTTPException(status_code=403, detail="No tenant context")
+
+    result = await db.execute(
+        text("DELETE FROM log_alert_rules WHERE id = CAST(:id AS uuid) AND tenant_id = :tenant_id RETURNING id"),
+        {"id": rule_id, "tenant_id": tenant_id},
+    )
+    await db.commit()
+    if not result.fetchone():
+        raise HTTPException(status_code=404, detail="Log alert rule not found")
