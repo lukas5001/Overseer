@@ -1097,3 +1097,52 @@ export interface DiscoveryBulkAddRequest {
   host_type_id: string
   collector_id?: string
 }
+
+// ── Logs ─────────────────────────────────────────────────────────────────────
+
+export interface LogSearchParams {
+  query?: string
+  host_ids?: string[]
+  services?: string[]
+  severity_min?: number
+  severity_max?: number
+  source?: string
+  from?: string
+  to?: string
+  limit?: number
+  offset?: number
+}
+
+export interface LogEntry {
+  time: string
+  host_id: string
+  host: string | null
+  source: string
+  source_path: string | null
+  service: string | null
+  severity: number
+  message: string
+  fields: Record<string, unknown> | null
+}
+
+export interface LogSearchResponse {
+  total: number
+  logs: LogEntry[]
+}
+
+export interface LogStats {
+  severity_distribution: Record<number, number>
+  volume: { time: string; count: number }[]
+  top_services: { service: string; count: number }[]
+}
+
+export interface LogSource {
+  id: number
+  host_id: string
+  hostname: string | null
+  source_type: string
+  config: Record<string, unknown>
+  enabled: boolean
+  created_at: string
+  updated_at: string
+}

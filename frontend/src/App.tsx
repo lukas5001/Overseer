@@ -30,6 +30,7 @@ import ReportsPage from './pages/ReportsPage'
 import StatusPagesAdminPage from './pages/StatusPagesAdminPage'
 import PublicStatusPage from './pages/PublicStatusPage'
 import DiscoveryPage from './pages/DiscoveryPage'
+import LogsPage from './pages/LogsPage'
 import LoginPage from './pages/LoginPage'
 import AiChatWidget from './components/AiChatWidget'
 
@@ -67,6 +68,7 @@ export default function App() {
           <Route path="/custom-dashboards" element={<CustomDashboardsPage />} />
           <Route path="/custom-dashboards/:dashboardId" element={<CustomDashboardViewPage />} />
           <Route path="/discovery" element={<DiscoveryPage />} />
+          <Route path="/logs" element={<LogsPage />} />
           <Route path="/collectors" element={<CollectorsPage />} />
           <Route path="/tenants" element={<TenantsPage />} />
           <Route path="/users" element={<UsersPage />} />

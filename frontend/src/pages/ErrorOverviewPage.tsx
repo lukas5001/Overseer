@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { AlertTriangle, CheckCheck, Clock, BellOff, X, Search, EyeOff, MessageSquare, ArrowUpDown, Filter, Save, Trash2, Edit2, Star, Tv } from 'lucide-react'
+import { AlertTriangle, CheckCheck, Clock, BellOff, X, Search, EyeOff, MessageSquare, ArrowUpDown, Filter, Save, Trash2, Edit2, Star, Tv, Scroll } from 'lucide-react'
 import { getHostTypeIcon } from '../lib/constants'
 import { Link } from 'react-router-dom'
 import clsx from 'clsx'
@@ -1304,6 +1304,15 @@ export default function ErrorOverviewPage() {
                       : '–'}
                   </div>
                 </StatusHistoryPopover>
+
+                {/* Logs button */}
+                <Link
+                  to={`/logs?host_ids=${error.host_id}&severity=0,1,2,3,4${error.last_state_change_at ? `&from=${new Date(new Date(error.last_state_change_at).getTime() - 5 * 60000).toISOString()}&to=${new Date().toISOString()}` : '&time=60'}`}
+                  title="Logs anzeigen"
+                  className="text-gray-300 hover:text-blue-500 transition-colors"
+                >
+                  <Scroll className="w-4 h-4" />
+                </Link>
 
                 {/* Downtime button */}
                 <button

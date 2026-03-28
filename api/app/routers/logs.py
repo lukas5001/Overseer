@@ -1,13 +1,16 @@
 """Overseer API – Log Search (TimescaleDB full-text search)."""
+import asyncio
+import json
 from datetime import datetime, timezone, timedelta
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.app.core.database import get_db
+from api.app.core.database import get_db, AsyncSessionLocal
 from api.app.core.auth import get_current_user
 
 router = APIRouter()
@@ -189,6 +192,103 @@ async def log_stats(
         "volume": volume,
         "top_services": top_services,
     }
+
+
+# ==================== Log Stream (SSE) ====================
+
+@router.get("/stream")
+async def stream_logs(
+    request: Request,
+    token: str | None = None,
+    host_ids: str | None = None,
+    severity_min: int | None = None,
+    query: str | None = None,
+):
+    """Server-Sent Events stream for live log tail. Token via query param (EventSource can't set headers)."""
+    import os
+    from jose import jwt, JWTError
+    secret = os.getenv("SECRET_KEY", "dev_secret_key_change_in_production")
+    if not token:
+        raise HTTPException(status_code=401, detail="Missing token")
+    try:
+        user = jwt.decode(token, secret, algorithms=["HS256"])
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    tenant_id = user.get("tenant_id")
+    if not tenant_id:
+        raise HTTPException(status_code=403, detail="No tenant context")
+
+    host_id_list = host_ids.split(",") if host_ids else None
+
+    async def event_generator():
+        last_time = datetime.now(timezone.utc)
+        while True:
+            if await request.is_disconnected():
+                break
+
+            conditions = ["l.tenant_id = :tenant_id", "l.time > :since"]
+            params: dict = {"tenant_id": tenant_id, "since": last_time}
+
+            if host_id_list:
+                conditions.append("l.host_id = ANY(:host_ids)")
+                params["host_ids"] = host_id_list
+
+            if severity_min is not None:
+                conditions.append("l.severity <= :severity_min")
+                params["severity_min"] = severity_min
+
+            if query:
+                conditions.append("l.search_vector @@ websearch_to_tsquery('english', :query)")
+                params["query"] = query
+
+            where = " AND ".join(conditions)
+            sql = f"""
+                SELECT l.time, l.host_id, h.hostname, l.source, l.source_path,
+                       l.service, l.severity, l.message, l.fields
+                FROM logs l
+                LEFT JOIN hosts h ON h.id = l.host_id
+                WHERE {where}
+                ORDER BY l.time ASC
+                LIMIT 100
+            """
+
+            try:
+                async with AsyncSessionLocal() as db:
+                    result = await db.execute(text(sql), params)
+                    rows = result.fetchall()
+
+                if rows:
+                    last_time = rows[-1].time
+                    logs = [
+                        {
+                            "time": row.time.isoformat(),
+                            "host_id": str(row.host_id),
+                            "host": row.hostname,
+                            "source": row.source,
+                            "source_path": row.source_path,
+                            "service": row.service,
+                            "severity": row.severity,
+                            "message": row.message,
+                            "fields": row.fields,
+                        }
+                        for row in rows
+                    ]
+                    yield f"data: {json.dumps(logs)}\n\n"
+            except Exception:
+                pass
+
+            await asyncio.sleep(2)
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 # ==================== Log Sources CRUD ====================

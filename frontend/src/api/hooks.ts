@@ -20,6 +20,7 @@ import type {
   ReportDelivery, ReportGenerateRequest,
   StatusPage, StatusPageCreate, StatusPageUpdate,
   StatusPageIncident, StatusPageSubscriber, PublicStatusPageData,
+  LogSearchParams, LogSearchResponse, LogStats, LogSource,
 } from '../types'
 import axios from 'axios'
 
@@ -1116,5 +1117,29 @@ export function useUnignoreDiscoveryResult() {
       qc.invalidateQueries({ queryKey: ['discovery-results'] })
       qc.invalidateQueries({ queryKey: ['discovery-ignored'] })
     },
+  })
+}
+
+// ── Logs ────────────────────────────────────────────────────────────────────
+
+export function useSearchLogs(params: LogSearchParams, enabled = true) {
+  return useQuery<LogSearchResponse>({
+    queryKey: ['logs-search', params],
+    queryFn: () => api.post('/api/v1/logs/search', params).then(r => r.data),
+    enabled,
+  })
+}
+
+export function useLogStats(params?: { host_id?: string; hours?: number }) {
+  return useQuery<LogStats>({
+    queryKey: ['log-stats', params],
+    queryFn: () => api.get('/api/v1/logs/stats', { params }).then(r => r.data),
+  })
+}
+
+export function useLogSources(hostId?: string) {
+  return useQuery<LogSource[]>({
+    queryKey: ['log-sources', hostId],
+    queryFn: () => api.get('/api/v1/logs/sources', { params: hostId ? { host_id: hostId } : {} }).then(r => r.data),
   })
 }
