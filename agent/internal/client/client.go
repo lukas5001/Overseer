@@ -11,9 +11,12 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/klauspost/compress/zstd"
 	"github.com/lukas5001/overseer-agent/internal/types"
 	"github.com/lukas5001/overseer-agent/internal/version"
 )
+
+var zstdEncoder, _ = zstd.NewWriter(nil, zstd.WithEncoderLevel(zstd.SpeedDefault))
 
 // Client is the HTTP client for communicating with the Overseer server
 type Client struct {
@@ -156,6 +159,59 @@ func (c *Client) SendHeartbeat(info *types.HeartbeatInfo) error {
 	}
 
 	return nil
+}
+
+// SendLogs sends log entries to the receiver endpoint with optional zstd compression
+func (c *Client) SendLogs(entries []types.LogEntry) error {
+	data, err := json.Marshal(entries)
+	if err != nil {
+		return fmt.Errorf("marshal log entries: %w", err)
+	}
+
+	// Compress with zstd if payload is large enough
+	var body io.Reader
+	var contentEncoding string
+	if len(data) > 1024 {
+		compressed, err := zstdCompress(data)
+		if err != nil {
+			// Fallback to uncompressed
+			body = bytes.NewReader(data)
+		} else {
+			body = bytes.NewReader(compressed)
+			contentEncoding = "zstd"
+		}
+	} else {
+		body = bytes.NewReader(data)
+	}
+
+	req, err := http.NewRequest("POST", c.baseURL+"/receiver/api/v1/logs/ingest", body)
+	if err != nil {
+		return fmt.Errorf("create log request: %w", err)
+	}
+
+	req.Header.Set("X-Agent-Token", c.token)
+	req.Header.Set("User-Agent", c.userAgent())
+	req.Header.Set("Content-Type", "application/json")
+	if contentEncoding != "" {
+		req.Header.Set("Content-Encoding", contentEncoding)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("send logs: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		respBody, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("send logs: HTTP %d: %s", resp.StatusCode, string(respBody))
+	}
+
+	return nil
+}
+
+func zstdCompress(data []byte) ([]byte, error) {
+	return zstdEncoder.EncodeAll(data, make([]byte, 0, len(data)/2)), nil
 }
 
 // SendDiscovery sends service discovery results to the server.

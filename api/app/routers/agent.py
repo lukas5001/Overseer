@@ -51,12 +51,25 @@ class AgentCheckDef(BaseModel):
     retry_interval_seconds: int = 15
 
 
+class LogSourceDef(BaseModel):
+    source_type: str          # 'file', 'journald', 'windows_eventlog'
+    config: dict
+
+
+class LogCollectionConfig(BaseModel):
+    enabled: bool = False
+    batch_size: int = 1000
+    flush_interval_seconds: int = 5
+    sources: list[LogSourceDef] = []
+
+
 class AgentConfigResponse(BaseModel):
     host_id: str
     hostname: str
     tenant_id: str
     config_interval_seconds: int = 300
     checks: list[AgentCheckDef]
+    log_collection: LogCollectionConfig = LogCollectionConfig()
 
 
 # ── Agent Token Auth Dependency ──────────────────────────────────────────────
@@ -361,11 +374,30 @@ async def get_agent_config(
             retry_interval_seconds=r.retry_interval_seconds,
         ))
 
+    # Load log collection sources
+    log_result = await db.execute(
+        text("""
+            SELECT source_type, config
+            FROM log_sources
+            WHERE host_id = CAST(:host_id AS integer)
+              AND tenant_id = CAST(:tenant_id AS uuid)
+              AND enabled = true
+        """),
+        {"host_id": agent["host_id"], "tenant_id": agent["tenant_id"]},
+    )
+    log_rows = log_result.fetchall()
+
+    log_collection = LogCollectionConfig(
+        enabled=len(log_rows) > 0,
+        sources=[LogSourceDef(source_type=r.source_type, config=r.config or {}) for r in log_rows],
+    )
+
     return AgentConfigResponse(
         host_id=agent["host_id"],
         hostname=agent["hostname"],
         tenant_id=agent["tenant_id"],
         checks=checks,
+        log_collection=log_collection,
     )
 
 

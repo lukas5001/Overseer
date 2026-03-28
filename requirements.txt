@@ -14,6 +14,7 @@ qrcode[pil]==7.4.2
 httpx==0.27.0
 pysnmp>=6.0.0
 alembic==1.13.0
+zstandard==0.23.0
 
 # PDF Report Engine
 weasyprint==62.3

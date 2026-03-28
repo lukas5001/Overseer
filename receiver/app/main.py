@@ -1,10 +1,11 @@
 """
-Overseer Receiver – Accepts check results from Collectors.
+Overseer Receiver – Accepts check results from Collectors and log data from Agents.
 
 Responsibilities:
-- Validate API key → identify tenant (real DB lookup)
+- Validate API key / Agent token → identify tenant (real DB lookup)
 - Validate payload schema
-- Write to Redis Stream
+- Write check results to Redis Stream
+- Bulk-insert log data into TimescaleDB
 - Return 202 Accepted immediately
 """
 import hashlib
@@ -14,8 +15,10 @@ import os
 from datetime import datetime, timezone
 
 import redis.asyncio as redis
-from fastapi import FastAPI, HTTPException, Header, Request
+import zstandard as zstd
+from fastapi import FastAPI, HTTPException, Header, Request, Response
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel, field_validator
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 
@@ -219,3 +222,124 @@ async def health():
             status_code=503,
             content={"status": "unhealthy", "redis": str(e)},
         )
+
+
+# ==================== Log Ingestion ====================
+
+ZSTD_DECOMPRESSOR = zstd.ZstdDecompressor()
+LOG_BATCH_MAX = 5000  # max log entries per request
+
+
+class LogEntry(BaseModel):
+    timestamp: datetime
+    source: str           # 'file', 'journald', 'windows_eventlog'
+    source_path: str | None = None
+    service: str | None = None
+    severity: int = 6     # syslog level: 0=emergency..7=debug
+    message: str
+    fields: dict | None = None
+
+    @field_validator("severity")
+    @classmethod
+    def validate_severity(cls, v: int) -> int:
+        if not 0 <= v <= 7:
+            raise ValueError("severity must be 0-7 (syslog levels)")
+        return v
+
+    @field_validator("source")
+    @classmethod
+    def validate_source(cls, v: str) -> str:
+        if v not in ("file", "journald", "windows_eventlog"):
+            raise ValueError("source must be file, journald, or windows_eventlog")
+        return v
+
+
+@app.post("/api/v1/logs/ingest", status_code=200)
+async def ingest_logs(request: Request):
+    """Receive log entries from Agents. Body is zstd-compressed JSON array or plain JSON."""
+    # Auth: agent token only
+    agent_token = request.headers.get("X-Agent-Token")
+    if not agent_token:
+        raise HTTPException(status_code=401, detail="Missing X-Agent-Token header")
+
+    await check_rate_limit(agent_token[:16])
+    tenant_info = await validate_agent_token(agent_token)
+
+    # Read body and decompress if needed
+    raw_body = await request.body()
+    if not raw_body:
+        raise HTTPException(status_code=400, detail="Empty request body")
+
+    content_encoding = request.headers.get("Content-Encoding", "")
+    if content_encoding == "zstd":
+        try:
+            body_bytes = ZSTD_DECOMPRESSOR.decompress(raw_body)
+        except Exception:
+            raise HTTPException(status_code=400, detail="Failed to decompress zstd body")
+    else:
+        body_bytes = raw_body
+
+    # Parse JSON array
+    try:
+        entries_raw = json.loads(body_bytes)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON")
+
+    if not isinstance(entries_raw, list):
+        raise HTTPException(status_code=400, detail="Expected JSON array")
+
+    if len(entries_raw) > LOG_BATCH_MAX:
+        raise HTTPException(status_code=400, detail=f"Max {LOG_BATCH_MAX} entries per batch")
+
+    if not entries_raw:
+        return {"status": "ok", "logs_ingested": 0}
+
+    # Validate entries
+    entries: list[LogEntry] = []
+    for i, raw in enumerate(entries_raw):
+        try:
+            entries.append(LogEntry(**raw))
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Invalid log entry at index {i}: {e}")
+
+    # Bulk insert into TimescaleDB
+    tenant_id = tenant_info["tenant_id"]
+    host_id = int(tenant_info["host_id"])
+
+    values_parts = []
+    params = {}
+    for i, entry in enumerate(entries):
+        values_parts.append(
+            f"(:time_{i}, :tenant_{i}, :host_{i}, :source_{i}, :spath_{i}, "
+            f":service_{i}, :severity_{i}, :message_{i}, :fields_{i})"
+        )
+        params[f"time_{i}"] = entry.timestamp
+        params[f"tenant_{i}"] = tenant_id
+        params[f"host_{i}"] = host_id
+        params[f"source_{i}"] = entry.source
+        params[f"spath_{i}"] = entry.source_path
+        params[f"service_{i}"] = entry.service
+        params[f"severity_{i}"] = entry.severity
+        params[f"message_{i}"] = entry.message
+        params[f"fields_{i}"] = json.dumps(entry.fields) if entry.fields else None
+
+    sql = f"""
+        INSERT INTO logs (time, tenant_id, host_id, source, source_path,
+                          service, severity, message, fields)
+        VALUES {', '.join(values_parts)}
+    """
+
+    try:
+        async with AsyncSessionLocal() as db:
+            await db.execute(text(sql), params)
+            await db.commit()
+    except Exception as e:
+        logger.error("Failed to insert logs: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to store logs")
+
+    logger.info(
+        "Ingested %d logs from agent host_id=%s tenant=%s",
+        len(entries), host_id, tenant_info["tenant_slug"],
+    )
+
+    return {"status": "ok", "logs_ingested": len(entries)}

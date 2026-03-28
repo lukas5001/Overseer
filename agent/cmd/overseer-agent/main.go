@@ -15,6 +15,7 @@ import (
 	"github.com/lukas5001/overseer-agent/internal/config"
 	"github.com/lukas5001/overseer-agent/internal/discovery"
 	"github.com/lukas5001/overseer-agent/internal/heartbeat"
+	"github.com/lukas5001/overseer-agent/internal/logcollector"
 	"github.com/lukas5001/overseer-agent/internal/scheduler"
 	"github.com/lukas5001/overseer-agent/internal/sender"
 	"github.com/lukas5001/overseer-agent/internal/service"
@@ -148,6 +149,14 @@ func run(configPath string) error {
 	go heartbeat.Run(ctx, httpClient, logger)
 	go discovery.Run(ctx, remoteCfg.Hostname, &discoveryAdapter{client: httpClient}, 10*time.Minute, logger)
 
+	// 7b. Start log collector if configured
+	var logCol *logcollector.Collector
+	if remoteCfg.LogCollection.Enabled {
+		logCol = logcollector.New(httpClient, remoteCfg.LogCollection, logger)
+		go logCol.Run(ctx)
+		logger.Info("log collection started", "sources", len(remoteCfg.LogCollection.Sources))
+	}
+
 	// 8. Config refresh goroutine
 	configRefreshInterval := time.Duration(remoteCfg.ConfigIntervalSeconds) * time.Second
 	if configRefreshInterval < 60*time.Second {
@@ -172,6 +181,9 @@ func run(configPath string) error {
 				}
 				remoteCfg = newCfg
 				sched.UpdateConfig(newCfg.Checks)
+				if logCol != nil {
+					logCol.UpdateConfig(newCfg.LogCollection)
+				}
 			}
 		}
 	}()

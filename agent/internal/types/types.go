@@ -2,11 +2,37 @@ package types
 
 // RemoteConfig is the response from GET /api/v1/agent/config
 type RemoteConfig struct {
-	HostID                string     `json:"host_id"`
-	Hostname              string     `json:"hostname"`
-	TenantID              string     `json:"tenant_id"`
-	ConfigIntervalSeconds int        `json:"config_interval_seconds"`
-	Checks                []CheckDef `json:"checks"`
+	HostID                string              `json:"host_id"`
+	Hostname              string              `json:"hostname"`
+	TenantID              string              `json:"tenant_id"`
+	ConfigIntervalSeconds int                 `json:"config_interval_seconds"`
+	Checks                []CheckDef          `json:"checks"`
+	LogCollection         LogCollectionConfig `json:"log_collection"`
+}
+
+// LogCollectionConfig defines the log collection settings from the server
+type LogCollectionConfig struct {
+	Enabled              bool            `json:"enabled"`
+	BatchSize            int             `json:"batch_size"`
+	FlushIntervalSeconds int             `json:"flush_interval_seconds"`
+	Sources              []LogSourceDef  `json:"sources"`
+}
+
+// LogSourceDef defines a single log source
+type LogSourceDef struct {
+	SourceType string         `json:"source_type"` // "file", "journald", "windows_eventlog"
+	Config     map[string]any `json:"config"`
+}
+
+// LogEntry is a single log line to be sent to the server
+type LogEntry struct {
+	Timestamp  string         `json:"timestamp"`
+	Source     string         `json:"source"`
+	SourcePath string         `json:"source_path,omitempty"`
+	Service    string         `json:"service,omitempty"`
+	Severity   int            `json:"severity"`
+	Message    string         `json:"message"`
+	Fields     map[string]any `json:"fields,omitempty"`
 }
 
 // CheckDef defines a single check as configured on the server
